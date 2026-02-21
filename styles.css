@@ -1,0 +1,440 @@
+:root {
+    /* ─── Light Theme (Default) ─── */
+    --bg-color: #f5f6f8;
+    --bg-surface: #ebedf2;
+    --panel-bg: #ffffff;
+    --panel-bg-hover: #f0f1f5;
+    --text-main: #1e1e2e;
+    --text-muted: #6b7280;
+    --text-bright: #111827;
+    --border-color: #e2e5ea;
+
+    --party-red: #e03e3e;
+    --party-blue: #2563eb;
+    --party-yellow: #d97706;
+    --party-none: #9ca3af;
+
+    --party-red-light: #fca5a5;
+    --party-blue-light: #93c5fd;
+    --party-yellow-light: #fcd34d;
+    --party-none-light: #d1d5db;
+
+    --minority-color: #1b8a3a;
+
+    --accent: #4f46e5;
+
+    --font-heading: 'Montserrat', sans-serif;
+    --font-body: 'Noto Sans', sans-serif;
+
+    --radius-sm: 8px;
+    --radius-md: 12px;
+
+    --hex-stroke: rgba(255, 255, 255, 0.5);
+    --hex-hover-stroke: rgba(0, 0, 0, 0.5);
+    --vote-bar-bg: #e5e7eb;
+}
+
+/* ─── Dark Theme ─── */
+body.dark {
+    --bg-color: #1a1c2a;
+    --bg-surface: #21243a;
+    --panel-bg: #262940;
+    --panel-bg-hover: #30345a;
+    --text-main: #d1d5e0;
+    --text-muted: #8b8fa3;
+    --text-bright: #f0f1f5;
+    --border-color: rgba(255, 255, 255, 0.08);
+
+    --party-red: #ff6b7a;
+    --party-blue: #60a5fa;
+    --party-yellow: #fbbf24;
+    --party-none: #6b7280;
+
+    --hex-stroke: rgba(0, 0, 0, 0.3);
+    --hex-hover-stroke: rgba(255, 255, 255, 0.6);
+    --vote-bar-bg: rgba(255, 255, 255, 0.08);
+}
+
+* {
+    box-sizing: border-box;
+    margin: 0;
+    padding: 0;
+}
+
+body {
+    background-color: var(--bg-color);
+    color: var(--text-main);
+    font-family: var(--font-body);
+    font-weight: 400;
+    line-height: 1.6;
+    display: flex;
+    flex-direction: column;
+    height: 100vh;
+    overflow: hidden;
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+    transition: background-color 0.3s, color 0.3s;
+}
+
+/* ─── Header ─── */
+header {
+    padding: 1rem 2rem;
+    background: var(--panel-bg);
+    border-bottom: 2px solid var(--border-color);
+    z-index: 10;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+}
+
+.header-left {
+    display: flex;
+    flex-direction: column;
+}
+
+.header-actions {
+    display: flex;
+    gap: 0.5rem;
+    align-items: center;
+}
+
+h1 {
+    font-family: var(--font-heading);
+    font-size: 1.5rem;
+    font-weight: 800;
+    color: var(--text-bright);
+    letter-spacing: -0.02em;
+}
+
+.subtitle {
+    color: var(--text-muted);
+    font-size: 0.85rem;
+    margin-top: 0.1rem;
+    font-weight: 400;
+}
+
+/* ─── Dark Mode Toggle ─── */
+#theme-toggle {
+    background: var(--bg-surface);
+    border: 2px solid var(--border-color);
+    border-radius: var(--radius-sm);
+    color: var(--text-main);
+    font-family: var(--font-body);
+    font-size: 0.82rem;
+    font-weight: 600;
+    padding: 0.45rem 1rem;
+    cursor: pointer;
+    transition: background 0.2s, border-color 0.2s, color 0.2s;
+    white-space: nowrap;
+}
+
+#theme-toggle:hover {
+    background: var(--panel-bg-hover);
+    border-color: var(--accent);
+    color: var(--text-bright);
+}
+
+#reset-btn,
+#undo-btn,
+#redo-btn {
+    background: var(--bg-surface);
+    border: 2px solid var(--border-color);
+    border-radius: var(--radius-sm);
+    color: var(--text-main);
+    font-family: var(--font-body);
+    font-size: 0.82rem;
+    font-weight: 600;
+    padding: 0.45rem 0.8rem;
+    cursor: pointer;
+    transition: background 0.2s, border-color 0.2s, color 0.2s;
+    white-space: nowrap;
+}
+
+#reset-btn:hover,
+#undo-btn:hover,
+#redo-btn:hover {
+    background: var(--panel-bg-hover);
+    border-color: var(--accent);
+    color: var(--text-bright);
+}
+
+#reset-btn {
+    border-color: var(--party-red);
+    color: var(--party-red);
+}
+
+/* ─── Layout ─── */
+main {
+    flex: 1;
+    display: flex;
+    overflow: hidden;
+}
+
+#map-container {
+    flex: 1;
+    position: relative;
+    background: var(--bg-surface);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    overflow: hidden;
+    cursor: crosshair;
+}
+
+#map-container.panning {
+    cursor: grabbing;
+}
+
+#hex-map {
+    width: 100%;
+    height: 100%;
+}
+
+/* ─── Hex Tiles ─── */
+.hex polygon {
+    stroke: var(--hex-stroke);
+    stroke-width: 1px;
+    transition: filter 0.12s ease;
+}
+
+.hex.hovered polygon {
+    filter: brightness(1.15);
+    stroke: var(--hex-hover-stroke);
+    stroke-width: 2px;
+}
+
+.minority-marker {
+    fill: var(--minority-color);
+    pointer-events: none;
+    opacity: 0.85;
+}
+
+/* ─── District Borders (flat, no shadows) ─── */
+.district-path {
+    fill: none;
+    stroke-linejoin: round;
+    pointer-events: none;
+    stroke-linecap: round;
+}
+
+.district-path.outline {
+    stroke-width: 3px;
+}
+
+.district-path.minority-majority {
+    stroke-dasharray: 8 6;
+}
+
+.active-district-group .district-path.outline {
+    stroke-width: 4.5px;
+}
+
+/* ─── Sidebar ─── */
+#sidebar {
+    width: 340px;
+    background: var(--panel-bg);
+    border-left: 2px solid var(--border-color);
+    display: flex;
+    flex-direction: column;
+    overflow-y: auto;
+    z-index: 5;
+}
+
+#sidebar::-webkit-scrollbar {
+    width: 4px;
+}
+
+#sidebar::-webkit-scrollbar-track {
+    background: transparent;
+}
+
+#sidebar::-webkit-scrollbar-thumb {
+    background: var(--border-color);
+    border-radius: 4px;
+}
+
+.panel {
+    padding: 1.25rem 1.5rem;
+    border-bottom: 1px solid var(--border-color);
+}
+
+.panel h2 {
+    font-family: var(--font-heading);
+    font-size: 0.7rem;
+    text-transform: uppercase;
+    letter-spacing: 0.12em;
+    color: var(--text-muted);
+    margin-bottom: 0.85rem;
+    font-weight: 700;
+}
+
+/* ─── Tools Panel ─── */
+.district-selector {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 0.5rem;
+    margin-bottom: 1rem;
+}
+
+.district-btn {
+    padding: 0.6rem 0;
+    border: 2px solid transparent;
+    border-radius: var(--radius-sm);
+    background: var(--bg-surface);
+    cursor: pointer;
+    font-family: var(--font-body);
+    font-weight: 600;
+    font-size: 0.85rem;
+    color: var(--text-main);
+    transition: all 0.2s ease;
+}
+
+.district-btn:hover {
+    background: var(--panel-bg-hover);
+}
+
+.district-btn.active {
+    border-color: var(--accent);
+    background: var(--bg-surface);
+    color: var(--text-bright);
+}
+
+.district-btn.error {
+    border-color: var(--party-red);
+    color: var(--party-red);
+}
+
+.instruction {
+    color: var(--text-muted);
+    font-size: 0.82rem;
+    line-height: 1.5;
+}
+
+.instruction strong {
+    color: var(--text-main);
+    font-weight: 600;
+}
+
+/* ─── Results ─── */
+.result-row {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 0.7rem;
+    font-size: 0.95rem;
+    padding: 0.3rem 0;
+}
+
+.party-label {
+    font-weight: 500;
+    font-size: 0.9rem;
+}
+
+.party-label.red {
+    color: var(--party-red);
+}
+
+.party-label.blue {
+    color: var(--party-blue);
+}
+
+.party-label.minority {
+    color: var(--minority-color);
+    font-size: 0.85rem;
+}
+
+.seat-count {
+    font-family: var(--font-heading);
+    font-weight: 700;
+    font-variant-numeric: tabular-nums;
+    color: var(--text-bright);
+}
+
+/* ─── District Details ─── */
+.hidden {
+    display: none !important;
+}
+
+#selected-district-info {
+    display: block;
+}
+
+#selected-district-info h3 {
+    font-family: var(--font-heading);
+    font-size: 1.1rem;
+    margin-bottom: 0.85rem;
+    font-weight: 700;
+    color: var(--text-bright);
+}
+
+.metric {
+    display: flex;
+    justify-content: space-between;
+    margin-bottom: 0.45rem;
+    font-size: 0.9rem;
+    padding: 0.15rem 0;
+}
+
+.label {
+    color: var(--text-muted);
+    font-weight: 400;
+}
+
+.value {
+    font-weight: 600;
+    color: var(--text-bright);
+}
+
+.metric-note {
+    font-size: 0.78rem;
+    color: var(--text-muted);
+    text-align: right;
+    margin-top: -0.15rem;
+    margin-bottom: 0.75rem;
+}
+
+/* ─── Vote Bars ─── */
+.vote-bar-container {
+    height: 10px;
+    background: var(--vote-bar-bg);
+    border-radius: 5px;
+    display: flex;
+    overflow: hidden;
+    margin-top: 0.85rem;
+    margin-bottom: 0.4rem;
+}
+
+.vote-bar {
+    transition: width 0.3s ease;
+}
+
+.vote-bar.red {
+    background: var(--party-red);
+}
+
+.vote-bar.blue {
+    background: var(--party-blue);
+}
+
+.vote-bar.yellow {
+    background: var(--party-yellow);
+}
+
+.vote-labels {
+    display: flex;
+    justify-content: space-between;
+    font-size: 0.75rem;
+    font-weight: 600;
+}
+
+.red-text {
+    color: var(--party-red);
+}
+
+.blue-text {
+    color: var(--party-blue);
+}
+
+.yellow-text {
+    color: var(--party-yellow);
+}

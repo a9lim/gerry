@@ -1,0 +1,137 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Gerrymandering Simulation</title>
+    <link rel="stylesheet" href="styles.css">
+    <link
+        href="https://fonts.googleapis.com/css2?family=Montserrat:wght@400;500;600;700;800;900&family=Noto+Sans:wght@300;400;500;600;700&display=swap"
+        rel="stylesheet">
+</head>
+
+<body>
+    <header>
+        <div class="header-left">
+            <h1>Redistricting Simulator</h1>
+            <p class="subtitle">Paint districts on the map to explore the impact of borders on electoral outcomes.</p>
+        </div>
+        <div class="header-actions">
+            <button id="reset-btn" title="Reset all districts">↺ Reset</button>
+            <button id="undo-btn" title="Undo (Ctrl+Z)">↶ Undo</button>
+            <button id="redo-btn" title="Redo (Ctrl+Y)">↷ Redo</button>
+            <button id="theme-toggle">🌙 Dark Mode</button>
+        </div>
+    </header>
+
+    <main>
+        <div id="map-container">
+            <svg id="hex-map" xmlns="http://www.w3.org/2000/svg">
+                <!-- Group for base hexes -->
+                <g id="hex-group"></g>
+                <!-- Group for district borders -->
+                <g id="border-group"></g>
+                <!-- Group for minority markers -->
+                <g id="minority-group"></g>
+            </svg>
+        </div>
+
+        <aside id="sidebar">
+            <div class="panel">
+                <h2>Controls</h2>
+                <p class="instruction" style="margin-bottom: 0.4rem"><strong>Left-Click Empty:</strong> Create district
+                </p>
+                <p class="instruction" style="margin-bottom: 0.4rem"><strong>Drag from District:</strong> Grow it</p>
+                <p class="instruction" style="margin-bottom: 0.4rem"><strong>Right-Click:</strong> Erase</p>
+                <p class="instruction" style="margin-bottom: 0.4rem"><strong>Scroll Wheel:</strong> Zoom in/out</p>
+                <p class="instruction" style="margin-bottom: 0.4rem"><strong>Middle-Click Drag:</strong> Pan map</p>
+                <p class="instruction"><strong>Ctrl+Z / Ctrl+Y:</strong> Undo / Redo</p>
+            </div>
+
+            <div class="panel">
+                <h2>Statewide Results</h2>
+                <div id="state-results">
+                    <div class="result-row">
+                        <span class="party-label red">Red Party</span>
+                        <span class="seat-count" id="red-seats">0 Seats</span>
+                    </div>
+                    <div class="result-row">
+                        <span class="party-label blue">Blue Party</span>
+                        <span class="seat-count" id="blue-seats">0 Seats</span>
+                    </div>
+                    <div class="result-row">
+                        <span class="party-label minority">Maj-Minority Districts</span>
+                        <span class="seat-count" id="mmd-count">0 / 2 min</span>
+                    </div>
+                    <div class="result-row"
+                        style="border-top: 1px solid var(--border-color); padding-top: 0.5rem; margin-top: 0.3rem">
+                        <span class="label">Districts Created</span>
+                        <span class="value" id="district-count">0 / 10</span>
+                    </div>
+                    <div class="result-row">
+                        <span class="label">Unassigned Hexes</span>
+                        <span class="value" id="unassigned-count">0</span>
+                    </div>
+                    <div class="result-row"
+                        style="border-top: 1px solid var(--border-color); padding-top: 0.5rem; margin-top: 0.3rem">
+                        <span class="label">Efficiency Gap</span>
+                        <span class="value" id="efficiency-gap">—</span>
+                    </div>
+                    <p class="instruction" id="eg-note" style="margin-top: 0.2rem; font-size: 0.72rem">EG > 7% may
+                        indicate gerrymandering</p>
+                </div>
+            </div>
+
+            <div class="panel">
+                <h2>District Details</h2>
+                <div id="selected-district-info" class="hidden">
+                    <h3 id="detail-title">District 1</h3>
+                    <div class="metric">
+                        <span class="label">Winner</span>
+                        <span class="value" id="detail-winner">-</span>
+                    </div>
+                    <div class="metric">
+                        <span class="label">Margin of Victory</span>
+                        <span class="value" id="detail-margin">-</span>
+                    </div>
+                    <div class="metric">
+                        <span class="label">Population</span>
+                        <span class="value" id="detail-pop">0</span>
+                    </div>
+                    <div class="metric-note">Target: <span id="target-pop"></span> (<span id="detail-deviation"></span>)
+                    </div>
+
+                    <div class="metric">
+                        <span class="label">Compactness</span>
+                        <span class="value" id="detail-compactness">0%</span>
+                    </div>
+                    <div class="metric">
+                        <span class="label">Contiguous</span>
+                        <span class="value" id="detail-contiguous">Yes</span>
+                    </div>
+                    <div class="metric">
+                        <span class="label">Minority-Majority</span>
+                        <span class="value" id="detail-mm">No</span>
+                    </div>
+
+                    <div class="vote-bar-container">
+                        <div class="vote-bar red" id="vote-bar-red" style="width: 0%"></div>
+                        <div class="vote-bar blue" id="vote-bar-blue" style="width: 0%"></div>
+                        <div class="vote-bar yellow" id="vote-bar-yellow" style="width: 0%"></div>
+                    </div>
+                    <div class="vote-labels">
+                        <span id="vote-pct-red" class="red-text">0%</span>
+                        <span id="vote-pct-yellow" class="yellow-text">0%</span>
+                        <span id="vote-pct-blue" class="blue-text">0%</span>
+                    </div>
+                </div>
+                <p id="no-selection-msg" class="instruction">Hover or select a district on the map to view details.</p>
+            </div>
+        </aside>
+    </main>
+
+    <script src="script.js"></script>
+</body>
+
+</html>

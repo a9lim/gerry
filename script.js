@@ -4,9 +4,9 @@ const CONFIG = {
     cols: 25,
     hexSize: 18,
     colors: {
-        red: { base: '#ff3b30', dark: '#8b0000', light: '#ff9999', muted: '#ffb3b0', district: '#ff3b30' },
-        blue: { base: '#007aff', dark: '#002266', light: '#99ccff', muted: '#b3d7ff', district: '#007aff' },
-        yellow: { base: '#ffcc00', dark: '#806600', light: '#ffe680', muted: '#fff0b3', district: '#ffcc00' },
+        red: { base: '#b80f2a', dark: '#800a1d', light: '#e83856', muted: '#e1a6b0', district: '#b80f2a' }, // Saturated deep crimson
+        blue: { base: '#0b429c', dark: '#062861', light: '#4d88e8', muted: '#a5bccc', district: '#0b429c' }, // Saturated navy blue
+        yellow: { base: '#e6a800', dark: '#9c7200', light: '#ffc933', muted: '#ebe4ab', district: '#e6a800' }, // Saturated golden yellow
         none: { base: '#d1d5db', dark: '#374151', light: '#e5e7eb', muted: '#f3f4f6', district: '#9ca3af' },
         minority: '#1b8a3a'
     }
@@ -20,7 +20,6 @@ const state = {
     isPainting: false,
     hoveredHex: null,
     targetPop: 0,
-    isDarkMode: false,
     // Zoom/Pan
     viewBox: { x: 0, y: 0, w: 0, h: 0 },
     origViewBox: { x: 0, y: 0, w: 0, h: 0 },
@@ -29,7 +28,8 @@ const state = {
     zoomLevel: 1,
     // Undo/Redo
     undoStack: [],
-    redoStack: []
+    redoStack: [],
+    deleteMode: false
 };
 
 // ─── Hex Math ───
@@ -54,6 +54,7 @@ function cornersToString(corners) {
 
 // ─── Init ───
 function init() {
+    initShaderBackground();
     generateHexes();
     setupUI();
     state.targetPop = Math.round(Array.from(state.hexes.values()).reduce((sum, h) => sum + h.population, 0) / CONFIG.numDistricts);
@@ -68,30 +69,48 @@ function generateHexes() {
     const centerY = CONFIG.rows / 2;
     const maxRadius = Math.min(CONFIG.cols, CONFIG.rows) / 2 + 1;
 
+    // Randomize shape noise for dynamic map footprints
+    const phase1 = Math.random() * Math.PI * 2;
+    const phase2 = Math.random() * Math.PI * 2;
+    const freq1 = 2 + Math.random() * 4;
+    const freq2 = 3 + Math.random() * 5;
+    const amp1 = 1 + Math.random() * 2;
+    const amp2 = 0.5 + Math.random() * 2;
+    const baseRadius = maxRadius * (0.75 + Math.random() * 0.15);
+
     for (let r = 0; r < CONFIG.rows; r++) {
         let r_offset = Math.floor(r / 2);
         for (let q = -r_offset; q < CONFIG.cols - r_offset; q++) {
             let y = r, x = q + r_offset;
             let dist = Math.sqrt(Math.pow(x - centerX, 2) + Math.pow(y - centerY, 2));
             let angle = Math.atan2(y - centerY, x - centerX);
-            let noise = Math.sin(angle * 3) * 2 + Math.cos(angle * 5) * 1.5;
-            if (dist > maxRadius + noise) continue;
+            let noise = Math.sin(angle * freq1 + phase1) * amp1 + Math.cos(angle * freq2 + phase2) * amp2;
+            if (dist > baseRadius + noise) continue;
 
             let pop = Math.floor(Math.random() * 80) + 20;
-            let pR = 0, pB = 0, pY = 0;
-            let bias = Math.random();
-            if (bias < 0.45) { pR = pop * (0.6 + Math.random() * 0.4); pB = pop - pR; }
-            else if (bias < 0.9) { pB = pop * (0.6 + Math.random() * 0.4); pR = pop - pB; }
-            else { pY = pop * (0.5 + Math.random() * 0.5); pR = (pop - pY) / 2; pB = pR; }
+
+            // Exclusive party assignment (enum-like: each tile is 100% one party)
+            let party;
+            let roll = Math.random();
+            if (roll < 0.43) party = 'red';
+            else if (roll < 0.86) party = 'blue';
+            else party = 'yellow';
+
+            let votes = { red: 0, blue: 0, yellow: 0 };
+            votes[party] = pop;
+
+            // Minority: boolean, scattered randomly ~25%
+            let isMinority = Math.random() < 0.25;
 
             let hex = {
                 id: ++idCounter, q, r, s: -q - r,
                 population: pop,
-                votes: { red: pR, blue: pB, yellow: pY },
-                minority: Math.random() < 0.25,
+                votes,
+                party,       // enum: 'red' | 'blue' | 'yellow'
+                minority: isMinority, // boolean
                 district: 0
             };
-            hex.partyWinner = getHexWinner(hex);
+            hex.partyWinner = party;
             state.hexes.set(`${q},${r}`, hex);
         }
     }
@@ -145,6 +164,56 @@ function redo() {
     restoreSnapshot(snap);
 }
 
+// ─── Map Operations ───
+function randomizeMap() {
+    state.deleteMode = false;
+    document.getElementById('delete-btn')?.classList.remove('active');
+    document.getElementById('map-container')?.classList.remove('delete-mode');
+
+    state.hexes.clear();
+    for (let i = 1; i <= CONFIG.numDistricts; i++) {
+        state.districts[i] = { id: i, population: 0, votes: { red: 0, blue: 0, yellow: 0 }, hexes: [], minorityPop: 0, isContiguous: true, compactness: 0, winner: 'none' };
+    }
+    state.undoStack = [];
+    state.redoStack = [];
+    generateHexes();
+    state.targetPop = Math.round(Array.from(state.hexes.values()).reduce((sum, h) => sum + h.population, 0) / CONFIG.numDistricts);
+    renderMap();
+    updateMetrics();
+    pushUndoSnapshot();
+}
+
+function resetMap() {
+    state.deleteMode = false;
+    document.getElementById('delete-btn')?.classList.remove('active');
+    document.getElementById('map-container')?.classList.remove('delete-mode');
+
+    state.hexes.forEach(hex => { hex.district = 0; });
+    calculateMetrics();
+    state.hexes.forEach((hex, qr) => updateHexVisuals(qr));
+    renderBorders();
+    updateMetrics();
+    pushUndoSnapshot();
+}
+
+function deleteDistrict(dId) {
+    if (dId === 0) return;
+    let changed = false;
+    state.hexes.forEach(hex => {
+        if (hex.district === dId) {
+            hex.district = 0;
+            changed = true;
+        }
+    });
+    if (changed) {
+        calculateMetrics();
+        state.hexes.forEach((hex, qr) => updateHexVisuals(qr));
+        renderBorders();
+        updateMetrics();
+        pushUndoSnapshot();
+    }
+}
+
 // ─── UI Setup ───
 function setupUI() {
     const selector = document.getElementById('district-selector');
@@ -159,30 +228,103 @@ function setupUI() {
     svg.addEventListener('contextmenu', e => e.preventDefault());
 
     // Header buttons
-    const themeBtn = document.getElementById('theme-toggle');
-    if (themeBtn) themeBtn.addEventListener('click', toggleTheme);
-
     const resetBtn = document.getElementById('reset-btn');
     if (resetBtn) resetBtn.addEventListener('click', resetMap);
 
-    const undoBtn = document.getElementById('undo-btn');
-    if (undoBtn) undoBtn.addEventListener('click', undo);
+    const randomizeBtn = document.getElementById('randomize-btn');
+    if (randomizeBtn) randomizeBtn.addEventListener('click', randomizeMap);
 
-    const redoBtn = document.getElementById('redo-btn');
-    if (redoBtn) redoBtn.addEventListener('click', redo);
+    const deleteBtn = document.getElementById('delete-btn');
+    if (deleteBtn) {
+        deleteBtn.addEventListener('click', () => {
+            state.deleteMode = !state.deleteMode;
+            deleteBtn.classList.toggle('active', state.deleteMode);
+            const container = document.getElementById('map-container');
+            if (state.deleteMode) container.classList.add('delete-mode');
+            else container.classList.remove('delete-mode');
+        });
+    }
 
-    // Keyboard shortcuts
+    // Keyboard shortcuts (undo/redo still work via keyboard)
     document.addEventListener('keydown', (e) => {
         if (e.ctrlKey && e.key === 'z') { e.preventDefault(); undo(); }
         if (e.ctrlKey && e.key === 'y') { e.preventDefault(); redo(); }
     });
+
+    // Intro screen
+    const introStart = document.getElementById('intro-start');
+    const introScreen = document.getElementById('intro-screen');
+    if (introStart && introScreen) {
+        introStart.addEventListener('click', () => {
+            introScreen.classList.add('hidden');
+            setTimeout(() => { introScreen.style.display = 'none'; }, 650);
+        });
+    }
 }
 
-function toggleTheme() {
-    state.isDarkMode = !state.isDarkMode;
-    document.body.classList.toggle('dark', state.isDarkMode);
-    document.getElementById('theme-toggle').textContent = state.isDarkMode ? '☀️ Light Mode' : '🌙 Dark Mode';
-    renderBorders();
+// ─── Animated Shader Background ───
+function initShaderBackground() {
+    const canvas = document.getElementById('bg-shader');
+    if (!canvas) return;
+    const ctx = canvas.getContext('2d');
+
+    function resize() {
+        canvas.width = window.innerWidth;
+        canvas.height = window.innerHeight;
+    }
+    resize();
+    window.addEventListener('resize', resize);
+
+    let frame = 0;
+
+    // Simple pseudo-random noise generator
+    function noise(x, y, t) {
+        const n = Math.sin(x * 12.9898 + y * 78.233 + t * 43.758) * 43758.5453;
+        return n - Math.floor(n);
+    }
+
+    function draw() {
+        frame++;
+        const w = canvas.width;
+        const h = canvas.height;
+        const imgData = ctx.createImageData(w, h);
+        const data = imgData.data;
+        const t = frame * 0.008;
+
+        // Sample every 4th pixel for performance, fill blocks
+        const step = 4;
+        for (let y = 0; y < h; y += step) {
+            for (let x = 0; x < w; x += step) {
+                const n = noise(x * 0.01, y * 0.01, t);
+                // Warm cream grain: slight brownish noise
+                const v = 180 + n * 60;
+                const r = v + 8;
+                const g = v + 2;
+                const b = v - 10;
+                // Fill the step×step block
+                for (let dy = 0; dy < step && y + dy < h; dy++) {
+                    for (let dx = 0; dx < step && x + dx < w; dx++) {
+                        const idx = ((y + dy) * w + (x + dx)) * 4;
+                        data[idx] = r;
+                        data[idx + 1] = g;
+                        data[idx + 2] = b;
+                        data[idx + 3] = 40; // Very subtle
+                    }
+                }
+            }
+        }
+        ctx.putImageData(imgData, 0, 0);
+        requestAnimationFrame(draw);
+    }
+
+    // Slow down: draw every 3rd frame
+    let raf = 0;
+    function loop() {
+        raf++;
+        if (raf % 3 === 0) draw();
+        else requestAnimationFrame(loop);
+    }
+    requestAnimationFrame(draw);
 }
 
 function resetMap() {
@@ -269,6 +411,11 @@ function startPainting(e) {
     const qr = getHexFromEvent(e);
     if (!qr) return;
     const hex = state.hexes.get(qr);
+
+    if (state.deleteMode) {
+        if (hex && hex.district > 0) deleteDistrict(hex.district);
+        return;
+    }
 
     if (e.button === 2) {
         state.isPainting = 'erase';
@@ -441,7 +588,7 @@ function renderBorders() {
             const nR = hex.r + directions[i].dr;
             const neighbor = state.hexes.get(`${nQ},${nR}`);
             if (!neighbor || neighbor.district !== hex.district) {
-                const inset = 0.15;
+                const inset = 0;
                 const c1 = { x: corners[i].x + (center.x - corners[i].x) * inset, y: corners[i].y + (center.y - corners[i].y) * inset };
                 const c2 = { x: corners[(i + 1) % 6].x + (center.x - corners[(i + 1) % 6].x) * inset, y: corners[(i + 1) % 6].y + (center.y - corners[(i + 1) % 6].y) * inset };
                 districtPaths[hex.district].push({ c1, c2 });
@@ -456,30 +603,113 @@ function renderBorders() {
         if (segments.length === 0) continue;
 
         let dAttr = '';
-        segments.forEach(seg => {
-            dAttr += `M ${fmt(seg.c1.x)},${fmt(seg.c1.y)} L ${fmt(seg.c2.x)},${fmt(seg.c2.y)} `;
-        });
+        let unvisited = [...segments];
+        while (unvisited.length > 0) {
+            let currentPath = [];
+            let startSeg = unvisited.pop();
+            currentPath.push(startSeg.c1, startSeg.c2);
 
-        const path = document.createElementNS("http://www.w3.org/2000/svg", "path");
-        path.setAttribute("d", dAttr.trim());
+            let added = true;
+            while (added) {
+                added = false;
+                const lastPt = currentPath[currentPath.length - 1];
+                const firstPt = currentPath[0];
+                for (let j = 0; j < unvisited.length; j++) {
+                    const s = unvisited[j];
+                    const isClose = (p1, p2) => Math.abs(p1.x - p2.x) < 0.1 && Math.abs(p1.y - p2.y) < 0.1;
+
+                    if (isClose(s.c1, lastPt)) {
+                        currentPath.push(s.c2);
+                        unvisited.splice(j, 1);
+                        added = true; break;
+                    } else if (isClose(s.c2, lastPt)) {
+                        currentPath.push(s.c1);
+                        unvisited.splice(j, 1);
+                        added = true; break;
+                    } else if (isClose(s.c2, firstPt)) {
+                        currentPath.unshift(s.c1);
+                        unvisited.splice(j, 1);
+                        added = true; break;
+                    } else if (isClose(s.c1, firstPt)) {
+                        currentPath.unshift(s.c2);
+                        unvisited.splice(j, 1);
+                        added = true; break;
+                    }
+                }
+            }
+
+            const isClosed = Math.abs(currentPath[0].x - currentPath[currentPath.length - 1].x) < 0.1 &&
+                Math.abs(currentPath[0].y - currentPath[currentPath.length - 1].y) < 0.1;
+
+            if (isClosed && currentPath.length > 2) {
+                currentPath.pop();
+                dAttr += `M ${fmt(currentPath[0].x)},${fmt(currentPath[0].y)} `;
+                for (let k = 1; k < currentPath.length; k++) {
+                    dAttr += `L ${fmt(currentPath[k].x)},${fmt(currentPath[k].y)} `;
+                }
+                dAttr += 'Z ';
+            } else {
+                dAttr += `M ${fmt(currentPath[0].x)},${fmt(currentPath[0].y)} `;
+                for (let k = 1; k < currentPath.length; k++) {
+                    dAttr += `L ${fmt(currentPath[k].x)},${fmt(currentPath[k].y)} `;
+                }
+            }
+        }
+
+        const dAttrTrimmed = dAttr.trim();
+
+        let defs = document.getElementById('map-defs');
+        if (!defs) {
+            const svg = document.getElementById('hex-map');
+            defs = document.createElementNS("http://www.w3.org/2000/svg", "defs");
+            defs.id = 'map-defs';
+            svg.insertBefore(defs, svg.firstChild);
+        }
+
+        let clip = document.getElementById(`clip-d-${i}`);
+        if (!clip) {
+            clip = document.createElementNS("http://www.w3.org/2000/svg", "clipPath");
+            clip.id = `clip-d-${i}`;
+            defs.appendChild(clip);
+        }
+
+        // Build a perfect mask using the district's hex polygons
+        let clipHTML = '';
+        state.districts[i].hexes.forEach(hex => {
+            const center = hexToPixel(hex.q, hex.r);
+            const corners = hexCorners(center, CONFIG.hexSize);
+            let hexPath = `M ${fmt(corners[0].x)},${fmt(corners[0].y)} `;
+            for (let c = 1; c < 6; c++) hexPath += `L ${fmt(corners[c].x)},${fmt(corners[c].y)} `;
+            hexPath += 'Z';
+            clipHTML += `<path d="${hexPath}"></path>`;
+        });
+        clip.innerHTML = clipHTML;
 
         const d = state.districts[i];
         let winner = d && d.winner !== 'none' ? d.winner : 'none';
-
-        // Adaptive outline colors
-        const colorKey = state.isDarkMode ? 'light' : 'dark';
-        if (winner === 'red') path.style.stroke = CONFIG.colors.red[colorKey];
-        else if (winner === 'blue') path.style.stroke = CONFIG.colors.blue[colorKey];
-        else if (winner === 'yellow') path.style.stroke = CONFIG.colors.yellow[colorKey];
-        else path.style.stroke = CONFIG.colors.none[colorKey];
-
         const isMM = d && d.isMinorityMajority;
 
-        path.classList.add('district-path', 'outline');
-        // Minority-majority: dotted border but keep party color
-        if (isMM) path.classList.add('minority-majority');
+        // Draw the thick MAIN party color stroke FIRST
+        const path = document.createElementNS("http://www.w3.org/2000/svg", "path");
+        path.setAttribute("d", dAttrTrimmed);
+        path.setAttribute("clip-path", `url(#clip-d-${i})`);
 
+        if (winner === 'red') path.style.stroke = CONFIG.colors.red.dark;
+        else if (winner === 'blue') path.style.stroke = CONFIG.colors.blue.dark;
+        else if (winner === 'yellow') path.style.stroke = CONFIG.colors.yellow.dark;
+        else path.style.stroke = CONFIG.colors.none.dark;
+
+        path.classList.add('district-path', 'outline');
         districtGroups[i].appendChild(path);
+
+        // Draw the thin GREEN overlay SECOND (it will sit on top, right on the boundary edge)
+        if (isMM) {
+            const mmPath = document.createElementNS("http://www.w3.org/2000/svg", "path");
+            mmPath.setAttribute("d", dAttrTrimmed);
+            mmPath.setAttribute("clip-path", `url(#clip-d-${i})`);
+            mmPath.classList.add('district-path', 'mmd-overlay');
+            districtGroups[i].appendChild(mmPath);
+        }
     }
 
     for (let i = 1; i <= CONFIG.numDistricts; i++) {
@@ -615,9 +845,9 @@ function updateMetrics() {
 
     document.getElementById('red-seats').innerText = seats.red + (seats.red === 1 ? ' Seat' : ' Seats');
     document.getElementById('blue-seats').innerText = seats.blue + (seats.blue === 1 ? ' Seat' : ' Seats');
+    document.getElementById('yellow-seats').innerText = seats.yellow + (seats.yellow === 1 ? ' Seat' : ' Seats');
     document.getElementById('mmd-count').innerText = `${mmdCount} / 2 min`;
     document.getElementById('district-count').innerText = `${activeDistrictCount} / ${CONFIG.numDistricts}`;
-    document.getElementById('unassigned-count').innerText = unassignedCount.toLocaleString();
 
     // Efficiency Gap
     const eg = calculateEfficiencyGap();
@@ -651,7 +881,6 @@ function updateSidebarDetails(dId) {
     if (state.targetPop > 0 && d.population > 0) {
         const dev = Math.abs((d.population - state.targetPop) / state.targetPop);
         if (dev > 0.1 || !d.isContiguous) {
-            document.getElementById('detail-title').innerText += ' ⚠️';
             document.getElementById('detail-title').style.color = 'var(--party-red)';
         } else {
             document.getElementById('detail-title').style.color = 'inherit';

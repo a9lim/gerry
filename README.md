@@ -27,24 +27,10 @@ npx serve .
 
 Then open `http://localhost:8000` in your browser.
 
-## Controls
-
-| Action | Input |
-|---|---|
-| Create district | Left-click empty hex |
-| Grow district | Left-click + drag from existing district |
-| Erase district | Right-click (or right-click drag) |
-| Zoom | Scroll wheel |
-| Pan | Middle-click + drag |
-| Undo | Ctrl+Z or ↶ button |
-| Redo | Ctrl+Y or ↷ button |
-| Reset | ↺ Reset button |
-
 ## Tech Stack
 
 - Vanilla HTML, CSS, JavaScript
 - SVG rendering for hex grid and district borders
-- Google Fonts (Montserrat, Noto Sans)
 - No build tools or dependencies required
 
 ## License

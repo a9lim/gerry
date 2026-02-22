@@ -52,6 +52,35 @@ function cornersToString(corners) {
     return corners.map(c => `${c.x},${c.y}`).join(' ');
 }
 
+// ─── Animation Utilities ───
+const animatedCounters = {};
+function animateValue(obj, end, duration, formatFn = Math.round, id) {
+    if (!obj) return;
+    const start = obj._currentVal || 0;
+    if (start === end) {
+        obj.innerText = formatFn(end);
+        obj._currentVal = end;
+        return;
+    }
+
+    let startTimestamp = null;
+    const step = (timestamp) => {
+        if (!startTimestamp) startTimestamp = timestamp;
+        const progress = Math.min((timestamp - startTimestamp) / duration, 1);
+        const ease = 1 - Math.pow(1 - progress, 4); // easeOutQuart
+        const current = progress < 1 ? start + (end - start) * ease : end;
+
+        obj.innerText = formatFn(current);
+        obj._currentVal = end;
+
+        if (progress < 1) {
+            animatedCounters[id] = requestAnimationFrame(step);
+        }
+    };
+    if (animatedCounters[id]) cancelAnimationFrame(animatedCounters[id]);
+    animatedCounters[id] = requestAnimationFrame(step);
+}
+
 // ─── Init ───
 function init() {
     initShaderBackground();
@@ -277,52 +306,44 @@ function initShaderBackground() {
 
     let frame = 0;
 
-    // Simple pseudo-random noise generator
-    function noise(x, y, t) {
-        const n = Math.sin(x * 12.9898 + y * 78.233 + t * 43.758) * 43758.5453;
-        return n - Math.floor(n);
-    }
+    // Smooth moving gradient blobs
+    const blobs = [
+        { color: [240, 239, 236], radius: 0.8, xOff: 0, yOff: 0, speed: 0.002 },
+        { color: [230, 227, 220], radius: 0.6, xOff: 100, yOff: 50, speed: 0.003 },
+        { color: [220, 215, 205], radius: 0.7, xOff: -50, yOff: 120, speed: 0.0015 },
+        { color: [255, 255, 255], radius: 0.5, xOff: 200, yOff: -100, speed: 0.0025 }
+    ];
 
     function draw() {
         frame++;
         const w = canvas.width;
         const h = canvas.height;
-        const imgData = ctx.createImageData(w, h);
-        const data = imgData.data;
-        const t = frame * 0.008;
 
-        // Sample every 4th pixel for performance, fill blocks
-        const step = 4;
-        for (let y = 0; y < h; y += step) {
-            for (let x = 0; x < w; x += step) {
-                const n = noise(x * 0.01, y * 0.01, t);
-                // Warm cream grain: slight brownish noise
-                const v = 180 + n * 60;
-                const r = v + 8;
-                const g = v + 2;
-                const b = v - 10;
-                // Fill the step×step block
-                for (let dy = 0; dy < step && y + dy < h; dy++) {
-                    for (let dx = 0; dx < step && x + dx < w; dx++) {
-                        const idx = ((y + dy) * w + (x + dx)) * 4;
-                        data[idx] = r;
-                        data[idx + 1] = g;
-                        data[idx + 2] = b;
-                        data[idx + 3] = 40; // Very subtle
-                    }
-                }
-            }
-        }
-        ctx.putImageData(imgData, 0, 0);
+        ctx.fillStyle = '#f7f6f3';
+        ctx.fillRect(0, 0, w, h);
+
+        ctx.globalCompositeOperation = 'source-over';
+
+        blobs.forEach((b) => {
+            const time = frame * b.speed;
+            const x = w / 2 + Math.sin(time + b.xOff) * w * 0.4;
+            const y = h / 2 + Math.cos(time * 0.8 + b.yOff) * h * 0.4;
+            const rad = Math.max(w, h) * b.radius;
+
+            const grad = ctx.createRadialGradient(x, y, 0, x, y, rad);
+            grad.addColorStop(0, `rgba(${b.color[0]}, ${b.color[1]}, ${b.color[2]}, 0.8)`);
+            grad.addColorStop(1, `rgba(${b.color[0]}, ${b.color[1]}, ${b.color[2]}, 0)`);
+
+            ctx.fillStyle = grad;
+            ctx.fillRect(0, 0, w, h);
+        });
+
+        // Subtle grain overlay
+        ctx.globalCompositeOperation = 'multiply';
+        ctx.fillStyle = 'rgba(0,0,0,0.015)';
+        ctx.fillRect(0, 0, w, h);
+
         requestAnimationFrame(draw);
-    }
-
-    // Slow down: draw every 3rd frame
-    let raf = 0;
-    function loop() {
-        raf++;
-        if (raf % 3 === 0) draw();
-        else requestAnimationFrame(loop);
     }
     requestAnimationFrame(draw);
 }
@@ -533,6 +554,14 @@ function renderMap() {
         const poly = document.createElementNS("http://www.w3.org/2000/svg", "polygon");
         poly.setAttribute("points", cornersToString(hexCorners(center, CONFIG.hexSize)));
         poly.style.fill = getPartyColor(hex.partyWinner, false);
+
+        // Calculate entrance delay based on distance to center
+        const centerX = CONFIG.cols / 2;
+        const centerY = CONFIG.rows / 2;
+        const dist = Math.sqrt(Math.pow(hex.q + hex.r / 2 - centerX, 2) + Math.pow(hex.r - centerY, 2));
+        const delay = dist * 0.035;
+        poly.style.animationDelay = `${delay}s`;
+
         g.appendChild(poly);
 
         g.addEventListener('mousemove', (e) => handleHover(e, `${hex.q},${hex.r}`));
@@ -545,6 +574,7 @@ function renderMap() {
             circle.setAttribute("cy", center.y);
             circle.setAttribute("r", CONFIG.hexSize * 0.25);
             circle.classList.add('minority-marker');
+            circle.style.animationDelay = `${delay + 0.15}s`;
             minorityGroup.appendChild(circle);
         }
     });
@@ -843,9 +873,9 @@ function updateMetrics() {
 
     state.hexes.forEach(hex => { if (hex.district === 0) unassignedCount++; });
 
-    document.getElementById('red-seats').innerText = seats.red + (seats.red === 1 ? ' Seat' : ' Seats');
-    document.getElementById('blue-seats').innerText = seats.blue + (seats.blue === 1 ? ' Seat' : ' Seats');
-    document.getElementById('yellow-seats').innerText = seats.yellow + (seats.yellow === 1 ? ' Seat' : ' Seats');
+    animateValue(document.getElementById('red-seats'), seats.red, 600, v => Math.round(v) + (Math.round(v) === 1 ? ' Seat' : ' Seats'), 'seats-red');
+    animateValue(document.getElementById('blue-seats'), seats.blue, 600, v => Math.round(v) + (Math.round(v) === 1 ? ' Seat' : ' Seats'), 'seats-blue');
+    animateValue(document.getElementById('yellow-seats'), seats.yellow, 600, v => Math.round(v) + (Math.round(v) === 1 ? ' Seat' : ' Seats'), 'seats-yellow');
     document.getElementById('mmd-count').innerText = `${mmdCount} / 2 min`;
     document.getElementById('district-count').innerText = `${activeDistrictCount} / ${CONFIG.numDistricts}`;
 
@@ -894,22 +924,23 @@ function updateSidebarDetails(dId) {
     const totalVotes = d.votes.red + d.votes.blue + d.votes.yellow;
     if (totalVotes > 0) {
         let votesArr = [d.votes.red, d.votes.blue, d.votes.yellow].sort((a, b) => b - a);
-        document.getElementById('detail-margin').innerText = `+${((votesArr[0] - votesArr[1]) / totalVotes * 100).toFixed(1)}%`;
+        const margin = ((votesArr[0] - votesArr[1]) / totalVotes * 100);
+        animateValue(document.getElementById('detail-margin'), margin, 600, v => `+${v.toFixed(1)}%`, 'detail-margin');
     } else {
         document.getElementById('detail-margin').innerText = '-';
     }
 
-    document.getElementById('detail-pop').innerText = Math.round(d.population).toLocaleString();
+    animateValue(document.getElementById('detail-pop'), d.population, 600, v => Math.round(v).toLocaleString(), 'detail-pop');
     document.getElementById('target-pop').innerText = state.targetPop.toLocaleString();
 
     if (state.targetPop > 0) {
         let dev = ((d.population - state.targetPop) / state.targetPop) * 100;
         let devEl = document.getElementById('detail-deviation');
-        devEl.innerText = `${dev > 0 ? '+' : ''}${dev.toFixed(1)}%`;
+        animateValue(devEl, dev, 600, v => `${v > 0 ? '+' : ''}${v.toFixed(1)}%`, 'detail-dev');
         devEl.style.color = Math.abs(dev) > 10 ? 'var(--party-red)' : 'var(--text-muted)';
     }
 
-    document.getElementById('detail-compactness').innerText = `${d.compactness}%`;
+    animateValue(document.getElementById('detail-compactness'), d.compactness, 600, v => `${Math.round(v)}%`, 'detail-comp');
 
     const cont = document.getElementById('detail-contiguous');
     cont.innerText = d.isContiguous ? 'Yes' : 'No';

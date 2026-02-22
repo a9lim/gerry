@@ -1,58 +1,50 @@
-:root {
-    /* ─── Light Theme (Default) ─── */
-    --bg-color: #f5f6f8;
-    --bg-surface: #ebedf2;
-    --panel-bg: #ffffff;
-    --panel-bg-hover: #f0f1f5;
-    --text-main: #1e1e2e;
-    --text-muted: #6b7280;
-    --text-bright: #111827;
-    --border-color: #e2e5ea;
+/* ═══════════════════════════════════════════════
+   Gerrymandering Simulator — Clean Modern Theme
+   ═══════════════════════════════════════════════ */
 
-    --party-red: #e03e3e;
-    --party-blue: #2563eb;
-    --party-yellow: #d97706;
+@import url('https://fonts.googleapis.com/css2?family=Instrument+Serif:ital@0;1&display=swap');
+
+:root {
+    /* ─── Near-White Palette ─── */
+    --bg-color: #f7f6f3;
+    --bg-surface: #f0efec;
+    --panel-bg: rgba(252, 251, 249, 0.78);
+    --panel-bg-solid: #fcfbf9;
+    --panel-bg-hover: #f3f2ef;
+    --text-main: #3a3632;
+    --text-muted: #929089;
+    --text-bright: #1a1815;
+    --border-color: rgba(58, 54, 50, 0.08);
+
+    --party-red: #b80f2a;
+    --party-blue: #0b429c;
+    --party-yellow: #e6a800;
     --party-none: #9ca3af;
 
-    --party-red-light: #fca5a5;
-    --party-blue-light: #93c5fd;
-    --party-yellow-light: #fcd34d;
+    --party-red-light: #e8a0a0;
+    --party-blue-light: #93b4e0;
+    --party-yellow-light: #e6cc6e;
     --party-none-light: #d1d5db;
 
-    --minority-color: #1b8a3a;
+    --minority-color: #3a8a50;
 
-    --accent: #4f46e5;
+    --accent: #6b5e4b;
+    --accent-glow: rgba(107, 94, 75, 0.15);
 
-    --font-heading: 'Montserrat', sans-serif;
-    --font-body: 'Noto Sans', sans-serif;
+    --font-heading: 'Instrument Serif', serif;
+    --font-body: 'Geist Mono', 'SF Mono', 'Fira Code', monospace;
+    --font-sans: 'Geist', 'Inter', system-ui, -apple-system, sans-serif;
 
-    --radius-sm: 8px;
-    --radius-md: 12px;
+    --radius-sm: 10px;
+    --radius-md: 14px;
 
-    --hex-stroke: rgba(255, 255, 255, 0.5);
-    --hex-hover-stroke: rgba(0, 0, 0, 0.5);
-    --vote-bar-bg: #e5e7eb;
-}
+    --hex-stroke: rgba(58, 54, 50, 0.1);
+    --hex-hover-stroke: rgba(26, 24, 21, 0.4);
+    --vote-bar-bg: rgba(58, 54, 50, 0.06);
 
-/* ─── Dark Theme ─── */
-body.dark {
-    --bg-color: #1a1c2a;
-    --bg-surface: #21243a;
-    --panel-bg: #262940;
-    --panel-bg-hover: #30345a;
-    --text-main: #d1d5e0;
-    --text-muted: #8b8fa3;
-    --text-bright: #f0f1f5;
-    --border-color: rgba(255, 255, 255, 0.08);
-
-    --party-red: #ff6b7a;
-    --party-blue: #60a5fa;
-    --party-yellow: #fbbf24;
-    --party-none: #6b7280;
-
-    --hex-stroke: rgba(0, 0, 0, 0.3);
-    --hex-hover-stroke: rgba(255, 255, 255, 0.6);
-    --vote-bar-bg: rgba(255, 255, 255, 0.08);
+    --shadow-sm: 0 1px 3px rgba(26, 24, 21, 0.04);
+    --shadow-md: 0 4px 16px rgba(26, 24, 21, 0.06);
+    --shadow-lift: 0 6px 24px rgba(26, 24, 21, 0.1);
 }
 
 * {
@@ -66,30 +58,173 @@ body {
     color: var(--text-main);
     font-family: var(--font-body);
     font-weight: 400;
-    line-height: 1.6;
+    font-size: 11.5px;
+    line-height: 1.55;
     display: flex;
     flex-direction: column;
     height: 100vh;
     overflow: hidden;
     -webkit-font-smoothing: antialiased;
     -moz-osx-font-smoothing: grayscale;
-    transition: background-color 0.3s, color 0.3s;
+}
+
+/* ─── Animated Background Shader ─── */
+#bg-shader {
+    position: fixed;
+    inset: 0;
+    width: 100%;
+    height: 100%;
+    z-index: 0;
+    pointer-events: none;
+    opacity: 0.25;
+}
+
+/* ══════════════════════════════════
+   Intro / Splash Screen
+   ══════════════════════════════════ */
+#intro-screen {
+    position: fixed;
+    inset: 0;
+    z-index: 1000;
+    background: var(--bg-color);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: opacity 0.6s cubic-bezier(0.22, 1, 0.36, 1),
+        transform 0.6s cubic-bezier(0.22, 1, 0.36, 1);
+}
+
+#intro-screen.hidden {
+    opacity: 0;
+    transform: scale(1.02);
+    pointer-events: none;
+}
+
+.intro-content {
+    text-align: center;
+    max-width: 520px;
+    padding: 2rem;
+    animation: introFadeIn 0.8s cubic-bezier(0.22, 1, 0.36, 1) 0.15s both;
+}
+
+@keyframes introFadeIn {
+    from {
+        opacity: 0;
+        transform: translateY(20px);
+    }
+
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+.intro-title {
+    font-family: var(--font-heading);
+    font-size: 3.2rem;
+    font-weight: 400;
+    color: var(--text-bright);
+    line-height: 1.1;
+    margin-bottom: 1rem;
+    letter-spacing: -0.02em;
+}
+
+.intro-desc {
+    font-family: var(--font-sans);
+    color: var(--text-muted);
+    font-size: 0.95rem;
+    line-height: 1.7;
+    margin-bottom: 2.2rem;
+    font-weight: 400;
+}
+
+.intro-instructions {
+    display: flex;
+    flex-direction: column;
+    gap: 0.6rem;
+    margin-bottom: 2.5rem;
+}
+
+.intro-key {
+    font-family: var(--font-body);
+    font-size: 0.72rem;
+    color: var(--text-muted);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 0.6rem;
+}
+
+.key-icon {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 24px;
+    height: 24px;
+    border-radius: 6px;
+    background: var(--bg-surface);
+    border: 1px solid var(--border-color);
+    font-size: 0.6rem;
+    color: var(--text-main);
+    flex-shrink: 0;
+}
+
+#intro-start {
+    font-family: var(--font-sans);
+    font-size: 0.85rem;
+    font-weight: 500;
+    color: var(--text-bright);
+    background: transparent;
+    border: 1.5px solid var(--text-bright);
+    border-radius: 100px;
+    padding: 0.7rem 2.8rem;
+    cursor: pointer;
+    transition: all 0.3s cubic-bezier(0.22, 1, 0.36, 1);
+    letter-spacing: 0.02em;
+}
+
+#intro-start:hover {
+    background: var(--text-bright);
+    color: var(--bg-color);
+    transform: translateY(-1px);
+    box-shadow: var(--shadow-md);
+}
+
+#intro-start:active {
+    transform: translateY(0);
 }
 
 /* ─── Header ─── */
 header {
-    padding: 1rem 2rem;
+    padding: 0.9rem 2rem;
     background: var(--panel-bg);
-    border-bottom: 2px solid var(--border-color);
+    backdrop-filter: blur(20px) saturate(1.4);
+    -webkit-backdrop-filter: blur(20px) saturate(1.4);
+    border-bottom: 1px solid var(--border-color);
     z-index: 10;
     display: flex;
     align-items: center;
     justify-content: space-between;
+    position: relative;
+    animation: slideDown 0.5s cubic-bezier(0.22, 1, 0.36, 1) both;
+}
+
+@keyframes slideDown {
+    from {
+        opacity: 0;
+        transform: translateY(-12px);
+    }
+
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
 }
 
 .header-left {
     display: flex;
     flex-direction: column;
+    gap: 0.1rem;
 }
 
 .header-actions {
@@ -100,67 +235,72 @@ header {
 
 h1 {
     font-family: var(--font-heading);
-    font-size: 1.5rem;
-    font-weight: 800;
+    font-size: 1.85rem;
+    font-weight: 400;
     color: var(--text-bright);
-    letter-spacing: -0.02em;
+    letter-spacing: -0.015em;
+    line-height: 1.15;
 }
 
 .subtitle {
+    font-family: var(--font-sans);
     color: var(--text-muted);
-    font-size: 0.85rem;
-    margin-top: 0.1rem;
+    font-size: 0.72rem;
     font-weight: 400;
+    letter-spacing: 0.01em;
 }
 
-/* ─── Dark Mode Toggle ─── */
-#theme-toggle {
-    background: var(--bg-surface);
-    border: 2px solid var(--border-color);
-    border-radius: var(--radius-sm);
-    color: var(--text-main);
-    font-family: var(--font-body);
-    font-size: 0.82rem;
-    font-weight: 600;
-    padding: 0.45rem 1rem;
+/* ─── Icon Buttons ─── */
+.icon-btn {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 36px;
+    height: 36px;
+    background: transparent;
+    border: none;
+    outline: none;
+    appearance: none;
+    -webkit-appearance: none;
+    border-radius: 50%;
+    color: var(--text-muted);
     cursor: pointer;
-    transition: background 0.2s, border-color 0.2s, color 0.2s;
-    white-space: nowrap;
+    transition: all 0.2s ease-in-out;
+    padding: 0;
 }
 
-#theme-toggle:hover {
-    background: var(--panel-bg-hover);
-    border-color: var(--accent);
+.icon-btn:hover {
     color: var(--text-bright);
+    background: rgba(0, 0, 0, 0.05);
 }
 
-#reset-btn,
-#undo-btn,
-#redo-btn {
-    background: var(--bg-surface);
-    border: 2px solid var(--border-color);
-    border-radius: var(--radius-sm);
-    color: var(--text-main);
-    font-family: var(--font-body);
-    font-size: 0.82rem;
-    font-weight: 600;
-    padding: 0.45rem 0.8rem;
-    cursor: pointer;
-    transition: background 0.2s, border-color 0.2s, color 0.2s;
-    white-space: nowrap;
+.icon-btn:active {
+    background: rgba(0, 0, 0, 0.1);
 }
 
-#reset-btn:hover,
-#undo-btn:hover,
-#redo-btn:hover {
-    background: var(--panel-bg-hover);
-    border-color: var(--accent);
-    color: var(--text-bright);
-}
-
-#reset-btn {
-    border-color: var(--party-red);
+#reset-btn:hover {
     color: var(--party-red);
+}
+
+#reset-btn:active {
+    background: rgba(201, 60, 60, 0.15);
+}
+
+#randomize-btn:hover {
+    color: var(--party-blue);
+}
+
+#randomize-btn:active {
+    background: rgba(11, 29, 58, 0.15);
+}
+
+#delete-btn.active {
+    color: var(--party-red);
+    background: rgba(201, 60, 60, 0.1);
+}
+
+#delete-btn.active:hover {
+    background: rgba(201, 60, 60, 0.18);
 }
 
 /* ─── Layout ─── */
@@ -168,6 +308,8 @@ main {
     flex: 1;
     display: flex;
     overflow: hidden;
+    position: relative;
+    z-index: 1;
 }
 
 #map-container {
@@ -181,6 +323,10 @@ main {
     cursor: crosshair;
 }
 
+#map-container.delete-mode {
+    cursor: url('data:image/svg+xml;utf8,<svg fill="none" stroke="%23c93c3c" stroke-width="3" stroke-linecap="round" stroke-linejoin="round" viewBox="0 0 24 24" height="24" width="24" xmlns="http://www.w3.org/2000/svg"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg>') 12 12, crosshair;
+}
+
 #map-container.panning {
     cursor: grabbing;
 }
@@ -188,17 +334,18 @@ main {
 #hex-map {
     width: 100%;
     height: 100%;
+    transition: opacity 0.4s ease;
 }
 
 /* ─── Hex Tiles ─── */
 .hex polygon {
     stroke: var(--hex-stroke);
     stroke-width: 1px;
-    transition: filter 0.12s ease;
+    transition: filter 0.15s ease, stroke 0.15s ease;
 }
 
 .hex.hovered polygon {
-    filter: brightness(1.15);
+    filter: brightness(1.12) saturate(1.1);
     stroke: var(--hex-hover-stroke);
     stroke-width: 2px;
 }
@@ -206,42 +353,64 @@ main {
 .minority-marker {
     fill: var(--minority-color);
     pointer-events: none;
-    opacity: 0.85;
+    opacity: 0.8;
 }
 
-/* ─── District Borders (flat, no shadows) ─── */
+/* ─── District Borders ─── */
 .district-path {
     fill: none;
-    stroke-linejoin: round;
+    stroke-linejoin: miter;
     pointer-events: none;
-    stroke-linecap: round;
+    stroke-linecap: butt;
 }
 
 .district-path.outline {
-    stroke-width: 3px;
+    stroke-width: 6px;
+    /* Thick 3px party base */
 }
 
-.district-path.minority-majority {
-    stroke-dasharray: 8 6;
+.district-path.mmd-overlay {
+    stroke-width: 2.5px;
+    /* Thin 1.25px green line on top, hugging the outer edge */
+    stroke: var(--minority-color);
 }
 
 .active-district-group .district-path.outline {
-    stroke-width: 4.5px;
+    stroke-width: 8px;
+}
+
+.active-district-group .district-path.mmd-overlay {
+    stroke-width: 3px;
 }
 
 /* ─── Sidebar ─── */
 #sidebar {
-    width: 340px;
+    width: 300px;
     background: var(--panel-bg);
-    border-left: 2px solid var(--border-color);
+    backdrop-filter: blur(24px) saturate(1.4);
+    -webkit-backdrop-filter: blur(24px) saturate(1.4);
+    border-left: 1px solid var(--border-color);
     display: flex;
     flex-direction: column;
     overflow-y: auto;
     z-index: 5;
+    animation: slideIn 0.55s cubic-bezier(0.22, 1, 0.36, 1) 0.1s both;
+}
+
+@keyframes slideIn {
+    from {
+        opacity: 0;
+        transform: translateX(16px);
+    }
+
+    to {
+        opacity: 1;
+        transform: translateX(0);
+    }
 }
 
 #sidebar::-webkit-scrollbar {
-    width: 4px;
+    width: 2px;
 }
 
 #sidebar::-webkit-scrollbar-track {
@@ -250,69 +419,62 @@ main {
 
 #sidebar::-webkit-scrollbar-thumb {
     background: var(--border-color);
-    border-radius: 4px;
+    border-radius: 2px;
 }
 
 .panel {
-    padding: 1.25rem 1.5rem;
+    padding: 1.25rem 1.4rem;
     border-bottom: 1px solid var(--border-color);
+    animation: fadeUp 0.45s cubic-bezier(0.22, 1, 0.36, 1) both;
+}
+
+.panel:nth-child(1) {
+    animation-delay: 0.15s;
+}
+
+.panel:nth-child(2) {
+    animation-delay: 0.25s;
+}
+
+@keyframes fadeUp {
+    from {
+        opacity: 0;
+        transform: translateY(8px);
+    }
+
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
 }
 
 .panel h2 {
     font-family: var(--font-heading);
-    font-size: 0.7rem;
-    text-transform: uppercase;
-    letter-spacing: 0.12em;
-    color: var(--text-muted);
-    margin-bottom: 0.85rem;
-    font-weight: 700;
-}
-
-/* ─── Tools Panel ─── */
-.district-selector {
-    display: grid;
-    grid-template-columns: repeat(4, 1fr);
-    gap: 0.5rem;
-    margin-bottom: 1rem;
-}
-
-.district-btn {
-    padding: 0.6rem 0;
-    border: 2px solid transparent;
-    border-radius: var(--radius-sm);
-    background: var(--bg-surface);
-    cursor: pointer;
-    font-family: var(--font-body);
-    font-weight: 600;
-    font-size: 0.85rem;
-    color: var(--text-main);
-    transition: all 0.2s ease;
-}
-
-.district-btn:hover {
-    background: var(--panel-bg-hover);
-}
-
-.district-btn.active {
-    border-color: var(--accent);
-    background: var(--bg-surface);
+    font-size: 1.6rem;
+    text-transform: none;
+    letter-spacing: -0.01em;
     color: var(--text-bright);
+    margin-bottom: 0.9rem;
+    font-weight: 400;
+    font-style: italic;
+    position: relative;
+    padding-bottom: 0.55rem;
 }
 
-.district-btn.error {
-    border-color: var(--party-red);
-    color: var(--party-red);
+.panel h2::after {
+    content: '';
+    position: absolute;
+    bottom: 0;
+    left: 0;
+    width: 20px;
+    height: 1.5px;
+    background: var(--accent);
+    border-radius: 1px;
+    transition: width 0.3s cubic-bezier(0.22, 1, 0.36, 1);
 }
 
-.instruction {
-    color: var(--text-muted);
-    font-size: 0.82rem;
-    line-height: 1.5;
-}
-
-.instruction strong {
-    color: var(--text-main);
-    font-weight: 600;
+.panel:hover h2::after {
+    width: 40px;
 }
 
 /* ─── Results ─── */
@@ -320,14 +482,27 @@ main {
     display: flex;
     justify-content: space-between;
     align-items: center;
-    margin-bottom: 0.7rem;
-    font-size: 0.95rem;
-    padding: 0.3rem 0;
+    margin-bottom: 0.35rem;
+    font-size: 0.78rem;
+    padding: 0.3rem 0.45rem;
+    border-radius: 8px;
+    transition: background 0.2s ease;
+}
+
+.result-row:hover {
+    background: rgba(107, 94, 75, 0.04);
+}
+
+.divider-top {
+    border-top: 1px solid var(--border-color);
+    padding-top: 0.5rem;
+    margin-top: 0.25rem;
 }
 
 .party-label {
+    font-family: var(--font-sans);
     font-weight: 500;
-    font-size: 0.9rem;
+    font-size: 0.75rem;
 }
 
 .party-label.red {
@@ -338,16 +513,33 @@ main {
     color: var(--party-blue);
 }
 
+.party-label.yellow {
+    color: var(--party-yellow);
+}
+
 .party-label.minority {
     color: var(--minority-color);
-    font-size: 0.85rem;
+    font-size: 0.7rem;
 }
 
 .seat-count {
-    font-family: var(--font-heading);
-    font-weight: 700;
+    font-family: var(--font-body);
+    font-weight: 600;
     font-variant-numeric: tabular-nums;
     color: var(--text-bright);
+    font-size: 0.75rem;
+}
+
+.instruction {
+    color: var(--text-muted);
+    font-size: 0.68rem;
+    line-height: 1.5;
+    font-family: var(--font-sans);
+}
+
+.instruction strong {
+    color: var(--text-main);
+    font-weight: 600;
 }
 
 /* ─── District Details ─── */
@@ -360,52 +552,62 @@ main {
 }
 
 #selected-district-info h3 {
-    font-family: var(--font-heading);
-    font-size: 1.1rem;
-    margin-bottom: 0.85rem;
-    font-weight: 700;
+    font-family: var(--font-sans);
+    font-size: 1.5rem;
+    margin-bottom: 0.75rem;
+    font-weight: 600;
     color: var(--text-bright);
 }
 
 .metric {
     display: flex;
     justify-content: space-between;
-    margin-bottom: 0.45rem;
-    font-size: 0.9rem;
-    padding: 0.15rem 0;
+    margin-bottom: 0.3rem;
+    font-size: 0.75rem;
+    padding: 0.18rem 0.35rem;
+    border-radius: 6px;
+    transition: background 0.2s ease;
+}
+
+.metric:hover {
+    background: rgba(107, 94, 75, 0.04);
 }
 
 .label {
+    font-family: var(--font-sans);
     color: var(--text-muted);
     font-weight: 400;
+    font-size: 0.72rem;
 }
 
 .value {
     font-weight: 600;
     color: var(--text-bright);
+    font-size: 0.72rem;
 }
 
 .metric-note {
-    font-size: 0.78rem;
+    font-family: var(--font-sans);
+    font-size: 0.65rem;
     color: var(--text-muted);
     text-align: right;
-    margin-top: -0.15rem;
-    margin-bottom: 0.75rem;
+    margin-top: -0.05rem;
+    margin-bottom: 0.65rem;
 }
 
 /* ─── Vote Bars ─── */
 .vote-bar-container {
-    height: 10px;
+    height: 6px;
     background: var(--vote-bar-bg);
-    border-radius: 5px;
+    border-radius: 3px;
     display: flex;
     overflow: hidden;
-    margin-top: 0.85rem;
-    margin-bottom: 0.4rem;
+    margin-top: 0.75rem;
+    margin-bottom: 0.35rem;
 }
 
 .vote-bar {
-    transition: width 0.3s ease;
+    transition: width 0.4s cubic-bezier(0.22, 1, 0.36, 1);
 }
 
 .vote-bar.red {
@@ -423,8 +625,9 @@ main {
 .vote-labels {
     display: flex;
     justify-content: space-between;
-    font-size: 0.75rem;
+    font-size: 0.62rem;
     font-weight: 600;
+    letter-spacing: 0.02em;
 }
 
 .red-text {
@@ -437,4 +640,10 @@ main {
 
 .yellow-text {
     color: var(--party-yellow);
+}
+
+/* ─── Selection ─── */
+::selection {
+    background: rgba(107, 94, 75, 0.15);
+    color: var(--text-bright);
 }

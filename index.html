@@ -4,51 +4,81 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Gerrymandering Simulation</title>
+    <title>Redistricting Simulator</title>
+    <meta name="description"
+        content="An interactive gerrymandering and redistricting simulator. Paint districts on a hex map to explore how borders shape electoral outcomes.">
     <link rel="stylesheet" href="styles.css">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link
-        href="https://fonts.googleapis.com/css2?family=Montserrat:wght@400;500;600;700;800;900&family=Noto+Sans:wght@300;400;500;600;700&display=swap"
+        href="https://fonts.googleapis.com/css2?family=Geist+Mono:wght@300;400;500;600;700&family=Instrument+Serif:ital@0;1&display=swap"
         rel="stylesheet">
 </head>
 
 <body>
+
+    <!-- ─── Intro Screen ─── -->
+    <div id="intro-screen">
+        <div class="intro-content">
+            <h1 class="intro-title">Redistricting Simulator</h1>
+            <p class="intro-desc">Explore how district boundaries shape electoral outcomes.<br>
+                Paint, erase, and redraw to see gerrymandering in action.</p>
+            <div class="intro-instructions">
+                <div class="intro-key"><span class="key-icon">◀</span> Left-click to create &amp; grow districts</div>
+                <div class="intro-key"><span class="key-icon">▶</span> Right-click to erase</div>
+                <div class="intro-key"><span class="key-icon">⊞</span> Scroll to zoom, middle-drag to pan</div>
+            </div>
+            <button id="intro-start">Begin</button>
+        </div>
+    </div>
+
+    <canvas id="bg-shader"></canvas>
+
     <header>
         <div class="header-left">
             <h1>Redistricting Simulator</h1>
             <p class="subtitle">Paint districts on the map to explore the impact of borders on electoral outcomes.</p>
         </div>
         <div class="header-actions">
-            <button id="reset-btn" title="Reset all districts">↺ Reset</button>
-            <button id="undo-btn" title="Undo (Ctrl+Z)">↶ Undo</button>
-            <button id="redo-btn" title="Redo (Ctrl+Y)">↷ Redo</button>
-            <button id="theme-toggle">🌙 Dark Mode</button>
+            <button id="delete-btn" class="icon-btn" title="Delete district toggle" aria-label="Delete district toggle">
+                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
+                    stroke-linecap="round" stroke-linejoin="round">
+                    <polyline points="3 6 5 6 21 6"></polyline>
+                    <path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path>
+                    <line x1="10" y1="11" x2="10" y2="17"></line>
+                    <line x1="14" y1="11" x2="14" y2="17"></line>
+                </svg>
+            </button>
+            <button id="randomize-btn" class="icon-btn" title="Randomize map" aria-label="Randomize map">
+                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
+                    stroke-linecap="round" stroke-linejoin="round">
+                    <path d="M16 3h5v5"></path>
+                    <path d="M4 20L21 3"></path>
+                    <path d="M21 16v5h-5"></path>
+                    <path d="M15 15l6 6"></path>
+                    <path d="M4 4l5 5"></path>
+                </svg>
+            </button>
+            <button id="reset-btn" class="icon-btn" title="Reset all districts" aria-label="Reset all districts">
+                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
+                    stroke-linecap="round" stroke-linejoin="round">
+                    <polyline points="1 4 1 10 7 10"></polyline>
+                    <path d="M3.51 15a9 9 0 1 0 2.13-9.36L1 10"></path>
+                </svg>
+            </button>
         </div>
     </header>
 
     <main>
         <div id="map-container">
             <svg id="hex-map" xmlns="http://www.w3.org/2000/svg">
-                <!-- Group for base hexes -->
                 <g id="hex-group"></g>
-                <!-- Group for district borders -->
                 <g id="border-group"></g>
-                <!-- Group for minority markers -->
                 <g id="minority-group"></g>
             </svg>
         </div>
 
         <aside id="sidebar">
-            <div class="panel">
-                <h2>Controls</h2>
-                <p class="instruction" style="margin-bottom: 0.4rem"><strong>Left-Click Empty:</strong> Create district
-                </p>
-                <p class="instruction" style="margin-bottom: 0.4rem"><strong>Drag from District:</strong> Grow it</p>
-                <p class="instruction" style="margin-bottom: 0.4rem"><strong>Right-Click:</strong> Erase</p>
-                <p class="instruction" style="margin-bottom: 0.4rem"><strong>Scroll Wheel:</strong> Zoom in/out</p>
-                <p class="instruction" style="margin-bottom: 0.4rem"><strong>Middle-Click Drag:</strong> Pan map</p>
-                <p class="instruction"><strong>Ctrl+Z / Ctrl+Y:</strong> Undo / Redo</p>
-            </div>
-
             <div class="panel">
                 <h2>Statewide Results</h2>
                 <div id="state-results">
@@ -64,22 +94,19 @@
                         <span class="party-label minority">Maj-Minority Districts</span>
                         <span class="seat-count" id="mmd-count">0 / 2 min</span>
                     </div>
-                    <div class="result-row"
-                        style="border-top: 1px solid var(--border-color); padding-top: 0.5rem; margin-top: 0.3rem">
+                    <div class="result-row">
+                        <span class="party-label yellow">Yellow Party</span>
+                        <span class="seat-count" id="yellow-seats">0 Seats</span>
+                    </div>
+                    <div class="result-row divider-top">
                         <span class="label">Districts Created</span>
                         <span class="value" id="district-count">0 / 10</span>
                     </div>
-                    <div class="result-row">
-                        <span class="label">Unassigned Hexes</span>
-                        <span class="value" id="unassigned-count">0</span>
-                    </div>
-                    <div class="result-row"
-                        style="border-top: 1px solid var(--border-color); padding-top: 0.5rem; margin-top: 0.3rem">
+                    <div class="result-row divider-top">
                         <span class="label">Efficiency Gap</span>
                         <span class="value" id="efficiency-gap">—</span>
                     </div>
-                    <p class="instruction" id="eg-note" style="margin-top: 0.2rem; font-size: 0.72rem">EG > 7% may
-                        indicate gerrymandering</p>
+                    <p class="instruction" id="eg-note">EG > 7% may indicate gerrymandering</p>
                 </div>
             </div>
 

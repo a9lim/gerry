@@ -29,7 +29,8 @@ const state = {
     // Undo/Redo
     undoStack: [],
     redoStack: [],
-    deleteMode: false
+    deleteMode: false,
+    maxPop: 100
 };
 
 // ─── Hex Math ───
@@ -84,6 +85,8 @@ function animateValue(obj, end, duration, formatFn = Math.round, id) {
 // ─── Init ───
 function init() {
     initShaderBackground();
+    const mapContainer = document.getElementById('map-container');
+    if (mapContainer) mapContainer.classList.add('paused');
     generateHexes();
     setupUI();
     state.targetPop = Math.round(Array.from(state.hexes.values()).reduce((sum, h) => sum + h.population, 0) / CONFIG.numDistricts);
@@ -107,6 +110,7 @@ function generateHexes() {
     const amp2 = 0.5 + Math.random() * 2;
     const baseRadius = maxRadius * (0.75 + Math.random() * 0.15);
 
+    let validCoords = [];
     for (let r = 0; r < CONFIG.rows; r++) {
         let r_offset = Math.floor(r / 2);
         for (let q = -r_offset; q < CONFIG.cols - r_offset; q++) {
@@ -114,35 +118,90 @@ function generateHexes() {
             let dist = Math.sqrt(Math.pow(x - centerX, 2) + Math.pow(y - centerY, 2));
             let angle = Math.atan2(y - centerY, x - centerX);
             let noise = Math.sin(angle * freq1 + phase1) * amp1 + Math.cos(angle * freq2 + phase2) * amp2;
-            if (dist > baseRadius + noise) continue;
-
-            let pop = Math.floor(Math.random() * 80) + 20;
-
-            // Exclusive party assignment (enum-like: each tile is 100% one party)
-            let party;
-            let roll = Math.random();
-            if (roll < 0.43) party = 'red';
-            else if (roll < 0.86) party = 'blue';
-            else party = 'yellow';
-
-            let votes = { red: 0, blue: 0, yellow: 0 };
-            votes[party] = pop;
-
-            // Minority: boolean, scattered randomly ~25%
-            let isMinority = Math.random() < 0.25;
-
-            let hex = {
-                id: ++idCounter, q, r, s: -q - r,
-                population: pop,
-                votes,
-                party,       // enum: 'red' | 'blue' | 'yellow'
-                minority: isMinority, // boolean
-                district: 0
-            };
-            hex.partyWinner = party;
-            state.hexes.set(`${q},${r}`, hex);
+            if (dist <= baseRadius + noise) {
+                validCoords.push({ q, r, x, y, dist });
+            }
         }
     }
+
+    // Generate scattered population centers
+    const numLargeCities = Math.floor(Math.random() * 2) + 2; // 2 to 3 large cities
+    const numSmallTowns = Math.floor(Math.random() * 6) + 5; // 5 to 10 scattered small towns
+    const centers = [];
+
+    for (let i = 0; i < numLargeCities; i++) {
+        const c = validCoords[Math.floor(Math.random() * validCoords.length)];
+        centers.push({ q: c.q, r: c.r, strength: Math.random() * 400 + 400, decay: Math.random() * 1.5 + 1.5 });
+    }
+    for (let i = 0; i < numSmallTowns; i++) {
+        const c = validCoords[Math.floor(Math.random() * validCoords.length)];
+        centers.push({ q: c.q, r: c.r, strength: Math.random() * 150 + 100, decay: Math.random() * 0.8 + 0.5 });
+    }
+
+    const hexDistance = (q1, r1, q2, r2) => (Math.abs(q1 - q2) + Math.abs(q1 + r1 - q2 - r2) + Math.abs(r1 - r2)) / 2;
+
+    state.maxPop = 0;
+
+    validCoords.forEach(c => {
+        let q = c.q, r = c.r;
+        // highly randomized base rural population (5 to 40)
+        let pop = Math.floor(Math.random() * 35) + 5;
+
+        centers.forEach(center => {
+            const d = hexDistance(q, r, center.q, center.r);
+            pop += Math.floor(center.strength * Math.exp(-d / center.decay));
+        });
+
+        // Add additional noise jitter
+        pop += Math.floor(Math.random() * 20);
+
+        if (pop > state.maxPop) state.maxPop = pop;
+
+        // Base party assignment largely depending on urban vs rural (cities lean blue, rural leans red)
+        let isUrban = pop > 150;
+        let party;
+        let roll = Math.random();
+
+        if (isUrban) {
+            // Cities lean blue
+            if (roll < 0.6) party = 'blue';
+            else if (roll < 0.85) party = 'red';
+            else party = 'yellow';
+        } else {
+            // Rural leans red
+            if (roll < 0.55) party = 'red';
+            else if (roll < 0.85) party = 'blue';
+            else party = 'yellow';
+        }
+
+        let votes = { red: 0, blue: 0, yellow: 0 };
+        // Introduce minority party split inside the hex
+        const winningPct = 0.5 + Math.random() * 0.3;
+        votes[party] = Math.floor(pop * winningPct);
+
+        const remainder = pop - votes[party];
+        const otherParties = ['red', 'blue', 'yellow'].filter(p => p !== party);
+        const secondPct = Math.random();
+        votes[otherParties[0]] = Math.floor(remainder * secondPct);
+        votes[otherParties[1]] = remainder - votes[otherParties[0]];
+
+        // Minority boolean: more likely in urban centers
+        let isMinority = Math.random() < (isUrban ? 0.4 : 0.15);
+
+        let hex = {
+            id: ++idCounter, q, r, s: -q - r,
+            population: pop,
+            votes,
+            party,       // enum: 'red' | 'blue' | 'yellow'
+            minority: isMinority, // boolean
+            district: 0
+        };
+        hex.partyWinner = party;
+        // Re-evaluate true winner based on constructed vote counts
+        hex.partyWinner = getHexWinner(hex);
+        state.hexes.set(`${q},${r}`, hex);
+    });
+
     for (let i = 1; i <= CONFIG.numDistricts; i++) {
         state.districts[i] = { id: i, population: 0, votes: { red: 0, blue: 0, yellow: 0 }, hexes: [], minorityPop: 0, isContiguous: true, compactness: 0, winner: 'none' };
     }
@@ -286,6 +345,8 @@ function setupUI() {
     if (introStart && introScreen) {
         introStart.addEventListener('click', () => {
             introScreen.classList.add('hidden');
+            const mapContainer = document.getElementById('map-container');
+            if (mapContainer) mapContainer.classList.remove('paused');
             setTimeout(() => { introScreen.style.display = 'none'; }, 650);
         });
     }
@@ -529,7 +590,7 @@ function updateHexVisuals(qr) {
     const g = document.querySelector(`.hex[data-qr="${qr}"]`);
     if (g) {
         g.querySelector('polygon').style.fill = getPartyColor(hex.partyWinner, false);
-        g.style.opacity = Math.max(0.3, Math.min(1.0, hex.population / 100));
+        g.style.opacity = Math.max(0.2, Math.min(1.0, 0.2 + 0.8 * (hex.population / state.maxPop)));
     }
 }
 
@@ -549,7 +610,7 @@ function renderMap() {
         const g = document.createElementNS("http://www.w3.org/2000/svg", "g");
         g.classList.add('hex');
         g.dataset.qr = `${hex.q},${hex.r}`;
-        g.style.opacity = Math.max(0.3, Math.min(1.0, hex.population / 100));
+        g.style.opacity = Math.max(0.2, Math.min(1.0, 0.2 + 0.8 * (hex.population / state.maxPop)));
 
         const poly = document.createElementNS("http://www.w3.org/2000/svg", "polygon");
         poly.setAttribute("points", cornersToString(hexCorners(center, CONFIG.hexSize)));

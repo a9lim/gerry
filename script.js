@@ -72,7 +72,7 @@ function animateValue(obj, end, duration, formatFn = Math.round, id) {
         const current = progress < 1 ? start + (end - start) * ease : end;
 
         obj.innerText = formatFn(current);
-        obj._currentVal = end;
+        obj._currentVal = current;
 
         if (progress < 1) {
             animatedCounters[id] = requestAnimationFrame(step);
@@ -84,7 +84,6 @@ function animateValue(obj, end, duration, formatFn = Math.round, id) {
 
 // ─── Init ───
 function init() {
-    initShaderBackground();
     const mapContainer = document.getElementById('map-container');
     if (mapContainer) mapContainer.classList.add('paused');
     generateHexes();
@@ -93,6 +92,34 @@ function init() {
     renderMap();
     updateMetrics();
     pushUndoSnapshot();
+}
+
+// ─── Simple hash-based noise (no dependencies) ───
+function hashNoise(x, y, seed) {
+    let n = Math.sin(x * 127.1 + y * 311.7 + seed * 53.3) * 43758.5453;
+    return n - Math.floor(n);
+}
+
+function smoothNoise(x, y, seed) {
+    const ix = Math.floor(x), iy = Math.floor(y);
+    const fx = x - ix, fy = y - iy;
+    const sx = fx * fx * (3 - 2 * fx), sy = fy * fy * (3 - 2 * fy);
+    const n00 = hashNoise(ix, iy, seed);
+    const n10 = hashNoise(ix + 1, iy, seed);
+    const n01 = hashNoise(ix, iy + 1, seed);
+    const n11 = hashNoise(ix + 1, iy + 1, seed);
+    return n00 * (1 - sx) * (1 - sy) + n10 * sx * (1 - sy) + n01 * (1 - sx) * sy + n11 * sx * sy;
+}
+
+function fbmNoise(x, y, seed, octaves = 4) {
+    let value = 0, amplitude = 1, frequency = 1, total = 0;
+    for (let i = 0; i < octaves; i++) {
+        value += smoothNoise(x * frequency, y * frequency, seed + i * 100) * amplitude;
+        total += amplitude;
+        amplitude *= 0.5;
+        frequency *= 2;
+    }
+    return value / total;
 }
 
 function generateHexes() {
@@ -124,80 +151,171 @@ function generateHexes() {
         }
     }
 
+    // Noise seeds for this map
+    const noiseSeed = Math.random() * 10000;
+    const partySeed = Math.random() * 10000;
+    const minoritySeed = Math.random() * 10000;
+
     // Generate scattered population centers
-    const numLargeCities = Math.floor(Math.random() * 2) + 2; // 2 to 3 large cities
-    const numSmallTowns = Math.floor(Math.random() * 6) + 5; // 5 to 10 scattered small towns
+    const numLargeCities = Math.floor(Math.random() * 2) + 2;
+    const numSmallTowns = Math.floor(Math.random() * 6) + 5;
+    const numSuburbs = Math.floor(Math.random() * 4) + 3;
     const centers = [];
 
     for (let i = 0; i < numLargeCities; i++) {
         const c = validCoords[Math.floor(Math.random() * validCoords.length)];
-        centers.push({ q: c.q, r: c.r, strength: Math.random() * 400 + 400, decay: Math.random() * 1.5 + 1.5 });
+        centers.push({ q: c.q, r: c.r, strength: Math.random() * 600 + 350, decay: Math.random() * 1.8 + 1.2, type: 'city' });
+    }
+    for (let i = 0; i < numSuburbs; i++) {
+        // Suburbs cluster near cities with irregular offsets
+        const city = centers[Math.floor(Math.random() * Math.min(centers.length, numLargeCities))];
+        const angle = Math.random() * Math.PI * 2;
+        const dist = 1.5 + Math.random() * 4;
+        const sq = city.q + Math.round(Math.cos(angle) * dist);
+        const sr = city.r + Math.round(Math.sin(angle) * dist);
+        centers.push({ q: sq, r: sr, strength: Math.random() * 250 + 100, decay: Math.random() * 1.2 + 0.6, type: 'suburb' });
     }
     for (let i = 0; i < numSmallTowns; i++) {
         const c = validCoords[Math.floor(Math.random() * validCoords.length)];
-        centers.push({ q: c.q, r: c.r, strength: Math.random() * 150 + 100, decay: Math.random() * 0.8 + 0.5 });
+        centers.push({ q: c.q, r: c.r, strength: Math.random() * 200 + 50, decay: Math.random() * 1.0 + 0.3, type: 'town' });
+    }
+
+    // Transportation corridors — lines of elevated population between two cities
+    const corridors = [];
+    if (centers.length >= 2) {
+        const numCorridors = Math.floor(Math.random() * 3) + 1;
+        for (let i = 0; i < numCorridors; i++) {
+            const a = centers[Math.floor(Math.random() * numLargeCities)];
+            const b = centers[Math.floor(Math.random() * centers.length)];
+            if (a !== b) corridors.push({ q1: a.q, r1: a.r, q2: b.q, r2: b.r, width: 1.5 + Math.random(), strength: 60 + Math.random() * 80 });
+        }
     }
 
     const hexDistance = (q1, r1, q2, r2) => (Math.abs(q1 - q2) + Math.abs(q1 + r1 - q2 - r2) + Math.abs(r1 - r2)) / 2;
 
+    // Point-to-line-segment distance for corridors
+    function distToSegment(px, py, x1, y1, x2, y2) {
+        const dx = x2 - x1, dy = y2 - y1;
+        const lenSq = dx * dx + dy * dy;
+        if (lenSq === 0) return Math.sqrt((px - x1) ** 2 + (py - y1) ** 2);
+        let t = ((px - x1) * dx + (py - y1) * dy) / lenSq;
+        t = Math.max(0, Math.min(1, t));
+        return Math.sqrt((px - (x1 + t * dx)) ** 2 + (py - (y1 + t * dy)) ** 2);
+    }
+
     state.maxPop = 0;
+
+    // Regional political lean — fbm noise creates large-scale political geography
+    const leanScale = 0.15 + Math.random() * 0.1;
 
     validCoords.forEach(c => {
         let q = c.q, r = c.r;
-        // highly randomized base rural population (5 to 40)
-        let pop = Math.floor(Math.random() * 35) + 5;
 
+        // Base rural population with multi-octave fbm for rough terrain variation
+        const terrainNoise = fbmNoise(q * 0.3, r * 0.3, noiseSeed, 5);
+        const microNoise = fbmNoise(q * 1.2, r * 1.2, noiseSeed + 50, 3);
+        let pop = Math.floor(3 + terrainNoise * 70 + microNoise * 30 + Math.random() * 20);
+
+        // City/suburb/town contributions with noisy, irregular decay
         centers.forEach(center => {
             const d = hexDistance(q, r, center.q, center.r);
-            pop += Math.floor(center.strength * Math.exp(-d / center.decay));
+            const localNoise = 0.5 + hashNoise(q, r, noiseSeed + 777) * 1.0;
+            const edgeJitter = 0.8 + hashNoise(q * 2.3, r * 2.3, noiseSeed + 555) * 0.4;
+            pop += Math.floor(center.strength * Math.exp(-d / (center.decay * edgeJitter)) * localNoise);
         });
 
-        // Add additional noise jitter
-        pop += Math.floor(Math.random() * 20);
+        // Corridor population boost
+        corridors.forEach(cor => {
+            const d = distToSegment(q, r, cor.q1, cor.r1, cor.q2, cor.r2);
+            if (d < cor.width * 2.5) {
+                const falloff = Math.exp(-d / cor.width);
+                pop += Math.floor(cor.strength * falloff * (0.3 + hashNoise(q, r, noiseSeed + 999) * 0.7));
+            }
+        });
+
+        // Sporadic random population spikes (hamlets, crossroads, factories)
+        if (Math.random() < 0.10) pop += Math.floor(Math.random() * 120 + 30);
+
+        // Occasional population voids (parks, water, farmland)
+        if (hashNoise(q * 0.8, r * 0.8, noiseSeed + 2000) > 0.82) {
+            pop = Math.floor(pop * (0.1 + Math.random() * 0.2));
+        }
+
+        // Two layers of multiplicative noise to break up smooth gradients
+        pop = Math.floor(pop * (0.4 + hashNoise(q * 1.7, r * 1.7, noiseSeed + 333) * 1.2));
+        pop = Math.max(3, Math.floor(pop * (0.7 + hashNoise(q * 3.1, r * 3.1, noiseSeed + 444) * 0.6)));
 
         if (pop > state.maxPop) state.maxPop = pop;
 
-        // Base party assignment largely depending on urban vs rural (cities lean blue, rural leans red)
-        let isUrban = pop > 150;
+        // Political lean uses large-scale noise for regional clustering
+        const regionalLean = fbmNoise(q * leanScale, r * leanScale, partySeed, 3);
+        const isUrban = pop > 150;
+        const isSuburban = pop > 80 && pop <= 150;
+
+        // Assign winning party — yellow is a minor third party (~10% of vote)
         let party;
         let roll = Math.random();
 
         if (isUrban) {
-            // Cities lean blue
-            if (roll < 0.6) party = 'blue';
-            else if (roll < 0.85) party = 'red';
+            const blueChance = 0.52 + (regionalLean - 0.5) * 0.3;
+            if (roll < blueChance) party = 'blue';
+            else if (roll < blueChance + 0.38) party = 'red';
             else party = 'yellow';
+        } else if (isSuburban) {
+            const lean = regionalLean;
+            if (lean > 0.55) {
+                if (roll < 0.48) party = 'blue';
+                else if (roll < 0.90) party = 'red';
+                else party = 'yellow';
+            } else {
+                if (roll < 0.48) party = 'red';
+                else if (roll < 0.90) party = 'blue';
+                else party = 'yellow';
+            }
         } else {
-            // Rural leans red
-            if (roll < 0.55) party = 'red';
-            else if (roll < 0.85) party = 'blue';
+            const redChance = 0.48 + (0.5 - regionalLean) * 0.3;
+            if (roll < redChance) party = 'red';
+            else if (roll < redChance + 0.42) party = 'blue';
             else party = 'yellow';
         }
 
+        // Vote distribution: ~45% red, ~45% blue, ~10% yellow overall
         let votes = { red: 0, blue: 0, yellow: 0 };
-        // Introduce minority party split inside the hex
-        const winningPct = 0.5 + Math.random() * 0.3;
-        votes[party] = Math.floor(pop * winningPct);
+        // Yellow always gets a small share (~5-15% of each hex)
+        const yellowPct = 0.05 + Math.random() * 0.10;
+        votes.yellow = Math.floor(pop * yellowPct);
+        const majorRemainder = pop - votes.yellow;
 
-        const remainder = pop - votes[party];
-        const otherParties = ['red', 'blue', 'yellow'].filter(p => p !== party);
-        const secondPct = Math.random();
-        votes[otherParties[0]] = Math.floor(remainder * secondPct);
-        votes[otherParties[1]] = remainder - votes[otherParties[0]];
+        if (party === 'yellow') {
+            // Rare yellow-winning hex: give yellow a plurality via a three-way split
+            const yellowBoost = 0.30 + Math.random() * 0.10;
+            votes.yellow = Math.floor(pop * yellowBoost);
+            const rest = pop - votes.yellow;
+            const redShare = 0.3 + Math.random() * 0.4;
+            votes.red = Math.floor(rest * redShare);
+            votes.blue = rest - votes.red;
+        } else {
+            // Red/blue winner — split the major remainder between them
+            const winningPct = 0.50 + Math.random() * 0.30;
+            votes[party] = Math.floor(majorRemainder * winningPct);
+            const loser = party === 'red' ? 'blue' : 'red';
+            votes[loser] = majorRemainder - votes[party];
+        }
 
-        // Minority boolean: more likely in urban centers
-        let isMinority = Math.random() < (isUrban ? 0.4 : 0.15);
+        // Minority clusters using multi-scale spatial noise — coherent neighborhoods with pockets
+        const minorityNoise = fbmNoise(q * 0.35, r * 0.35, minoritySeed, 4)
+            * 0.7 + fbmNoise(q * 0.9, r * 0.9, minoritySeed + 500, 3) * 0.3;
+        const minorityThreshold = isUrban ? 0.48 : (isSuburban ? 0.60 : 0.78);
+        let isMinority = minorityNoise > minorityThreshold;
 
         let hex = {
             id: ++idCounter, q, r, s: -q - r,
             population: pop,
             votes,
-            party,       // enum: 'red' | 'blue' | 'yellow'
-            minority: isMinority, // boolean
+            party,
+            minority: isMinority,
             district: 0
         };
-        hex.partyWinner = party;
-        // Re-evaluate true winner based on constructed vote counts
         hex.partyWinner = getHexWinner(hex);
         state.hexes.set(`${q},${r}`, hex);
     });
@@ -310,7 +428,16 @@ function setupUI() {
     const svg = document.getElementById('hex-map');
     svg.addEventListener('mousedown', onMouseDown);
     svg.addEventListener('mouseup', onMouseUp);
-    svg.addEventListener('mouseleave', onMouseUp);
+    svg.addEventListener('mouseleave', (e) => {
+        onMouseUp(e);
+        const tooltip = document.getElementById('hex-tooltip');
+        if (tooltip) tooltip.classList.remove('visible');
+        if (state.hoveredHex) {
+            const oldEl = document.querySelector(`.hex[data-qr="${state.hoveredHex}"]`);
+            if (oldEl) oldEl.classList.remove('hovered');
+            state.hoveredHex = null;
+        }
+    });
     svg.addEventListener('mousemove', onMouseMove);
     svg.addEventListener('wheel', onWheel, { passive: false });
     svg.addEventListener('contextmenu', e => e.preventDefault());
@@ -352,71 +479,6 @@ function setupUI() {
     }
 }
 
-// ─── Animated Shader Background ───
-function initShaderBackground() {
-    const canvas = document.getElementById('bg-shader');
-    if (!canvas) return;
-    const ctx = canvas.getContext('2d');
-
-    function resize() {
-        canvas.width = window.innerWidth;
-        canvas.height = window.innerHeight;
-    }
-    resize();
-    window.addEventListener('resize', resize);
-
-    let frame = 0;
-
-    // Smooth moving gradient blobs
-    const blobs = [
-        { color: [240, 239, 236], radius: 0.8, xOff: 0, yOff: 0, speed: 0.002 },
-        { color: [230, 227, 220], radius: 0.6, xOff: 100, yOff: 50, speed: 0.003 },
-        { color: [220, 215, 205], radius: 0.7, xOff: -50, yOff: 120, speed: 0.0015 },
-        { color: [255, 255, 255], radius: 0.5, xOff: 200, yOff: -100, speed: 0.0025 }
-    ];
-
-    function draw() {
-        frame++;
-        const w = canvas.width;
-        const h = canvas.height;
-
-        ctx.fillStyle = '#f7f6f3';
-        ctx.fillRect(0, 0, w, h);
-
-        ctx.globalCompositeOperation = 'source-over';
-
-        blobs.forEach((b) => {
-            const time = frame * b.speed;
-            const x = w / 2 + Math.sin(time + b.xOff) * w * 0.4;
-            const y = h / 2 + Math.cos(time * 0.8 + b.yOff) * h * 0.4;
-            const rad = Math.max(w, h) * b.radius;
-
-            const grad = ctx.createRadialGradient(x, y, 0, x, y, rad);
-            grad.addColorStop(0, `rgba(${b.color[0]}, ${b.color[1]}, ${b.color[2]}, 0.8)`);
-            grad.addColorStop(1, `rgba(${b.color[0]}, ${b.color[1]}, ${b.color[2]}, 0)`);
-
-            ctx.fillStyle = grad;
-            ctx.fillRect(0, 0, w, h);
-        });
-
-        // Subtle grain overlay
-        ctx.globalCompositeOperation = 'multiply';
-        ctx.fillStyle = 'rgba(0,0,0,0.015)';
-        ctx.fillRect(0, 0, w, h);
-
-        requestAnimationFrame(draw);
-    }
-    requestAnimationFrame(draw);
-}
-
-function resetMap() {
-    state.hexes.forEach(hex => { hex.district = 0; });
-    calculateMetrics();
-    state.hexes.forEach((hex, qr) => updateHexVisuals(qr));
-    renderBorders();
-    updateMetrics();
-    pushUndoSnapshot();
-}
 
 // ─── Zoom & Pan ───
 function onWheel(e) {
@@ -484,7 +546,30 @@ function onMouseMove(e) {
     }
     // Normal hex hover
     const qr = getHexFromEvent(e);
-    if (qr) handleHover(e, qr);
+    if (qr) {
+        handleHover(e, qr);
+    } else {
+        // Hide tooltip when not on a hex
+        const tooltip = document.getElementById('hex-tooltip');
+        if (tooltip) tooltip.classList.remove('visible');
+        if (state.hoveredHex) {
+            const oldEl = document.querySelector(`.hex[data-qr="${state.hoveredHex}"]`);
+            if (oldEl) oldEl.classList.remove('hovered');
+            state.hoveredHex = null;
+        }
+    }
+}
+
+// ─── Live border update (throttled to one per frame) ───
+let _borderUpdatePending = false;
+function scheduleBorderUpdate() {
+    if (_borderUpdatePending) return;
+    _borderUpdatePending = true;
+    requestAnimationFrame(() => {
+        renderBorders();
+        renderDistrictLabels();
+        _borderUpdatePending = false;
+    });
 }
 
 // ─── Painting ───
@@ -523,8 +608,6 @@ function startPainting(e) {
 function stopPainting() {
     if (state.isPainting !== false) {
         state.isPainting = false;
-        calculateMetrics();
-        renderBorders();
         updateMetrics();
         pushUndoSnapshot();
     }
@@ -576,8 +659,35 @@ function handleHover(e, qr) {
     }
     if (state.isPainting) {
         paintHex(e);
-        updateMetrics();
+        calculateMetrics();
+        updateSidebarDetails(state.currentDistrict);
+        scheduleBorderUpdate();
     }
+    showHexTooltip(e, qr);
+}
+
+function showHexTooltip(e, qr) {
+    const tooltip = document.getElementById('hex-tooltip');
+    if (!tooltip) return;
+    if (!qr) { tooltip.classList.remove('visible'); return; }
+    const hex = state.hexes.get(qr);
+    if (!hex) { tooltip.classList.remove('visible'); return; }
+
+    const total = hex.votes.red + hex.votes.blue + hex.votes.yellow;
+    const pR = total > 0 ? Math.round(hex.votes.red / total * 100) : 0;
+    const pB = total > 0 ? Math.round(hex.votes.blue / total * 100) : 0;
+    const pY = total > 0 ? Math.round(hex.votes.yellow / total * 100) : 0;
+
+    tooltip.innerHTML = `<span class="tt-pop">Pop: ${hex.population.toLocaleString()}</span>`
+        + `<div class="tt-votes"><span class="tt-r">R ${pR}%</span> <span class="tt-b">B ${pB}%</span> <span class="tt-y">Y ${pY}%</span></div>`
+        + (hex.minority ? `<span class="tt-m">Minority area</span>` : '')
+        + (hex.district > 0 ? `<span>District ${hex.district}</span>` : '');
+
+    const container = document.getElementById('map-container');
+    const rect = container.getBoundingClientRect();
+    tooltip.style.left = `${e.clientX - rect.left + 12}px`;
+    tooltip.style.top = `${e.clientY - rect.top - 10}px`;
+    tooltip.classList.add('visible');
 }
 
 // ─── Rendering ───
@@ -616,11 +726,11 @@ function renderMap() {
         poly.setAttribute("points", cornersToString(hexCorners(center, CONFIG.hexSize)));
         poly.style.fill = getPartyColor(hex.partyWinner, false);
 
-        // Calculate entrance delay based on distance to center
-        const centerX = CONFIG.cols / 2;
-        const centerY = CONFIG.rows / 2;
-        const dist = Math.sqrt(Math.pow(hex.q + hex.r / 2 - centerX, 2) + Math.pow(hex.r - centerY, 2));
-        const delay = dist * 0.035;
+        // Staggered radial pop-in from center
+        const mapCenterX = CONFIG.cols / 2;
+        const mapCenterY = CONFIG.rows / 2;
+        const dist = Math.sqrt(Math.pow(hex.q + hex.r / 2 - mapCenterX, 2) + Math.pow(hex.r - mapCenterY, 2));
+        const delay = dist * 0.04 + Math.random() * 0.03;
         poly.style.animationDelay = `${delay}s`;
 
         g.appendChild(poly);
@@ -954,6 +1064,69 @@ function updateMetrics() {
     }
 
     updateSidebarDetails(state.currentDistrict);
+    updateProportionality(seats);
+    renderDistrictLabels();
+}
+
+// ─── Popular Vote vs Seats ───
+function updateProportionality(seats) {
+    // Calculate total popular vote across all hexes in assigned districts
+    let totalVotes = { red: 0, blue: 0, yellow: 0 };
+    let totalSeats = (seats.red || 0) + (seats.blue || 0) + (seats.yellow || 0);
+
+    state.hexes.forEach(hex => {
+        if (hex.district > 0) {
+            totalVotes.red += hex.votes.red;
+            totalVotes.blue += hex.votes.blue;
+            totalVotes.yellow += hex.votes.yellow;
+        }
+    });
+
+    const grandTotal = totalVotes.red + totalVotes.blue + totalVotes.yellow;
+
+    ['red', 'blue', 'yellow'].forEach(party => {
+        const votePct = grandTotal > 0 ? (totalVotes[party] / grandTotal) * 100 : 0;
+        const seatPct = totalSeats > 0 ? ((seats[party] || 0) / totalSeats) * 100 : 0;
+
+        const voteBar = document.getElementById(`prop-${party}-votes`);
+        const seatBar = document.getElementById(`prop-${party}-seats`);
+        const voteLbl = document.getElementById(`prop-${party}-vote-pct`);
+        const seatLbl = document.getElementById(`prop-${party}-seat-pct`);
+
+        if (voteBar) voteBar.style.width = `${votePct}%`;
+        if (seatBar) seatBar.style.width = `${seatPct}%`;
+        if (voteLbl) voteLbl.innerText = grandTotal > 0 ? `${Math.round(votePct)}% votes` : '—';
+        if (seatLbl) seatLbl.innerText = totalSeats > 0 ? `${Math.round(seatPct)}% seats` : '—';
+    });
+}
+
+// ─── District Number Labels ───
+function renderDistrictLabels() {
+    const labelGroup = document.getElementById('label-group');
+    if (!labelGroup) return;
+    labelGroup.innerHTML = '';
+
+    for (let i = 1; i <= CONFIG.numDistricts; i++) {
+        const d = state.districts[i];
+        if (!d || d.hexes.length === 0) continue;
+
+        // Calculate centroid
+        let cx = 0, cy = 0;
+        d.hexes.forEach(hex => {
+            const p = hexToPixel(hex.q, hex.r);
+            cx += p.x;
+            cy += p.y;
+        });
+        cx /= d.hexes.length;
+        cy /= d.hexes.length;
+
+        const text = document.createElementNS("http://www.w3.org/2000/svg", "text");
+        text.setAttribute("x", cx);
+        text.setAttribute("y", cy);
+        text.classList.add('district-label');
+        text.textContent = i;
+        labelGroup.appendChild(text);
+    }
 }
 
 function updateSidebarDetails(dId) {

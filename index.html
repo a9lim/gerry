@@ -73,7 +73,9 @@
                 <g id="hex-group"></g>
                 <g id="border-group"></g>
                 <g id="minority-group"></g>
+                <g id="label-group"></g>
             </svg>
+            <div id="hex-tooltip" class="hex-tooltip"></div>
         </div>
 
         <aside id="sidebar">
@@ -101,10 +103,64 @@
                         <span class="value" id="district-count">0 / 10</span>
                     </div>
                     <div class="result-row divider-top">
-                        <span class="label">Efficiency Gap</span>
+                        <span class="label">Efficiency Gap <span class="info-tip" data-tip="Measures wasted votes between Red and Blue. Values above 7% may indicate partisan gerrymandering. Based on the standard used in Gill v. Whitford.">?</span></span>
                         <span class="value" id="efficiency-gap">—</span>
                     </div>
                     <p class="instruction" id="eg-note">EG > 7% may indicate gerrymandering</p>
+                </div>
+            </div>
+
+            <div class="panel" id="popular-vote-panel">
+                <h2>Popular Vote vs Seats</h2>
+                <p class="instruction" style="margin-bottom: 0.6rem">When seat share diverges from vote share, gerrymandering may be at work.</p>
+                <div class="proportionality-row">
+                    <span class="prop-label red-text">Red</span>
+                    <div class="prop-bars">
+                        <div class="prop-bar-track">
+                            <div class="prop-bar-fill vote-fill red" id="prop-red-votes" style="width: 0%"></div>
+                        </div>
+                        <div class="prop-bar-track">
+                            <div class="prop-bar-fill seat-fill red" id="prop-red-seats" style="width: 0%"></div>
+                        </div>
+                    </div>
+                    <div class="prop-values">
+                        <span class="prop-pct" id="prop-red-vote-pct">0%</span>
+                        <span class="prop-pct" id="prop-red-seat-pct">0%</span>
+                    </div>
+                </div>
+                <div class="proportionality-row">
+                    <span class="prop-label blue-text">Blue</span>
+                    <div class="prop-bars">
+                        <div class="prop-bar-track">
+                            <div class="prop-bar-fill vote-fill blue" id="prop-blue-votes" style="width: 0%"></div>
+                        </div>
+                        <div class="prop-bar-track">
+                            <div class="prop-bar-fill seat-fill blue" id="prop-blue-seats" style="width: 0%"></div>
+                        </div>
+                    </div>
+                    <div class="prop-values">
+                        <span class="prop-pct" id="prop-blue-vote-pct">0%</span>
+                        <span class="prop-pct" id="prop-blue-seat-pct">0%</span>
+                    </div>
+                </div>
+                <div class="proportionality-row">
+                    <span class="prop-label yellow-text">Yell</span>
+                    <div class="prop-bars">
+                        <div class="prop-bar-track">
+                            <div class="prop-bar-fill vote-fill yellow" id="prop-yellow-votes" style="width: 0%"></div>
+                        </div>
+                        <div class="prop-bar-track">
+                            <div class="prop-bar-fill seat-fill yellow" id="prop-yellow-seats" style="width: 0%"></div>
+                        </div>
+                    </div>
+                    <div class="prop-values">
+                        <span class="prop-pct" id="prop-yellow-vote-pct">0%</span>
+                        <span class="prop-pct" id="prop-yellow-seat-pct">0%</span>
+                    </div>
+                </div>
+                <div class="prop-legend">
+                    <span class="prop-legend-item"><span class="legend-swatch vote-swatch"></span> Vote %</span>
+                    <span class="prop-legend-item"><span class="legend-swatch seat-swatch"></span> Seat %</span>
                 </div>
             </div>
 
@@ -128,15 +184,15 @@
                     </div>
 
                     <div class="metric">
-                        <span class="label">Compactness</span>
+                        <span class="label">Compactness <span class="info-tip" data-tip="Polsby-Popper score. Higher values mean a more compact, regular shape. Gerrymandered districts tend to have low compactness.">?</span></span>
                         <span class="value" id="detail-compactness">0%</span>
                     </div>
                     <div class="metric">
-                        <span class="label">Contiguous</span>
+                        <span class="label">Contiguous <span class="info-tip" data-tip="A district is contiguous if every hex can be reached from every other hex without leaving the district. Non-contiguous districts are generally illegal.">?</span></span>
                         <span class="value" id="detail-contiguous">Yes</span>
                     </div>
                     <div class="metric">
-                        <span class="label">Minority-Majority</span>
+                        <span class="label">Minority-Majority <span class="info-tip" data-tip="A district where over 50% of the population is a minority group. The Voting Rights Act may require creating minority-majority districts to ensure fair representation.">?</span></span>
                         <span class="value" id="detail-mm">No</span>
                     </div>
 

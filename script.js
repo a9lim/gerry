@@ -4,13 +4,25 @@ const CONFIG = {
     cols: 25,
     hexSize: 18,
     colors: {
-        red: { base: '#b80f2a', dark: '#800a1d', light: '#e83856', muted: '#e1a6b0', district: '#b80f2a' }, // Saturated deep crimson
-        blue: { base: '#0b429c', dark: '#062861', light: '#4d88e8', muted: '#a5bccc', district: '#0b429c' }, // Saturated navy blue
-        yellow: { base: '#e6a800', dark: '#9c7200', light: '#ffc933', muted: '#ebe4ab', district: '#e6a800' }, // Saturated golden yellow
-        none: { base: '#d1d5db', dark: '#374151', light: '#e5e7eb', muted: '#f3f4f6', district: '#9ca3af' },
-        minority: '#1b8a3a'
+        light: {
+            red: { base: '#b80f2a', dark: '#800a1d', light: '#e83856', muted: '#e1a6b0', district: '#b80f2a' },
+            blue: { base: '#0b429c', dark: '#062861', light: '#4d88e8', muted: '#a5bccc', district: '#0b429c' },
+            yellow: { base: '#e6a800', dark: '#9c7200', light: '#ffc933', muted: '#ebe4ab', district: '#e6a800' },
+            none: { base: '#d1d5db', dark: '#374151', light: '#e5e7eb', muted: '#f3f4f6', district: '#9ca3af' },
+            minority: '#1b8a3a'
+        },
+        dark: {
+            red: { base: '#e05060', dark: '#c43848', light: '#f08888', muted: '#4a1820', district: '#e05060' },
+            blue: { base: '#5a90e0', dark: '#3868b8', light: '#88b0f0', muted: '#182848', district: '#5a90e0' },
+            yellow: { base: '#e0b030', dark: '#b88820', light: '#f0d060', muted: '#3a3010', district: '#e0b030' },
+            none: { base: '#5a564e', dark: '#3a3830', light: '#706860', muted: '#2a2820', district: '#5a564e' },
+            minority: '#48b070'
+        }
     }
 };
+
+// Resolved color reference — updated on theme change
+let activeColors = CONFIG.colors.light;
 
 const state = {
     hexes: new Map(),
@@ -30,6 +42,7 @@ const state = {
     undoStack: [],
     redoStack: [],
     deleteMode: false,
+    eraseMode: false,
     maxPop: 100
 };
 
@@ -84,6 +97,7 @@ function animateValue(obj, end, duration, formatFn = Math.round, id) {
 
 // ─── Init ───
 function init() {
+    refreshMinOpacity();
     const mapContainer = document.getElementById('map-container');
     if (mapContainer) mapContainer.classList.add('paused');
     generateHexes();
@@ -355,12 +369,14 @@ function pushUndoSnapshot() {
     state.undoStack.push(getSnapshot());
     state.redoStack = [];
     if (state.undoStack.length > 50) state.undoStack.shift();
+    updateUndoRedoState();
 }
 
 function undo() {
     if (state.undoStack.length <= 1) return;
     state.redoStack.push(state.undoStack.pop());
     restoreSnapshot(state.undoStack[state.undoStack.length - 1]);
+    updateUndoRedoState();
 }
 
 function redo() {
@@ -368,6 +384,14 @@ function redo() {
     const snap = state.redoStack.pop();
     state.undoStack.push(snap);
     restoreSnapshot(snap);
+    updateUndoRedoState();
+}
+
+function updateUndoRedoState() {
+    const undoBtn = document.getElementById('undo-btn');
+    const redoBtn = document.getElementById('redo-btn');
+    if (undoBtn) undoBtn.disabled = state.undoStack.length <= 1;
+    if (redoBtn) redoBtn.disabled = state.redoStack.length === 0;
 }
 
 // ─── Map Operations ───
@@ -455,12 +479,52 @@ function setupUI() {
             state.deleteMode = !state.deleteMode;
             deleteBtn.classList.toggle('active', state.deleteMode);
             const container = document.getElementById('map-container');
-            if (state.deleteMode) container.classList.add('delete-mode');
-            else container.classList.remove('delete-mode');
+            container.classList.toggle('delete-mode', state.deleteMode);
+            // Mutually exclusive with erase mode
+            if (state.deleteMode && state.eraseMode) {
+                state.eraseMode = false;
+                document.getElementById('erase-btn')?.classList.remove('active');
+                container.classList.remove('erase-mode');
+            }
         });
     }
 
-    // Keyboard shortcuts (undo/redo still work via keyboard)
+    // Erase mode toggle
+    const eraseBtn = document.getElementById('erase-btn');
+    if (eraseBtn) {
+        eraseBtn.addEventListener('click', () => {
+            state.eraseMode = !state.eraseMode;
+            eraseBtn.classList.toggle('active', state.eraseMode);
+            const container = document.getElementById('map-container');
+            container.classList.toggle('erase-mode', state.eraseMode);
+            // Mutually exclusive with delete mode
+            if (state.eraseMode && state.deleteMode) {
+                state.deleteMode = false;
+                document.getElementById('delete-btn')?.classList.remove('active');
+                container.classList.remove('delete-mode');
+            }
+        });
+    }
+
+    // Undo/redo buttons
+    const undoBtn = document.getElementById('undo-btn');
+    if (undoBtn) undoBtn.addEventListener('click', undo);
+    const redoBtn = document.getElementById('redo-btn');
+    if (redoBtn) redoBtn.addEventListener('click', redo);
+
+    // Theme toggle
+    const themeBtn = document.getElementById('theme-btn');
+    if (themeBtn) themeBtn.addEventListener('click', toggleTheme);
+
+    // Zoom controls
+    const zoomInBtn = document.getElementById('zoom-in-btn');
+    if (zoomInBtn) zoomInBtn.addEventListener('click', () => smoothZoom(1));
+    const zoomOutBtn = document.getElementById('zoom-out-btn');
+    if (zoomOutBtn) zoomOutBtn.addEventListener('click', () => smoothZoom(-1));
+    const zoomFitBtn = document.getElementById('zoom-fit-btn');
+    if (zoomFitBtn) zoomFitBtn.addEventListener('click', zoomToFit);
+
+    // Keyboard shortcuts
     document.addEventListener('keydown', (e) => {
         if (e.ctrlKey && e.key === 'z') { e.preventDefault(); undo(); }
         if (e.ctrlKey && e.key === 'y') { e.preventDefault(); redo(); }
@@ -509,6 +573,87 @@ function onWheel(e) {
     state.zoomLevel = state.origViewBox.w / vb.w;
 
     svg.setAttribute('viewBox', `${vb.x} ${vb.y} ${vb.w} ${vb.h}`);
+    updateZoomDisplay();
+}
+
+function smoothZoom(direction) {
+    const svg = document.getElementById('hex-map');
+    const vb = state.viewBox;
+
+    const cx = vb.x + vb.w / 2;
+    const cy = vb.y + vb.h / 2;
+
+    const factor = direction > 0 ? 1 / 1.25 : 1.25;
+    const targetW = vb.w * factor;
+    const targetH = vb.h * factor;
+
+    const minW = state.origViewBox.w * 0.3;
+    const maxW = state.origViewBox.w * 3;
+    if (targetW < minW || targetW > maxW) return;
+
+    const startVb = { x: vb.x, y: vb.y, w: vb.w, h: vb.h };
+    const endVb = {
+        x: cx - targetW / 2,
+        y: cy - targetH / 2,
+        w: targetW,
+        h: targetH
+    };
+
+    const duration = 200;
+    let start = null;
+
+    function step(ts) {
+        if (!start) start = ts;
+        const t = Math.min((ts - start) / duration, 1);
+        const ease = 1 - Math.pow(1 - t, 3);
+
+        vb.x = startVb.x + (endVb.x - startVb.x) * ease;
+        vb.y = startVb.y + (endVb.y - startVb.y) * ease;
+        vb.w = startVb.w + (endVb.w - startVb.w) * ease;
+        vb.h = startVb.h + (endVb.h - startVb.h) * ease;
+        state.zoomLevel = state.origViewBox.w / vb.w;
+
+        svg.setAttribute('viewBox', `${vb.x} ${vb.y} ${vb.w} ${vb.h}`);
+        updateZoomDisplay();
+
+        if (t < 1) requestAnimationFrame(step);
+    }
+
+    requestAnimationFrame(step);
+}
+
+function zoomToFit() {
+    const svg = document.getElementById('hex-map');
+    const vb = state.viewBox;
+    const orig = state.origViewBox;
+
+    const startVb = { x: vb.x, y: vb.y, w: vb.w, h: vb.h };
+    const duration = 300;
+    let start = null;
+
+    function step(ts) {
+        if (!start) start = ts;
+        const t = Math.min((ts - start) / duration, 1);
+        const ease = 1 - Math.pow(1 - t, 3);
+
+        vb.x = startVb.x + (orig.x - startVb.x) * ease;
+        vb.y = startVb.y + (orig.y - startVb.y) * ease;
+        vb.w = startVb.w + (orig.w - startVb.w) * ease;
+        vb.h = startVb.h + (orig.h - startVb.h) * ease;
+        state.zoomLevel = state.origViewBox.w / vb.w;
+
+        svg.setAttribute('viewBox', `${vb.x} ${vb.y} ${vb.w} ${vb.h}`);
+        updateZoomDisplay();
+
+        if (t < 1) requestAnimationFrame(step);
+    }
+
+    requestAnimationFrame(step);
+}
+
+function updateZoomDisplay() {
+    const el = document.getElementById('zoom-level');
+    if (el) el.textContent = `${Math.round(state.zoomLevel * 100)}%`;
 }
 
 function onMouseDown(e) {
@@ -584,7 +729,7 @@ function startPainting(e) {
         return;
     }
 
-    if (e.button === 2) {
+    if (e.button === 2 || (e.button === 0 && state.eraseMode)) {
         state.isPainting = 'erase';
     } else if (e.button === 0) {
         if (hex.district > 0) {
@@ -642,6 +787,13 @@ function paintHex(e) {
     if (hex.district !== targetDistrict) {
         hex.district = targetDistrict;
         updateHexVisuals(qr);
+        // Paint flash micro-animation
+        const g = document.querySelector(`.hex[data-qr="${qr}"]`);
+        if (g) {
+            g.classList.remove('just-painted');
+            void g.offsetWidth; // force reflow to restart animation
+            g.classList.add('just-painted');
+        }
     }
 }
 
@@ -692,7 +844,19 @@ function showHexTooltip(e, qr) {
 
 // ─── Rendering ───
 function getPartyColor(party, isMuted) {
-    return CONFIG.colors[party][isMuted ? 'muted' : 'base'];
+    return activeColors[party][isMuted ? 'muted' : 'base'];
+}
+
+let _cachedMinOpacity = 0.22;
+
+function refreshMinOpacity() {
+    const val = getComputedStyle(document.documentElement).getPropertyValue('--hex-min-opacity');
+    _cachedMinOpacity = parseFloat(val) || 0.22;
+}
+
+function hexOpacity(population) {
+    const min = _cachedMinOpacity;
+    return Math.max(min, Math.min(1.0, min + (1 - min) * (population / state.maxPop)));
 }
 
 function updateHexVisuals(qr) {
@@ -700,7 +864,7 @@ function updateHexVisuals(qr) {
     const g = document.querySelector(`.hex[data-qr="${qr}"]`);
     if (g) {
         g.querySelector('polygon').style.fill = getPartyColor(hex.partyWinner, false);
-        g.style.opacity = Math.max(0.2, Math.min(1.0, 0.2 + 0.8 * (hex.population / state.maxPop)));
+        g.style.opacity = hexOpacity(hex.population);
     }
 }
 
@@ -720,7 +884,7 @@ function renderMap() {
         const g = document.createElementNS("http://www.w3.org/2000/svg", "g");
         g.classList.add('hex');
         g.dataset.qr = `${hex.q},${hex.r}`;
-        g.style.opacity = Math.max(0.2, Math.min(1.0, 0.2 + 0.8 * (hex.population / state.maxPop)));
+        g.style.opacity = hexOpacity(hex.population);
 
         const poly = document.createElementNS("http://www.w3.org/2000/svg", "polygon");
         poly.setAttribute("points", cornersToString(hexCorners(center, CONFIG.hexSize)));
@@ -895,10 +1059,10 @@ function renderBorders() {
         path.setAttribute("d", dAttrTrimmed);
         path.setAttribute("clip-path", `url(#clip-d-${i})`);
 
-        if (winner === 'red') path.style.stroke = CONFIG.colors.red.dark;
-        else if (winner === 'blue') path.style.stroke = CONFIG.colors.blue.dark;
-        else if (winner === 'yellow') path.style.stroke = CONFIG.colors.yellow.dark;
-        else path.style.stroke = CONFIG.colors.none.dark;
+        if (winner === 'red') path.style.stroke = activeColors.red.dark;
+        else if (winner === 'blue') path.style.stroke = activeColors.blue.dark;
+        else if (winner === 'yellow') path.style.stroke = activeColors.yellow.dark;
+        else path.style.stroke = activeColors.none.dark;
 
         path.classList.add('district-path', 'outline');
         districtGroups[i].appendChild(path);
@@ -1057,10 +1221,10 @@ function updateMetrics() {
         const pct = (eg * 100).toFixed(1);
         const direction = eg > 0 ? '→ Blue' : '→ Red';
         egEl.innerText = `${Math.abs(pct)}% ${direction}`;
-        egEl.style.color = Math.abs(eg) > 0.07 ? 'var(--party-red)' : 'var(--text-bright)';
+        egEl.style.color = Math.abs(eg) > 0.07 ? 'var(--party-red)' : 'var(--text-primary)';
     } else {
         egEl.innerText = '—';
-        egEl.style.color = 'var(--text-muted)';
+        egEl.style.color = 'var(--text-secondary)';
     }
 
     updateSidebarDetails(state.currentDistrict);
@@ -1153,7 +1317,7 @@ function updateSidebarDetails(dId) {
 
     const wSpan = document.getElementById('detail-winner');
     wSpan.innerText = d.winner.charAt(0).toUpperCase() + d.winner.slice(1);
-    wSpan.style.color = d.winner !== 'none' ? CONFIG.colors[d.winner].base : 'var(--text-muted)';
+    wSpan.style.color = d.winner !== 'none' ? activeColors[d.winner].base : 'var(--text-secondary)';
 
     const totalVotes = d.votes.red + d.votes.blue + d.votes.yellow;
     if (totalVotes > 0) {
@@ -1171,19 +1335,19 @@ function updateSidebarDetails(dId) {
         let dev = ((d.population - state.targetPop) / state.targetPop) * 100;
         let devEl = document.getElementById('detail-deviation');
         animateValue(devEl, dev, 600, v => `${v > 0 ? '+' : ''}${v.toFixed(1)}%`, 'detail-dev');
-        devEl.style.color = Math.abs(dev) > 10 ? 'var(--party-red)' : 'var(--text-muted)';
+        devEl.style.color = Math.abs(dev) > 10 ? 'var(--party-red)' : 'var(--text-secondary)';
     }
 
     animateValue(document.getElementById('detail-compactness'), d.compactness, 600, v => `${Math.round(v)}%`, 'detail-comp');
 
     const cont = document.getElementById('detail-contiguous');
     cont.innerText = d.isContiguous ? 'Yes' : 'No';
-    cont.style.color = d.isContiguous ? 'var(--minority-color)' : 'var(--party-red)';
+    cont.style.color = d.isContiguous ? 'var(--party-green)' : 'var(--party-red)';
 
     const mmEl = document.getElementById('detail-mm');
     if (mmEl) {
         mmEl.innerText = d.isMinorityMajority ? 'Yes' : 'No';
-        mmEl.style.color = d.isMinorityMajority ? 'var(--minority-color)' : 'var(--text-muted)';
+        mmEl.style.color = d.isMinorityMajority ? 'var(--party-green)' : 'var(--text-secondary)';
     }
 
     if (totalVotes > 0) {
@@ -1199,5 +1363,215 @@ function updateSidebarDetails(dId) {
     }
 }
 
+// ─── Theme Management ───
+function initTheme() {
+    const saved = localStorage.getItem('gerry-theme');
+    if (saved) {
+        document.documentElement.dataset.theme = saved;
+    } else {
+        const prefersDark = window.matchMedia('(prefers-color-scheme: dark)').matches;
+        document.documentElement.dataset.theme = prefersDark ? 'dark' : 'light';
+    }
+    syncTheme();
+
+    window.matchMedia('(prefers-color-scheme: dark)').addEventListener('change', (e) => {
+        if (!localStorage.getItem('gerry-theme')) {
+            document.documentElement.dataset.theme = e.matches ? 'dark' : 'light';
+            syncTheme();
+        }
+    });
+}
+
+function syncTheme() {
+    const isDark = document.documentElement.dataset.theme === 'dark';
+    activeColors = isDark ? CONFIG.colors.dark : CONFIG.colors.light;
+    refreshMinOpacity();
+    updateThemeIcon();
+}
+
+function toggleTheme() {
+    const current = document.documentElement.dataset.theme;
+    const next = current === 'dark' ? 'light' : 'dark';
+    document.documentElement.dataset.theme = next;
+    localStorage.setItem('gerry-theme', next);
+    syncTheme();
+    // Re-render all hex visuals and borders for the new palette
+    state.hexes.forEach((hex, qr) => updateHexVisuals(qr));
+    renderBorders();
+}
+
+function updateThemeIcon() {
+    const btn = document.getElementById('theme-btn');
+    if (!btn) return;
+    const isDark = document.documentElement.dataset.theme === 'dark';
+    const sun = btn.querySelector('.icon-sun');
+    const moon = btn.querySelector('.icon-moon');
+    if (sun) sun.style.display = isDark ? 'block' : 'none';
+    if (moon) moon.style.display = isDark ? 'none' : 'block';
+}
+
+// ─── Sidebar Resize ───
+function initSidebarResize() {
+    const handle = document.getElementById('sidebar-resize-handle');
+    const sidebar = document.getElementById('sidebar');
+    if (!handle || !sidebar) return;
+
+    let isResizing = false;
+    let startX, startWidth;
+
+    handle.addEventListener('mousedown', (e) => {
+        e.preventDefault();
+        isResizing = true;
+        startX = e.clientX;
+        startWidth = sidebar.offsetWidth;
+        handle.classList.add('active');
+        document.body.style.cursor = 'col-resize';
+        document.body.style.userSelect = 'none';
+        sidebar.style.transition = 'none';
+    });
+
+    document.addEventListener('mousemove', (e) => {
+        if (!isResizing) return;
+        const dx = startX - e.clientX;
+        const newWidth = Math.max(300, Math.min(560, startWidth + dx));
+        sidebar.style.width = `${newWidth}px`;
+    });
+
+    document.addEventListener('mouseup', () => {
+        if (!isResizing) return;
+        isResizing = false;
+        handle.classList.remove('active');
+        document.body.style.cursor = '';
+        document.body.style.userSelect = '';
+        sidebar.style.transition = '';
+    });
+}
+
+// ─── Touch Handlers (mobile pinch-to-zoom & paint) ───
+function initTouchHandlers() {
+    const svg = document.getElementById('hex-map');
+    const container = document.getElementById('map-container');
+    if (!svg || !container) return;
+
+    let lastPinchDist = 0;
+    let lastPinchCenter = null;
+    let isTouchPainting = false;
+
+    container.addEventListener('touchstart', (e) => {
+        if (e.touches.length === 1) {
+            e.preventDefault();
+            isTouchPainting = true;
+            const touch = e.touches[0];
+            const el = document.elementFromPoint(touch.clientX, touch.clientY);
+            if (el) {
+                const simEvent = new MouseEvent('mousedown', {
+                    clientX: touch.clientX,
+                    clientY: touch.clientY,
+                    button: state.eraseMode ? 2 : 0
+                });
+                el.dispatchEvent(simEvent);
+            }
+        } else if (e.touches.length === 2) {
+            e.preventDefault();
+            isTouchPainting = false;
+            stopPainting();
+            const [t1, t2] = [e.touches[0], e.touches[1]];
+            lastPinchDist = Math.hypot(t2.clientX - t1.clientX, t2.clientY - t1.clientY);
+            lastPinchCenter = {
+                x: (t1.clientX + t2.clientX) / 2,
+                y: (t1.clientY + t2.clientY) / 2
+            };
+        }
+    }, { passive: false });
+
+    container.addEventListener('touchmove', (e) => {
+        if (e.touches.length === 1 && isTouchPainting) {
+            e.preventDefault();
+            const touch = e.touches[0];
+            const el = document.elementFromPoint(touch.clientX, touch.clientY);
+            if (el) {
+                const simEvent = new MouseEvent('mousemove', {
+                    clientX: touch.clientX,
+                    clientY: touch.clientY,
+                    button: 0
+                });
+                el.dispatchEvent(simEvent);
+            }
+        } else if (e.touches.length === 2) {
+            e.preventDefault();
+            const [t1, t2] = [e.touches[0], e.touches[1]];
+            const dist = Math.hypot(t2.clientX - t1.clientX, t2.clientY - t1.clientY);
+            const center = {
+                x: (t1.clientX + t2.clientX) / 2,
+                y: (t1.clientY + t2.clientY) / 2
+            };
+
+            if (lastPinchDist > 0) {
+                const scale = lastPinchDist / dist;
+                const vb = state.viewBox;
+                const rect = svg.getBoundingClientRect();
+
+                const mx = (center.x - rect.left) / rect.width;
+                const my = (center.y - rect.top) / rect.height;
+                const svgX = vb.x + mx * vb.w;
+                const svgY = vb.y + my * vb.h;
+
+                const newW = vb.w * scale;
+                const newH = vb.h * scale;
+
+                const minW = state.origViewBox.w * 0.3;
+                const maxW = state.origViewBox.w * 3;
+                if (newW >= minW && newW <= maxW) {
+                    vb.x = svgX - mx * newW;
+                    vb.y = svgY - my * newH;
+                    vb.w = newW;
+                    vb.h = newH;
+                    state.zoomLevel = state.origViewBox.w / vb.w;
+                    svg.setAttribute('viewBox', `${vb.x} ${vb.y} ${vb.w} ${vb.h}`);
+                    updateZoomDisplay();
+                }
+
+                // Pan with two-finger drag
+                if (lastPinchCenter) {
+                    const dx = (lastPinchCenter.x - center.x) / rect.width * vb.w;
+                    const dy = (lastPinchCenter.y - center.y) / rect.height * vb.h;
+                    vb.x += dx;
+                    vb.y += dy;
+                    svg.setAttribute('viewBox', `${vb.x} ${vb.y} ${vb.w} ${vb.h}`);
+                }
+            }
+
+            lastPinchDist = dist;
+            lastPinchCenter = center;
+        }
+    }, { passive: false });
+
+    container.addEventListener('touchend', (e) => {
+        if (e.touches.length === 0) {
+            if (isTouchPainting) {
+                isTouchPainting = false;
+                stopPainting();
+            }
+            lastPinchDist = 0;
+            lastPinchCenter = null;
+        } else if (e.touches.length === 1) {
+            lastPinchDist = 0;
+            lastPinchCenter = null;
+        }
+    });
+
+    container.addEventListener('touchcancel', () => {
+        isTouchPainting = false;
+        lastPinchDist = 0;
+        lastPinchCenter = null;
+        stopPainting();
+    });
+}
+
 // Initialize
-document.addEventListener('DOMContentLoaded', init);
+document.addEventListener('DOMContentLoaded', () => {
+    initTheme();
+    init();
+    initSidebarResize();
+    initTouchHandlers();
+});

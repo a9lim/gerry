@@ -674,17 +674,17 @@ main {
 }
 
 .palette-btn {
-    width: 36px;
-    height: 36px;
-    border-radius: 50%;
-    border: 2px solid var(--border-strong);
-    background: var(--bg-elevated);
-    color: var(--text-primary);
+    width: 28px;
+    height: 28px;
+    border-radius: var(--radius-sm);
+    border: none;
+    background: transparent;
+    color: var(--text-muted);
     font-family: var(--font-mono);
-    font-size: 0.72rem;
-    font-weight: 700;
+    font-size: 0.78rem;
+    font-weight: 500;
     cursor: pointer;
-    transition: all 0.2s var(--ease-out);
+    transition: color 0.2s var(--ease-out), font-weight 0.2s var(--ease-out);
     display: flex;
     align-items: center;
     justify-content: center;
@@ -695,24 +695,21 @@ main {
 }
 
 .palette-btn:hover:not(.active) {
-    transform: scale(1.08);
-    border-color: var(--text-muted);
+    color: var(--text-primary);
 }
 
 .palette-btn.active {
-    border-color: var(--accent);
-    box-shadow: 0 0 0 3px var(--accent-glow), 0 0 20px var(--accent-glow);
-    transform: scale(1.12);
+    color: var(--accent);
+    font-weight: 800;
+    font-size: 0.88rem;
 }
 
 .palette-btn.has-district {
-    color: #fff;
-    border-color: transparent;
-    text-shadow: 0 1px 2px rgba(0,0,0,0.3);
+    color: var(--text-secondary);
 }
 
 .palette-btn.has-district.active {
-    border-color: var(--accent);
+    color: var(--accent);
 }
 
 /* ═══════════════════════════════════
@@ -752,11 +749,11 @@ main {
 }
 
 .stats-title {
-    font-family: var(--font-heading);
-    font-size: 1.5rem;
-    font-weight: 400;
-    font-style: italic;
-    letter-spacing: -0.02em;
+    font-family: 'Sora', var(--font-body);
+    font-size: 0.72rem;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.12em;
     color: var(--text-primary);
 }
 
@@ -785,45 +782,24 @@ main {
     border-radius: 4px;
 }
 
-/* ─── Panels (cards inside stats) ─── */
+/* ─── Panels (sections inside stats) ─── */
 .panel {
-    padding: 14px 16px;
-    background: var(--bg-elevated);
-    border: 1px solid var(--border);
-    border-radius: var(--radius-md);
-    transition: background-color 0.4s, border-color 0.3s, box-shadow 0.3s;
-}
-
-.panel:hover {
-    box-shadow: var(--shadow-sm);
+    padding: 10px 16px;
+    background: transparent;
+    border: none;
+    border-radius: 0;
 }
 
 .panel h2 {
-    font-family: var(--font-heading);
-    font-size: 1.2rem;
-    font-weight: 400;
-    font-style: italic;
-    letter-spacing: -0.01em;
-    color: var(--text-primary);
+    font-family: 'Sora', var(--font-body);
+    font-size: 0.68rem;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.12em;
+    color: var(--text-muted);
     margin-bottom: 0.65rem;
-    position: relative;
     padding-bottom: 0.4rem;
-}
-
-.panel h2::after {
-    content: '';
-    position: absolute;
-    bottom: 0;
-    left: 0;
-    width: 16px;
-    height: 1.5px;
-    background: var(--accent);
-    border-radius: 1px;
-    transition: width 0.4s var(--ease-out);
-}
-
-.panel:hover h2::after {
-    width: 32px;
+    border-bottom: 1px solid var(--border);
 }
 
 .panel-hint {
@@ -928,12 +904,13 @@ main {
 }
 
 #selected-district-info h3 {
-    font-family: var(--font-heading);
-    font-size: 1.3rem;
+    font-family: 'Sora', var(--font-body);
+    font-size: 0.68rem;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.12em;
     margin-bottom: 0.6rem;
-    font-weight: 400;
-    color: var(--text-primary);
-    font-style: italic;
+    color: var(--text-secondary);
 }
 
 .metric {
@@ -1244,9 +1221,9 @@ main {
     }
 
     .palette-btn {
-        width: 32px;
-        height: 32px;
-        font-size: 0.65rem;
+        width: 26px;
+        height: 26px;
+        font-size: 0.72rem;
     }
 
     #map-controls {
@@ -1278,7 +1255,7 @@ main {
     }
 
     .panel {
-        padding: 12px 14px;
+        padding: 8px 14px;
     }
 
 }
@@ -1303,9 +1280,9 @@ main {
     }
 
     .palette-btn {
-        width: 30px;
-        height: 30px;
-        font-size: 0.6rem;
+        width: 24px;
+        height: 24px;
+        font-size: 0.65rem;
     }
 
     .intro-cards {

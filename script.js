@@ -1,3 +1,4 @@
+// ─── Configuration ───
 const CONFIG = {
     numDistricts: 10,
     rows: 18,
@@ -5,21 +6,116 @@ const CONFIG = {
     hexSize: 18,
     colors: {
         light: {
-            red: { base: '#b80f2a', dark: '#800a1d', light: '#e83856', muted: '#e1a6b0', district: '#b80f2a' },
-            blue: { base: '#0b429c', dark: '#062861', light: '#4d88e8', muted: '#a5bccc', district: '#0b429c' },
-            yellow: { base: '#e6a800', dark: '#9c7200', light: '#ffc933', muted: '#ebe4ab', district: '#e6a800' },
+            red: { base: '#C42838', dark: '#8A1C28', light: '#E84858', muted: '#e1a6b0', district: '#C42838' },
+            blue: { base: '#1A54B0', dark: '#0E3470', light: '#4D88E8', muted: '#a5bccc', district: '#1A54B0' },
+            yellow: { base: '#B88A00', dark: '#7A5C00', light: '#E0B830', muted: '#ebe4ab', district: '#B88A00' },
             none: { base: '#d1d5db', dark: '#374151', light: '#e5e7eb', muted: '#f3f4f6', district: '#9ca3af' },
-            minority: '#1b8a3a'
+            minority: '#2B8650'
         },
         dark: {
-            red: { base: '#e05060', dark: '#c43848', light: '#f08888', muted: '#4a1820', district: '#e05060' },
-            blue: { base: '#5a90e0', dark: '#3868b8', light: '#88b0f0', muted: '#182848', district: '#5a90e0' },
-            yellow: { base: '#e0b030', dark: '#b88820', light: '#f0d060', muted: '#3a3010', district: '#e0b030' },
+            red: { base: '#E86070', dark: '#C44050', light: '#F08888', muted: '#4a1820', district: '#E86070' },
+            blue: { base: '#6498E6', dark: '#3868B8', light: '#88B0F0', muted: '#182848', district: '#6498E6' },
+            yellow: { base: '#E0B830', dark: '#B89020', light: '#F0D060', muted: '#3a3010', district: '#E0B830' },
             none: { base: '#5a564e', dark: '#3a3830', light: '#706860', muted: '#2a2820', district: '#5a564e' },
-            minority: '#48b070'
+            minority: '#50B878'
         }
     }
 };
+
+// ─── Precomputed Constants ───
+const SQRT3 = Math.sqrt(3);
+const HEX_W = SQRT3 * CONFIG.hexSize;
+const HEX_H = 1.5 * CONFIG.hexSize;
+
+const HEX_DIRS = [
+    { dq: 1, dr: 0 }, { dq: 0, dr: 1 }, { dq: -1, dr: 1 },
+    { dq: -1, dr: 0 }, { dq: 0, dr: -1 }, { dq: 1, dr: -1 }
+];
+
+const HEX_CORNER_OFFSETS = Array.from({ length: 6 }, (_, i) => {
+    const angle = Math.PI / 180 * (60 * i - 30);
+    return { dx: Math.cos(angle), dy: Math.sin(angle) };
+});
+
+const PALETTE_COLOR_MAP = {
+    red: 'var(--party-red)',
+    blue: 'var(--party-blue)',
+    yellow: 'var(--party-yellow)'
+};
+
+// ─── DOM Cache ───
+const $ = {};
+
+function cacheDOMElements() {
+    $.svg = document.getElementById('hex-map');
+    $.hexGroup = document.getElementById('hex-group');
+    $.borderGroup = document.getElementById('border-group');
+    $.minorityGroup = document.getElementById('minority-group');
+    $.labelGroup = document.getElementById('label-group');
+    $.mapContainer = document.getElementById('map-container');
+    $.tooltip = document.getElementById('hex-tooltip');
+    $.sidebar = document.getElementById('sidebar');
+    $.palette = document.getElementById('district-palette');
+    $.undoBtn = document.getElementById('undo-btn');
+    $.redoBtn = document.getElementById('redo-btn');
+    $.deleteBtn = document.getElementById('delete-btn');
+    $.eraseBtn = document.getElementById('erase-btn');
+    $.themeBtn = document.getElementById('theme-btn');
+    $.statsToggle = document.getElementById('stats-toggle');
+    $.closeStats = document.getElementById('close-stats');
+    $.zoomLevel = document.getElementById('zoom-level');
+    $.introScreen = document.getElementById('intro-screen');
+    $.introStart = document.getElementById('intro-start');
+
+    // Stats elements
+    $.redSeats = document.getElementById('red-seats');
+    $.blueSeats = document.getElementById('blue-seats');
+    $.yellowSeats = document.getElementById('yellow-seats');
+    $.mmdCount = document.getElementById('mmd-count');
+    $.districtCount = document.getElementById('district-count');
+    $.efficiencyGap = document.getElementById('efficiency-gap');
+    $.egNote = document.getElementById('eg-note');
+
+    // District detail elements
+    $.selectedInfo = document.getElementById('selected-district-info');
+    $.noSelectionMsg = document.getElementById('no-selection-msg');
+    $.detailTitle = document.getElementById('detail-title');
+    $.detailWinner = document.getElementById('detail-winner');
+    $.detailMargin = document.getElementById('detail-margin');
+    $.detailPop = document.getElementById('detail-pop');
+    $.targetPop = document.getElementById('target-pop');
+    $.detailDeviation = document.getElementById('detail-deviation');
+    $.detailCompactness = document.getElementById('detail-compactness');
+    $.detailContiguous = document.getElementById('detail-contiguous');
+    $.detailMm = document.getElementById('detail-mm');
+
+    // Vote bars
+    $.voteBarRed = document.getElementById('vote-bar-red');
+    $.voteBarBlue = document.getElementById('vote-bar-blue');
+    $.voteBarYellow = document.getElementById('vote-bar-yellow');
+    $.votePctRed = document.getElementById('vote-pct-red');
+    $.votePctBlue = document.getElementById('vote-pct-blue');
+    $.votePctYellow = document.getElementById('vote-pct-yellow');
+
+    // Proportionality elements (keyed by party)
+    $.prop = {};
+    for (const party of ['red', 'blue', 'yellow']) {
+        $.prop[party] = {
+            votes: document.getElementById(`prop-${party}-votes`),
+            seats: document.getElementById(`prop-${party}-seats`),
+            votePct: document.getElementById(`prop-${party}-vote-pct`),
+            seatPct: document.getElementById(`prop-${party}-seat-pct`)
+        };
+    }
+
+    // Create SVG defs element once
+    $.defs = document.createElementNS("http://www.w3.org/2000/svg", "defs");
+    $.defs.id = 'map-defs';
+    $.svg.insertBefore($.defs, $.svg.firstChild);
+}
+
+// ─── Hex Element Index (avoids querySelector on every hover/paint) ───
+const hexElements = new Map();
 
 // Resolved color reference — updated on theme change
 let activeColors = CONFIG.colors.light;
@@ -32,13 +128,11 @@ const state = {
     isPainting: false,
     hoveredHex: null,
     targetPop: 0,
-    // Zoom/Pan
     viewBox: { x: 0, y: 0, w: 0, h: 0 },
     origViewBox: { x: 0, y: 0, w: 0, h: 0 },
     isPanning: false,
     panStart: { x: 0, y: 0 },
     zoomLevel: 1,
-    // Undo/Redo
     undoStack: [],
     redoStack: [],
     deleteMode: false,
@@ -48,32 +142,33 @@ const state = {
 
 // ─── Hex Math ───
 function hexToPixel(q, r) {
-    const w = Math.sqrt(3) * CONFIG.hexSize;
-    const h = 2 * CONFIG.hexSize;
-    return { x: w * (q + r / 2), y: h * (3 / 4) * r };
+    return { x: HEX_W * (q + r / 2), y: HEX_H * r };
 }
 
 function hexCorners(center, size) {
-    const corners = [];
-    for (let i = 0; i < 6; i++) {
-        const angle_rad = Math.PI / 180 * (60 * i - 30);
-        corners.push({ x: center.x + size * Math.cos(angle_rad), y: center.y + size * Math.sin(angle_rad) });
-    }
-    return corners;
+    return HEX_CORNER_OFFSETS.map(o => ({
+        x: center.x + size * o.dx,
+        y: center.y + size * o.dy
+    }));
 }
 
 function cornersToString(corners) {
     return corners.map(c => `${c.x},${c.y}`).join(' ');
 }
 
+function hexDistance(q1, r1, q2, r2) {
+    return (Math.abs(q1 - q2) + Math.abs(q1 + r1 - q2 - r2) + Math.abs(r1 - r2)) / 2;
+}
+
 // ─── Animation Utilities ───
 const animatedCounters = {};
-function animateValue(obj, end, duration, formatFn = Math.round, id) {
-    if (!obj) return;
-    const start = obj._currentVal || 0;
+
+function animateValue(el, end, duration, formatFn = Math.round, id) {
+    if (!el) return;
+    const start = el._currentVal || 0;
     if (start === end) {
-        obj.innerText = formatFn(end);
-        obj._currentVal = end;
+        el.textContent = formatFn(end);
+        el._currentVal = end;
         return;
     }
 
@@ -81,11 +176,11 @@ function animateValue(obj, end, duration, formatFn = Math.round, id) {
     const step = (timestamp) => {
         if (!startTimestamp) startTimestamp = timestamp;
         const progress = Math.min((timestamp - startTimestamp) / duration, 1);
-        const ease = 1 - Math.pow(1 - progress, 4); // easeOutQuart
+        const ease = 1 - Math.pow(1 - progress, 4);
         const current = progress < 1 ? start + (end - start) * ease : end;
 
-        obj.innerText = formatFn(current);
-        obj._currentVal = current;
+        el.textContent = formatFn(current);
+        el._currentVal = current;
 
         if (progress < 1) {
             animatedCounters[id] = requestAnimationFrame(step);
@@ -98,17 +193,18 @@ function animateValue(obj, end, duration, formatFn = Math.round, id) {
 // ─── Init ───
 function init() {
     refreshMinOpacity();
-    const mapContainer = document.getElementById('map-container');
-    if (mapContainer) mapContainer.classList.add('paused');
+    if ($.mapContainer) $.mapContainer.classList.add('paused');
     generateHexes();
     setupUI();
-    state.targetPop = Math.round(Array.from(state.hexes.values()).reduce((sum, h) => sum + h.population, 0) / CONFIG.numDistricts);
+    state.targetPop = Math.round(
+        Array.from(state.hexes.values()).reduce((sum, h) => sum + h.population, 0) / CONFIG.numDistricts
+    );
     renderMap();
     updateMetrics();
     pushUndoSnapshot();
 }
 
-// ─── Simple hash-based noise (no dependencies) ───
+// ─── Noise Functions ───
 function hashNoise(x, y, seed) {
     let n = Math.sin(x * 127.1 + y * 311.7 + seed * 53.3) * 43758.5453;
     return n - Math.floor(n);
@@ -136,13 +232,13 @@ function fbmNoise(x, y, seed, octaves = 4) {
     return value / total;
 }
 
+// ─── Hex Generation ───
 function generateHexes() {
     let idCounter = 0;
     const centerX = CONFIG.cols / 2;
     const centerY = CONFIG.rows / 2;
     const maxRadius = Math.min(CONFIG.cols, CONFIG.rows) / 2 + 1;
 
-    // Randomize shape noise for dynamic map footprints
     const phase1 = Math.random() * Math.PI * 2;
     const phase2 = Math.random() * Math.PI * 2;
     const freq1 = 2 + Math.random() * 4;
@@ -151,26 +247,25 @@ function generateHexes() {
     const amp2 = 0.5 + Math.random() * 2;
     const baseRadius = maxRadius * (0.75 + Math.random() * 0.15);
 
-    let validCoords = [];
+    const validCoords = [];
     for (let r = 0; r < CONFIG.rows; r++) {
-        let r_offset = Math.floor(r / 2);
+        const r_offset = Math.floor(r / 2);
         for (let q = -r_offset; q < CONFIG.cols - r_offset; q++) {
-            let y = r, x = q + r_offset;
-            let dist = Math.sqrt(Math.pow(x - centerX, 2) + Math.pow(y - centerY, 2));
-            let angle = Math.atan2(y - centerY, x - centerX);
-            let noise = Math.sin(angle * freq1 + phase1) * amp1 + Math.cos(angle * freq2 + phase2) * amp2;
+            const y = r, x = q + r_offset;
+            const dist = Math.sqrt((x - centerX) ** 2 + (y - centerY) ** 2);
+            const angle = Math.atan2(y - centerY, x - centerX);
+            const noise = Math.sin(angle * freq1 + phase1) * amp1 + Math.cos(angle * freq2 + phase2) * amp2;
             if (dist <= baseRadius + noise) {
                 validCoords.push({ q, r, x, y, dist });
             }
         }
     }
 
-    // Noise seeds for this map
     const noiseSeed = Math.random() * 10000;
     const partySeed = Math.random() * 10000;
     const minoritySeed = Math.random() * 10000;
 
-    // Generate scattered population centers
+    // Population centers
     const numLargeCities = Math.floor(Math.random() * 2) + 2;
     const numSmallTowns = Math.floor(Math.random() * 6) + 5;
     const numSuburbs = Math.floor(Math.random() * 4) + 3;
@@ -181,20 +276,21 @@ function generateHexes() {
         centers.push({ q: c.q, r: c.r, strength: Math.random() * 600 + 350, decay: Math.random() * 1.8 + 1.2, type: 'city' });
     }
     for (let i = 0; i < numSuburbs; i++) {
-        // Suburbs cluster near cities with irregular offsets
         const city = centers[Math.floor(Math.random() * Math.min(centers.length, numLargeCities))];
         const angle = Math.random() * Math.PI * 2;
         const dist = 1.5 + Math.random() * 4;
-        const sq = city.q + Math.round(Math.cos(angle) * dist);
-        const sr = city.r + Math.round(Math.sin(angle) * dist);
-        centers.push({ q: sq, r: sr, strength: Math.random() * 250 + 100, decay: Math.random() * 1.2 + 0.6, type: 'suburb' });
+        centers.push({
+            q: city.q + Math.round(Math.cos(angle) * dist),
+            r: city.r + Math.round(Math.sin(angle) * dist),
+            strength: Math.random() * 250 + 100, decay: Math.random() * 1.2 + 0.6, type: 'suburb'
+        });
     }
     for (let i = 0; i < numSmallTowns; i++) {
         const c = validCoords[Math.floor(Math.random() * validCoords.length)];
         centers.push({ q: c.q, r: c.r, strength: Math.random() * 200 + 50, decay: Math.random() * 1.0 + 0.3, type: 'town' });
     }
 
-    // Transportation corridors — lines of elevated population between two cities
+    // Transportation corridors
     const corridors = [];
     if (centers.length >= 2) {
         const numCorridors = Math.floor(Math.random() * 3) + 1;
@@ -205,103 +301,78 @@ function generateHexes() {
         }
     }
 
-    const hexDistance = (q1, r1, q2, r2) => (Math.abs(q1 - q2) + Math.abs(q1 + r1 - q2 - r2) + Math.abs(r1 - r2)) / 2;
-
-    // Point-to-line-segment distance for corridors
     function distToSegment(px, py, x1, y1, x2, y2) {
         const dx = x2 - x1, dy = y2 - y1;
         const lenSq = dx * dx + dy * dy;
-        if (lenSq === 0) return Math.sqrt((px - x1) ** 2 + (py - y1) ** 2);
-        let t = ((px - x1) * dx + (py - y1) * dy) / lenSq;
-        t = Math.max(0, Math.min(1, t));
-        return Math.sqrt((px - (x1 + t * dx)) ** 2 + (py - (y1 + t * dy)) ** 2);
+        if (lenSq === 0) return Math.hypot(px - x1, py - y1);
+        const t = Math.max(0, Math.min(1, ((px - x1) * dx + (py - y1) * dy) / lenSq));
+        return Math.hypot(px - (x1 + t * dx), py - (y1 + t * dy));
     }
 
     state.maxPop = 0;
-
-    // Regional political lean — fbm noise creates large-scale political geography
     const leanScale = 0.15 + Math.random() * 0.1;
 
     validCoords.forEach(c => {
-        let q = c.q, r = c.r;
+        const { q, r } = c;
 
-        // Base rural population with multi-octave fbm for rough terrain variation
+        // Base rural population with multi-octave fbm
         const terrainNoise = fbmNoise(q * 0.3, r * 0.3, noiseSeed, 5);
         const microNoise = fbmNoise(q * 1.2, r * 1.2, noiseSeed + 50, 3);
         let pop = Math.floor(3 + terrainNoise * 70 + microNoise * 30 + Math.random() * 20);
 
-        // City/suburb/town contributions with noisy, irregular decay
-        centers.forEach(center => {
+        // City/suburb/town contributions
+        for (const center of centers) {
             const d = hexDistance(q, r, center.q, center.r);
-            const localNoise = 0.5 + hashNoise(q, r, noiseSeed + 777) * 1.0;
+            const localNoise = 0.5 + hashNoise(q, r, noiseSeed + 777);
             const edgeJitter = 0.8 + hashNoise(q * 2.3, r * 2.3, noiseSeed + 555) * 0.4;
             pop += Math.floor(center.strength * Math.exp(-d / (center.decay * edgeJitter)) * localNoise);
-        });
+        }
 
         // Corridor population boost
-        corridors.forEach(cor => {
+        for (const cor of corridors) {
             const d = distToSegment(q, r, cor.q1, cor.r1, cor.q2, cor.r2);
             if (d < cor.width * 2.5) {
-                const falloff = Math.exp(-d / cor.width);
-                pop += Math.floor(cor.strength * falloff * (0.3 + hashNoise(q, r, noiseSeed + 999) * 0.7));
+                pop += Math.floor(cor.strength * Math.exp(-d / cor.width) * (0.3 + hashNoise(q, r, noiseSeed + 999) * 0.7));
             }
-        });
+        }
 
-        // Sporadic random population spikes (hamlets, crossroads, factories)
+        // Sporadic spikes and voids
         if (Math.random() < 0.10) pop += Math.floor(Math.random() * 120 + 30);
-
-        // Occasional population voids (parks, water, farmland)
         if (hashNoise(q * 0.8, r * 0.8, noiseSeed + 2000) > 0.82) {
             pop = Math.floor(pop * (0.1 + Math.random() * 0.2));
         }
 
-        // Two layers of multiplicative noise to break up smooth gradients
+        // Multiplicative noise
         pop = Math.floor(pop * (0.4 + hashNoise(q * 1.7, r * 1.7, noiseSeed + 333) * 1.2));
         pop = Math.max(3, Math.floor(pop * (0.7 + hashNoise(q * 3.1, r * 3.1, noiseSeed + 444) * 0.6)));
 
         if (pop > state.maxPop) state.maxPop = pop;
 
-        // Political lean uses large-scale noise for regional clustering
+        // Political lean
         const regionalLean = fbmNoise(q * leanScale, r * leanScale, partySeed, 3);
         const isUrban = pop > 150;
         const isSuburban = pop > 80 && pop <= 150;
 
-        // Assign winning party — yellow is a minor third party (~10% of vote)
         let party;
-        let roll = Math.random();
+        const roll = Math.random();
 
         if (isUrban) {
             const blueChance = 0.52 + (regionalLean - 0.5) * 0.3;
-            if (roll < blueChance) party = 'blue';
-            else if (roll < blueChance + 0.38) party = 'red';
-            else party = 'yellow';
+            party = roll < blueChance ? 'blue' : roll < blueChance + 0.38 ? 'red' : 'yellow';
         } else if (isSuburban) {
-            const lean = regionalLean;
-            if (lean > 0.55) {
-                if (roll < 0.48) party = 'blue';
-                else if (roll < 0.90) party = 'red';
-                else party = 'yellow';
+            if (regionalLean > 0.55) {
+                party = roll < 0.48 ? 'blue' : roll < 0.90 ? 'red' : 'yellow';
             } else {
-                if (roll < 0.48) party = 'red';
-                else if (roll < 0.90) party = 'blue';
-                else party = 'yellow';
+                party = roll < 0.48 ? 'red' : roll < 0.90 ? 'blue' : 'yellow';
             }
         } else {
             const redChance = 0.48 + (0.5 - regionalLean) * 0.3;
-            if (roll < redChance) party = 'red';
-            else if (roll < redChance + 0.42) party = 'blue';
-            else party = 'yellow';
+            party = roll < redChance ? 'red' : roll < redChance + 0.42 ? 'blue' : 'yellow';
         }
 
-        // Vote distribution: ~45% red, ~45% blue, ~10% yellow overall
-        let votes = { red: 0, blue: 0, yellow: 0 };
-        // Yellow always gets a small share (~5-15% of each hex)
-        const yellowPct = 0.05 + Math.random() * 0.10;
-        votes.yellow = Math.floor(pop * yellowPct);
-        const majorRemainder = pop - votes.yellow;
-
+        // Vote distribution
+        const votes = { red: 0, blue: 0, yellow: 0 };
         if (party === 'yellow') {
-            // Rare yellow-winning hex: give yellow a plurality via a three-way split
             const yellowBoost = 0.30 + Math.random() * 0.10;
             votes.yellow = Math.floor(pop * yellowBoost);
             const rest = pop - votes.yellow;
@@ -309,41 +380,49 @@ function generateHexes() {
             votes.red = Math.floor(rest * redShare);
             votes.blue = rest - votes.red;
         } else {
-            // Red/blue winner — split the major remainder between them
+            const yellowPct = 0.05 + Math.random() * 0.10;
+            votes.yellow = Math.floor(pop * yellowPct);
+            const majorRemainder = pop - votes.yellow;
             const winningPct = 0.50 + Math.random() * 0.30;
             votes[party] = Math.floor(majorRemainder * winningPct);
             const loser = party === 'red' ? 'blue' : 'red';
             votes[loser] = majorRemainder - votes[party];
         }
 
-        // Minority clusters using multi-scale spatial noise — coherent neighborhoods with pockets
-        const minorityNoise = fbmNoise(q * 0.35, r * 0.35, minoritySeed, 4)
-            * 0.7 + fbmNoise(q * 0.9, r * 0.9, minoritySeed + 500, 3) * 0.3;
+        // Minority clusters
+        const minorityNoise = fbmNoise(q * 0.35, r * 0.35, minoritySeed, 4) * 0.7
+            + fbmNoise(q * 0.9, r * 0.9, minoritySeed + 500, 3) * 0.3;
         const minorityThreshold = isUrban ? 0.48 : (isSuburban ? 0.60 : 0.78);
-        let isMinority = minorityNoise > minorityThreshold;
 
-        let hex = {
+        const hex = {
             id: ++idCounter, q, r, s: -q - r,
-            population: pop,
-            votes,
-            party,
-            minority: isMinority,
+            population: pop, votes, party,
+            minority: minorityNoise > minorityThreshold,
             district: 0
         };
         hex.partyWinner = getHexWinner(hex);
         state.hexes.set(`${q},${r}`, hex);
     });
 
-    for (let i = 1; i <= CONFIG.numDistricts; i++) {
-        state.districts[i] = { id: i, population: 0, votes: { red: 0, blue: 0, yellow: 0 }, hexes: [], minorityPop: 0, isContiguous: true, compactness: 0, winner: 'none' };
-    }
+    initDistricts();
     calculateMetrics();
 }
 
+function initDistricts() {
+    for (let i = 1; i <= CONFIG.numDistricts; i++) {
+        state.districts[i] = {
+            id: i, population: 0, votes: { red: 0, blue: 0, yellow: 0 },
+            hexes: [], minorityPop: 0, isContiguous: true, compactness: 0,
+            winner: 'none', isMinorityMajority: false
+        };
+    }
+}
+
 function getHexWinner(hex) {
-    let max = Math.max(hex.votes.red, hex.votes.blue, hex.votes.yellow);
-    if (max === hex.votes.red) return 'red';
-    if (max === hex.votes.blue) return 'blue';
+    const { red, blue, yellow } = hex.votes;
+    const max = Math.max(red, blue, yellow);
+    if (max === red) return 'red';
+    if (max === blue) return 'blue';
     return 'yellow';
 }
 
@@ -360,7 +439,7 @@ function restoreSnapshot(snap) {
         if (hex) hex.district = districtId;
     }
     calculateMetrics();
-    state.hexes.forEach((hex, qr) => updateHexVisuals(qr));
+    state.hexes.forEach((_, qr) => updateHexVisuals(qr));
     renderBorders();
     updateMetrics();
 }
@@ -388,39 +467,41 @@ function redo() {
 }
 
 function updateUndoRedoState() {
-    const undoBtn = document.getElementById('undo-btn');
-    const redoBtn = document.getElementById('redo-btn');
-    if (undoBtn) undoBtn.disabled = state.undoStack.length <= 1;
-    if (redoBtn) redoBtn.disabled = state.redoStack.length === 0;
+    if ($.undoBtn) $.undoBtn.disabled = state.undoStack.length <= 1;
+    if ($.redoBtn) $.redoBtn.disabled = state.redoStack.length === 0;
 }
 
 // ─── Map Operations ───
-function randomizeMap() {
+function clearModes() {
     state.deleteMode = false;
-    document.getElementById('delete-btn')?.classList.remove('active');
-    document.getElementById('map-container')?.classList.remove('delete-mode');
+    state.eraseMode = false;
+    if ($.deleteBtn) $.deleteBtn.classList.remove('active');
+    if ($.eraseBtn) $.eraseBtn.classList.remove('active');
+    if ($.mapContainer) $.mapContainer.classList.remove('delete-mode', 'erase-mode');
+}
 
+function randomizeMap() {
+    clearModes();
     state.hexes.clear();
-    for (let i = 1; i <= CONFIG.numDistricts; i++) {
-        state.districts[i] = { id: i, population: 0, votes: { red: 0, blue: 0, yellow: 0 }, hexes: [], minorityPop: 0, isContiguous: true, compactness: 0, winner: 'none' };
-    }
+    hexElements.clear();
+    initDistricts();
     state.undoStack = [];
     state.redoStack = [];
     generateHexes();
-    state.targetPop = Math.round(Array.from(state.hexes.values()).reduce((sum, h) => sum + h.population, 0) / CONFIG.numDistricts);
+    state.targetPop = Math.round(
+        Array.from(state.hexes.values()).reduce((sum, h) => sum + h.population, 0) / CONFIG.numDistricts
+    );
     renderMap();
     updateMetrics();
+    renderDistrictPalette();
     pushUndoSnapshot();
 }
 
 function resetMap() {
-    state.deleteMode = false;
-    document.getElementById('delete-btn')?.classList.remove('active');
-    document.getElementById('map-container')?.classList.remove('delete-mode');
-
+    clearModes();
     state.hexes.forEach(hex => { hex.district = 0; });
     calculateMetrics();
-    state.hexes.forEach((hex, qr) => updateHexVisuals(qr));
+    state.hexes.forEach((_, qr) => updateHexVisuals(qr));
     renderBorders();
     updateMetrics();
     pushUndoSnapshot();
@@ -437,7 +518,7 @@ function deleteDistrict(dId) {
     });
     if (changed) {
         calculateMetrics();
-        state.hexes.forEach((hex, qr) => updateHexVisuals(qr));
+        state.hexes.forEach((_, qr) => updateHexVisuals(qr));
         renderBorders();
         updateMetrics();
         pushUndoSnapshot();
@@ -446,112 +527,146 @@ function deleteDistrict(dId) {
 
 // ─── UI Setup ───
 function setupUI() {
-    const selector = document.getElementById('district-selector');
-    if (selector) selector.innerHTML = '';
-
-    const svg = document.getElementById('hex-map');
-    svg.addEventListener('mousedown', onMouseDown);
-    svg.addEventListener('mouseup', onMouseUp);
-    svg.addEventListener('mouseleave', (e) => {
+    $.svg.addEventListener('mousedown', onMouseDown);
+    $.svg.addEventListener('mouseup', onMouseUp);
+    $.svg.addEventListener('mouseleave', (e) => {
         onMouseUp(e);
-        const tooltip = document.getElementById('hex-tooltip');
-        if (tooltip) tooltip.classList.remove('visible');
+        if ($.tooltip) $.tooltip.classList.remove('visible');
         if (state.hoveredHex) {
-            const oldEl = document.querySelector(`.hex[data-qr="${state.hoveredHex}"]`);
+            const oldEl = hexElements.get(state.hoveredHex);
             if (oldEl) oldEl.classList.remove('hovered');
             state.hoveredHex = null;
         }
     });
-    svg.addEventListener('mousemove', onMouseMove);
-    svg.addEventListener('wheel', onWheel, { passive: false });
-    svg.addEventListener('contextmenu', e => e.preventDefault());
+    $.svg.addEventListener('mousemove', onMouseMove);
+    $.svg.addEventListener('wheel', onWheel, { passive: false });
+    $.svg.addEventListener('contextmenu', e => e.preventDefault());
 
-    // Header buttons
-    const resetBtn = document.getElementById('reset-btn');
-    if (resetBtn) resetBtn.addEventListener('click', resetMap);
+    // Toolbar buttons
+    document.getElementById('reset-btn')?.addEventListener('click', resetMap);
+    document.getElementById('randomize-btn')?.addEventListener('click', randomizeMap);
 
-    const randomizeBtn = document.getElementById('randomize-btn');
-    if (randomizeBtn) randomizeBtn.addEventListener('click', randomizeMap);
-
-    const deleteBtn = document.getElementById('delete-btn');
-    if (deleteBtn) {
-        deleteBtn.addEventListener('click', () => {
+    if ($.deleteBtn) {
+        $.deleteBtn.addEventListener('click', () => {
             state.deleteMode = !state.deleteMode;
-            deleteBtn.classList.toggle('active', state.deleteMode);
-            const container = document.getElementById('map-container');
-            container.classList.toggle('delete-mode', state.deleteMode);
-            // Mutually exclusive with erase mode
+            $.deleteBtn.classList.toggle('active', state.deleteMode);
+            $.mapContainer.classList.toggle('delete-mode', state.deleteMode);
             if (state.deleteMode && state.eraseMode) {
                 state.eraseMode = false;
-                document.getElementById('erase-btn')?.classList.remove('active');
-                container.classList.remove('erase-mode');
+                $.eraseBtn?.classList.remove('active');
+                $.mapContainer.classList.remove('erase-mode');
             }
         });
     }
 
-    // Erase mode toggle
-    const eraseBtn = document.getElementById('erase-btn');
-    if (eraseBtn) {
-        eraseBtn.addEventListener('click', () => {
+    if ($.eraseBtn) {
+        $.eraseBtn.addEventListener('click', () => {
             state.eraseMode = !state.eraseMode;
-            eraseBtn.classList.toggle('active', state.eraseMode);
-            const container = document.getElementById('map-container');
-            container.classList.toggle('erase-mode', state.eraseMode);
-            // Mutually exclusive with delete mode
+            $.eraseBtn.classList.toggle('active', state.eraseMode);
+            $.mapContainer.classList.toggle('erase-mode', state.eraseMode);
             if (state.eraseMode && state.deleteMode) {
                 state.deleteMode = false;
-                document.getElementById('delete-btn')?.classList.remove('active');
-                container.classList.remove('delete-mode');
+                $.deleteBtn?.classList.remove('active');
+                $.mapContainer.classList.remove('delete-mode');
             }
         });
     }
 
-    // Undo/redo buttons
-    const undoBtn = document.getElementById('undo-btn');
-    if (undoBtn) undoBtn.addEventListener('click', undo);
-    const redoBtn = document.getElementById('redo-btn');
-    if (redoBtn) redoBtn.addEventListener('click', redo);
+    if ($.undoBtn) $.undoBtn.addEventListener('click', undo);
+    if ($.redoBtn) $.redoBtn.addEventListener('click', redo);
+    if ($.themeBtn) $.themeBtn.addEventListener('click', toggleTheme);
 
-    // Theme toggle
-    const themeBtn = document.getElementById('theme-btn');
-    if (themeBtn) themeBtn.addEventListener('click', toggleTheme);
+    document.getElementById('zoom-in-btn')?.addEventListener('click', () => smoothZoom(1));
+    document.getElementById('zoom-out-btn')?.addEventListener('click', () => smoothZoom(-1));
+    document.getElementById('zoom-fit-btn')?.addEventListener('click', zoomToFit);
 
-    // Zoom controls
-    const zoomInBtn = document.getElementById('zoom-in-btn');
-    if (zoomInBtn) zoomInBtn.addEventListener('click', () => smoothZoom(1));
-    const zoomOutBtn = document.getElementById('zoom-out-btn');
-    if (zoomOutBtn) zoomOutBtn.addEventListener('click', () => smoothZoom(-1));
-    const zoomFitBtn = document.getElementById('zoom-fit-btn');
-    if (zoomFitBtn) zoomFitBtn.addEventListener('click', zoomToFit);
-
-    // Keyboard shortcuts
     document.addEventListener('keydown', (e) => {
         if (e.ctrlKey && e.key === 'z') { e.preventDefault(); undo(); }
         if (e.ctrlKey && e.key === 'y') { e.preventDefault(); redo(); }
     });
 
+    // Stats panel toggle
+    if ($.statsToggle && $.sidebar) {
+        $.statsToggle.addEventListener('click', () => {
+            $.sidebar.classList.toggle('open');
+            $.statsToggle.classList.toggle('active');
+        });
+        if (window.innerWidth > 900) {
+            $.sidebar.classList.add('open');
+            $.statsToggle.classList.add('active');
+        }
+    }
+    if ($.closeStats && $.sidebar) {
+        $.closeStats.addEventListener('click', () => {
+            $.sidebar.classList.remove('open');
+            $.statsToggle?.classList.remove('active');
+        });
+    }
+
+    renderDistrictPalette();
+
     // Intro screen
-    const introStart = document.getElementById('intro-start');
-    const introScreen = document.getElementById('intro-screen');
-    if (introStart && introScreen) {
-        introStart.addEventListener('click', () => {
-            introScreen.classList.add('hidden');
-            const mapContainer = document.getElementById('map-container');
-            if (mapContainer) mapContainer.classList.remove('paused');
-            setTimeout(() => { introScreen.style.display = 'none'; }, 650);
+    if ($.introStart && $.introScreen) {
+        $.introStart.addEventListener('click', () => {
+            $.introScreen.classList.add('hidden');
+            document.body.classList.add('app-ready');
+            if ($.mapContainer) $.mapContainer.classList.remove('paused');
+            setTimeout(() => { $.introScreen.style.display = 'none'; }, 850);
         });
     }
 }
 
+// ─── District Palette ───
+function renderDistrictPalette() {
+    if (!$.palette) return;
+    $.palette.innerHTML = '';
+
+    for (let i = 1; i <= CONFIG.numDistricts; i++) {
+        const btn = document.createElement('button');
+        btn.className = 'palette-btn';
+        btn.dataset.district = i;
+        btn.textContent = i;
+        btn.title = `District ${i}`;
+        if (i === state.currentDistrict) btn.classList.add('active');
+
+        btn.addEventListener('click', () => {
+            state.currentDistrict = i;
+            clearModes();
+            updateDistrictPalette();
+            updateSidebarDetails(i);
+            renderBorders();
+            renderDistrictLabels();
+        });
+
+        $.palette.appendChild(btn);
+    }
+
+    updateDistrictPalette();
+}
+
+function updateDistrictPalette() {
+    const buttons = document.querySelectorAll('.palette-btn');
+    for (const btn of buttons) {
+        const dId = parseInt(btn.dataset.district);
+        const d = state.districts[dId];
+
+        btn.classList.toggle('active', dId === state.currentDistrict);
+
+        if (d && d.population > 0 && d.winner !== 'none') {
+            btn.classList.add('has-district');
+            btn.style.background = PALETTE_COLOR_MAP[d.winner] || '';
+        } else {
+            btn.classList.remove('has-district');
+            btn.style.background = '';
+        }
+    }
+}
 
 // ─── Zoom & Pan ───
 function onWheel(e) {
     e.preventDefault();
-    const svg = document.getElementById('hex-map');
     const vb = state.viewBox;
-
-    // Get cursor position in SVG coordinates
-    const rect = svg.getBoundingClientRect();
+    const rect = $.svg.getBoundingClientRect();
     const mx = (e.clientX - rect.left) / rect.width;
     const my = (e.clientY - rect.top) / rect.height;
     const svgX = vb.x + mx * vb.w;
@@ -561,7 +676,6 @@ function onWheel(e) {
     const newW = vb.w * zoomFactor;
     const newH = vb.h * zoomFactor;
 
-    // Clamp zoom
     const minW = state.origViewBox.w * 0.3;
     const maxW = state.origViewBox.w * 3;
     if (newW < minW || newW > maxW) return;
@@ -572,14 +686,12 @@ function onWheel(e) {
     vb.h = newH;
     state.zoomLevel = state.origViewBox.w / vb.w;
 
-    svg.setAttribute('viewBox', `${vb.x} ${vb.y} ${vb.w} ${vb.h}`);
+    $.svg.setAttribute('viewBox', `${vb.x} ${vb.y} ${vb.w} ${vb.h}`);
     updateZoomDisplay();
 }
 
 function smoothZoom(direction) {
-    const svg = document.getElementById('hex-map');
     const vb = state.viewBox;
-
     const cx = vb.x + vb.w / 2;
     const cy = vb.y + vb.h / 2;
 
@@ -591,15 +703,17 @@ function smoothZoom(direction) {
     const maxW = state.origViewBox.w * 3;
     if (targetW < minW || targetW > maxW) return;
 
-    const startVb = { x: vb.x, y: vb.y, w: vb.w, h: vb.h };
-    const endVb = {
-        x: cx - targetW / 2,
-        y: cy - targetH / 2,
-        w: targetW,
-        h: targetH
-    };
+    const startVb = { ...vb };
+    const endVb = { x: cx - targetW / 2, y: cy - targetH / 2, w: targetW, h: targetH };
+    animateViewBox(startVb, endVb, 200);
+}
 
-    const duration = 200;
+function zoomToFit() {
+    animateViewBox({ ...state.viewBox }, { ...state.origViewBox }, 300);
+}
+
+function animateViewBox(startVb, endVb, duration) {
+    const vb = state.viewBox;
     let start = null;
 
     function step(ts) {
@@ -613,36 +727,7 @@ function smoothZoom(direction) {
         vb.h = startVb.h + (endVb.h - startVb.h) * ease;
         state.zoomLevel = state.origViewBox.w / vb.w;
 
-        svg.setAttribute('viewBox', `${vb.x} ${vb.y} ${vb.w} ${vb.h}`);
-        updateZoomDisplay();
-
-        if (t < 1) requestAnimationFrame(step);
-    }
-
-    requestAnimationFrame(step);
-}
-
-function zoomToFit() {
-    const svg = document.getElementById('hex-map');
-    const vb = state.viewBox;
-    const orig = state.origViewBox;
-
-    const startVb = { x: vb.x, y: vb.y, w: vb.w, h: vb.h };
-    const duration = 300;
-    let start = null;
-
-    function step(ts) {
-        if (!start) start = ts;
-        const t = Math.min((ts - start) / duration, 1);
-        const ease = 1 - Math.pow(1 - t, 3);
-
-        vb.x = startVb.x + (orig.x - startVb.x) * ease;
-        vb.y = startVb.y + (orig.y - startVb.y) * ease;
-        vb.w = startVb.w + (orig.w - startVb.w) * ease;
-        vb.h = startVb.h + (orig.h - startVb.h) * ease;
-        state.zoomLevel = state.origViewBox.w / vb.w;
-
-        svg.setAttribute('viewBox', `${vb.x} ${vb.y} ${vb.w} ${vb.h}`);
+        $.svg.setAttribute('viewBox', `${vb.x} ${vb.y} ${vb.w} ${vb.h}`);
         updateZoomDisplay();
 
         if (t < 1) requestAnimationFrame(step);
@@ -652,17 +737,16 @@ function zoomToFit() {
 }
 
 function updateZoomDisplay() {
-    const el = document.getElementById('zoom-level');
-    if (el) el.textContent = `${Math.round(state.zoomLevel * 100)}%`;
+    if ($.zoomLevel) $.zoomLevel.textContent = `${Math.round(state.zoomLevel * 100)}%`;
 }
 
+// ─── Mouse Handlers ───
 function onMouseDown(e) {
     if (e.button === 1) {
-        // Middle click: pan
         e.preventDefault();
         state.isPanning = true;
         state.panStart = { x: e.clientX, y: e.clientY };
-        document.getElementById('map-container').classList.add('panning');
+        $.mapContainer.classList.add('panning');
         return;
     }
     startPainting(e);
@@ -671,7 +755,7 @@ function onMouseDown(e) {
 function onMouseUp(e) {
     if (state.isPanning) {
         state.isPanning = false;
-        document.getElementById('map-container').classList.remove('panning');
+        $.mapContainer.classList.remove('panning');
         return;
     }
     stopPainting();
@@ -679,26 +763,22 @@ function onMouseUp(e) {
 
 function onMouseMove(e) {
     if (state.isPanning) {
-        const svg = document.getElementById('hex-map');
-        const rect = svg.getBoundingClientRect();
+        const rect = $.svg.getBoundingClientRect();
         const dx = (e.clientX - state.panStart.x) / rect.width * state.viewBox.w;
         const dy = (e.clientY - state.panStart.y) / rect.height * state.viewBox.h;
         state.viewBox.x -= dx;
         state.viewBox.y -= dy;
         state.panStart = { x: e.clientX, y: e.clientY };
-        svg.setAttribute('viewBox', `${state.viewBox.x} ${state.viewBox.y} ${state.viewBox.w} ${state.viewBox.h}`);
+        $.svg.setAttribute('viewBox', `${state.viewBox.x} ${state.viewBox.y} ${state.viewBox.w} ${state.viewBox.h}`);
         return;
     }
-    // Normal hex hover
     const qr = getHexFromEvent(e);
     if (qr) {
         handleHover(e, qr);
     } else {
-        // Hide tooltip when not on a hex
-        const tooltip = document.getElementById('hex-tooltip');
-        if (tooltip) tooltip.classList.remove('visible');
+        if ($.tooltip) $.tooltip.classList.remove('visible');
         if (state.hoveredHex) {
-            const oldEl = document.querySelector(`.hex[data-qr="${state.hoveredHex}"]`);
+            const oldEl = hexElements.get(state.hoveredHex);
             if (oldEl) oldEl.classList.remove('hovered');
             state.hoveredHex = null;
         }
@@ -707,6 +787,7 @@ function onMouseMove(e) {
 
 // ─── Live border update (throttled to one per frame) ───
 let _borderUpdatePending = false;
+
 function scheduleBorderUpdate() {
     if (_borderUpdatePending) return;
     _borderUpdatePending = true;
@@ -735,19 +816,14 @@ function startPainting(e) {
         if (hex.district > 0) {
             state.isPainting = hex.district;
         } else {
-            let usedDistricts = new Set();
-            state.hexes.forEach(h => { if (h.district > 0) usedDistricts.add(h.district); });
-            let nextId = 0;
-            for (let i = 1; i <= CONFIG.numDistricts; i++) {
-                if (!usedDistricts.has(i)) { nextId = i; break; }
-            }
-            if (nextId > 0) state.isPainting = nextId;
-            else return;
+            // Use currently selected district from palette
+            state.isPainting = state.currentDistrict;
         }
     }
     state.currentDistrict = typeof state.isPainting === 'number' ? state.isPainting : state.currentDistrict;
     paintHex(e);
     updateSidebarDetails(state.currentDistrict);
+    updateDistrictPalette();
 }
 
 function stopPainting() {
@@ -760,14 +836,12 @@ function stopPainting() {
 
 function getHexFromEvent(e) {
     let target = e.target;
-    if (target.tagName !== 'polygon' && target.tagName !== 'g') {
-        const parent = target.closest('.hex');
-        if (parent) target = parent;
-    } else if (target.tagName === 'polygon') {
+    if (target.tagName === 'polygon') {
         target = target.parentNode;
+    } else if (target.tagName !== 'g' || !target.classList.contains('hex')) {
+        target = target.closest('.hex');
     }
-    if (target && target.classList && target.classList.contains('hex')) return target.dataset.qr;
-    return null;
+    return target?.classList?.contains('hex') ? target.dataset.qr : null;
 }
 
 function paintHex(e) {
@@ -775,23 +849,22 @@ function paintHex(e) {
     const qr = getHexFromEvent(e);
     if (!qr) return;
     const hex = state.hexes.get(qr);
-    let targetDistrict = state.isPainting === 'erase' ? 0 : state.isPainting;
+    const targetDistrict = state.isPainting === 'erase' ? 0 : state.isPainting;
 
-    // Population cap (allow up to 10% over target)
+    // Population cap using cached district state (avoid full hex iteration)
     if (targetDistrict > 0 && hex.district !== targetDistrict && state.targetPop > 0) {
-        let currentPop = 0;
-        state.hexes.forEach(h => { if (h.district === targetDistrict) currentPop += h.population; });
-        if (currentPop + hex.population > state.targetPop * 1.1) return;
+        const d = state.districts[targetDistrict];
+        if (d && d.population + hex.population > state.targetPop * 1.1) return;
     }
 
     if (hex.district !== targetDistrict) {
         hex.district = targetDistrict;
         updateHexVisuals(qr);
         // Paint flash micro-animation
-        const g = document.querySelector(`.hex[data-qr="${qr}"]`);
+        const g = hexElements.get(qr);
         if (g) {
             g.classList.remove('just-painted');
-            void g.offsetWidth; // force reflow to restart animation
+            void g.offsetWidth;
             g.classList.add('just-painted');
         }
     }
@@ -800,14 +873,12 @@ function paintHex(e) {
 function handleHover(e, qr) {
     if (state.hoveredHex !== qr) {
         if (state.hoveredHex) {
-            const oldEl = document.querySelector(`.hex[data-qr="${state.hoveredHex}"]`);
+            const oldEl = hexElements.get(state.hoveredHex);
             if (oldEl) oldEl.classList.remove('hovered');
         }
         state.hoveredHex = qr;
-        if (qr) {
-            const el = document.querySelector(`.hex[data-qr="${qr}"]`);
-            if (el) el.classList.add('hovered');
-        }
+        const el = hexElements.get(qr);
+        if (el) el.classList.add('hovered');
     }
     if (state.isPainting) {
         paintHex(e);
@@ -819,32 +890,30 @@ function handleHover(e, qr) {
 }
 
 function showHexTooltip(e, qr) {
-    const tooltip = document.getElementById('hex-tooltip');
-    if (!tooltip) return;
-    if (!qr) { tooltip.classList.remove('visible'); return; }
+    if (!$.tooltip) return;
+    if (!qr) { $.tooltip.classList.remove('visible'); return; }
     const hex = state.hexes.get(qr);
-    if (!hex) { tooltip.classList.remove('visible'); return; }
+    if (!hex) { $.tooltip.classList.remove('visible'); return; }
 
     const total = hex.votes.red + hex.votes.blue + hex.votes.yellow;
     const pR = total > 0 ? Math.round(hex.votes.red / total * 100) : 0;
     const pB = total > 0 ? Math.round(hex.votes.blue / total * 100) : 0;
     const pY = total > 0 ? Math.round(hex.votes.yellow / total * 100) : 0;
 
-    tooltip.innerHTML = `<span class="tt-pop">Pop: ${hex.population.toLocaleString()}</span>`
+    $.tooltip.innerHTML = `<span class="tt-pop">Pop: ${hex.population.toLocaleString()}</span>`
         + `<div class="tt-votes"><span class="tt-r">R ${pR}%</span> <span class="tt-b">B ${pB}%</span> <span class="tt-y">Y ${pY}%</span></div>`
         + (hex.minority ? `<span class="tt-m">Minority area</span>` : '')
         + (hex.district > 0 ? `<span>District ${hex.district}</span>` : '');
 
-    const container = document.getElementById('map-container');
-    const rect = container.getBoundingClientRect();
-    tooltip.style.left = `${e.clientX - rect.left + 12}px`;
-    tooltip.style.top = `${e.clientY - rect.top - 10}px`;
-    tooltip.classList.add('visible');
+    const rect = $.mapContainer.getBoundingClientRect();
+    $.tooltip.style.left = `${e.clientX - rect.left + 12}px`;
+    $.tooltip.style.top = `${e.clientY - rect.top - 10}px`;
+    $.tooltip.classList.add('visible');
 }
 
 // ─── Rendering ───
-function getPartyColor(party, isMuted) {
-    return activeColors[party][isMuted ? 'muted' : 'base'];
+function getPartyColor(party) {
+    return activeColors[party].base;
 }
 
 let _cachedMinOpacity = 0.22;
@@ -855,53 +924,51 @@ function refreshMinOpacity() {
 }
 
 function hexOpacity(population) {
-    const min = _cachedMinOpacity;
-    return Math.max(min, Math.min(1.0, min + (1 - min) * (population / state.maxPop)));
+    return Math.max(_cachedMinOpacity, Math.min(1.0, _cachedMinOpacity + (1 - _cachedMinOpacity) * (population / state.maxPop)));
 }
 
 function updateHexVisuals(qr) {
     const hex = state.hexes.get(qr);
-    const g = document.querySelector(`.hex[data-qr="${qr}"]`);
+    const g = hexElements.get(qr);
     if (g) {
-        g.querySelector('polygon').style.fill = getPartyColor(hex.partyWinner, false);
+        g.querySelector('polygon').style.fill = getPartyColor(hex.partyWinner);
         g.style.opacity = hexOpacity(hex.population);
     }
 }
 
 function renderMap() {
-    const hexGroup = document.getElementById('hex-group');
-    const minorityGroup = document.getElementById('minority-group');
-    hexGroup.innerHTML = '';
-    minorityGroup.innerHTML = '';
+    $.hexGroup.innerHTML = '';
+    $.minorityGroup.innerHTML = '';
+    hexElements.clear();
 
     let minX = Infinity, maxX = -Infinity, minY = Infinity, maxY = -Infinity;
+    const mapCenterX = CONFIG.cols / 2;
+    const mapCenterY = CONFIG.rows / 2;
 
     state.hexes.forEach(hex => {
         const center = hexToPixel(hex.q, hex.r);
-        minX = Math.min(minX, center.x); maxX = Math.max(maxX, center.x);
-        minY = Math.min(minY, center.y); maxY = Math.max(maxY, center.y);
+        if (center.x < minX) minX = center.x;
+        if (center.x > maxX) maxX = center.x;
+        if (center.y < minY) minY = center.y;
+        if (center.y > maxY) maxY = center.y;
 
+        const qr = `${hex.q},${hex.r}`;
         const g = document.createElementNS("http://www.w3.org/2000/svg", "g");
         g.classList.add('hex');
-        g.dataset.qr = `${hex.q},${hex.r}`;
+        g.dataset.qr = qr;
         g.style.opacity = hexOpacity(hex.population);
 
         const poly = document.createElementNS("http://www.w3.org/2000/svg", "polygon");
         poly.setAttribute("points", cornersToString(hexCorners(center, CONFIG.hexSize)));
-        poly.style.fill = getPartyColor(hex.partyWinner, false);
+        poly.style.fill = getPartyColor(hex.partyWinner);
 
-        // Staggered radial pop-in from center
-        const mapCenterX = CONFIG.cols / 2;
-        const mapCenterY = CONFIG.rows / 2;
-        const dist = Math.sqrt(Math.pow(hex.q + hex.r / 2 - mapCenterX, 2) + Math.pow(hex.r - mapCenterY, 2));
-        const delay = dist * 0.04 + Math.random() * 0.03;
-        poly.style.animationDelay = `${delay}s`;
+        // Staggered radial pop-in
+        const dist = Math.sqrt((hex.q + hex.r / 2 - mapCenterX) ** 2 + (hex.r - mapCenterY) ** 2);
+        poly.style.animationDelay = `${dist * 0.04 + Math.random() * 0.03}s`;
 
         g.appendChild(poly);
-
-        g.addEventListener('mousemove', (e) => handleHover(e, `${hex.q},${hex.r}`));
-        g.addEventListener('mousedown', (e) => handleHover(e, `${hex.q},${hex.r}`));
-        hexGroup.appendChild(g);
+        $.hexGroup.appendChild(g);
+        hexElements.set(qr, g);
 
         if (hex.minority) {
             const circle = document.createElementNS("http://www.w3.org/2000/svg", "circle");
@@ -909,54 +976,47 @@ function renderMap() {
             circle.setAttribute("cy", center.y);
             circle.setAttribute("r", CONFIG.hexSize * 0.25);
             circle.classList.add('minority-marker');
-            circle.style.animationDelay = `${delay + 0.15}s`;
-            minorityGroup.appendChild(circle);
+            circle.style.animationDelay = `${dist * 0.04 + Math.random() * 0.03 + 0.15}s`;
+            $.minorityGroup.appendChild(circle);
         }
     });
 
-    const svg = document.getElementById('hex-map');
     const padding = CONFIG.hexSize * 2;
     const w = maxX - minX + padding * 2;
     const h = maxY - minY + padding * 2;
     const vb = { x: minX - padding, y: minY - padding, w, h };
     state.viewBox = { ...vb };
     state.origViewBox = { ...vb };
-    svg.setAttribute('viewBox', `${vb.x} ${vb.y} ${vb.w} ${vb.h}`);
+    $.svg.setAttribute('viewBox', `${vb.x} ${vb.y} ${vb.w} ${vb.h}`);
 
     renderBorders();
 }
 
 function renderBorders() {
-    const borderGroup = document.getElementById('border-group');
-    borderGroup.innerHTML = '';
-
-    const directions = [
-        { dq: 1, dr: 0 }, { dq: 0, dr: 1 }, { dq: -1, dr: 1 },
-        { dq: -1, dr: 0 }, { dq: 0, dr: -1 }, { dq: 1, dr: -1 }
-    ];
+    $.borderGroup.innerHTML = '';
+    $.defs.innerHTML = '';
 
     const districtGroups = {};
-    const districtPaths = {};
+    const districtSegments = {};
     for (let i = 1; i <= CONFIG.numDistricts; i++) {
-        const g = document.createElementNS("http://www.w3.org/2000/svg", "g");
-        g.dataset.districtId = i;
-        districtGroups[i] = g;
-        districtPaths[i] = [];
+        districtGroups[i] = document.createElementNS("http://www.w3.org/2000/svg", "g");
+        districtGroups[i].dataset.districtId = i;
+        districtSegments[i] = [];
     }
 
+    // Collect boundary segments
     state.hexes.forEach(hex => {
         if (hex.district === 0) return;
         const center = hexToPixel(hex.q, hex.r);
         const corners = hexCorners(center, CONFIG.hexSize);
         for (let i = 0; i < 6; i++) {
-            const nQ = hex.q + directions[i].dq;
-            const nR = hex.r + directions[i].dr;
-            const neighbor = state.hexes.get(`${nQ},${nR}`);
+            const dir = HEX_DIRS[i];
+            const neighbor = state.hexes.get(`${hex.q + dir.dq},${hex.r + dir.dr}`);
             if (!neighbor || neighbor.district !== hex.district) {
-                const inset = 0;
-                const c1 = { x: corners[i].x + (center.x - corners[i].x) * inset, y: corners[i].y + (center.y - corners[i].y) * inset };
-                const c2 = { x: corners[(i + 1) % 6].x + (center.x - corners[(i + 1) % 6].x) * inset, y: corners[(i + 1) % 6].y + (center.y - corners[(i + 1) % 6].y) * inset };
-                districtPaths[hex.district].push({ c1, c2 });
+                districtSegments[hex.district].push({
+                    c1: corners[i],
+                    c2: corners[(i + 1) % 6]
+                });
             }
         }
     });
@@ -964,14 +1024,15 @@ function renderBorders() {
     const fmt = n => n.toFixed(2);
 
     for (let i = 1; i <= CONFIG.numDistricts; i++) {
-        const segments = districtPaths[i];
+        const segments = districtSegments[i];
         if (segments.length === 0) continue;
 
+        // Chain segments into continuous paths
         let dAttr = '';
-        let unvisited = [...segments];
+        const unvisited = [...segments];
         while (unvisited.length > 0) {
-            let currentPath = [];
-            let startSeg = unvisited.pop();
+            const currentPath = [];
+            const startSeg = unvisited.pop();
             currentPath.push(startSeg.c1, startSeg.c2);
 
             let added = true;
@@ -981,94 +1042,73 @@ function renderBorders() {
                 const firstPt = currentPath[0];
                 for (let j = 0; j < unvisited.length; j++) {
                     const s = unvisited[j];
-                    const isClose = (p1, p2) => Math.abs(p1.x - p2.x) < 0.1 && Math.abs(p1.y - p2.y) < 0.1;
+                    const close = (p1, p2) => Math.abs(p1.x - p2.x) < 0.1 && Math.abs(p1.y - p2.y) < 0.1;
 
-                    if (isClose(s.c1, lastPt)) {
+                    if (close(s.c1, lastPt)) {
                         currentPath.push(s.c2);
-                        unvisited.splice(j, 1);
-                        added = true; break;
-                    } else if (isClose(s.c2, lastPt)) {
+                    } else if (close(s.c2, lastPt)) {
                         currentPath.push(s.c1);
-                        unvisited.splice(j, 1);
-                        added = true; break;
-                    } else if (isClose(s.c2, firstPt)) {
+                    } else if (close(s.c2, firstPt)) {
                         currentPath.unshift(s.c1);
-                        unvisited.splice(j, 1);
-                        added = true; break;
-                    } else if (isClose(s.c1, firstPt)) {
+                    } else if (close(s.c1, firstPt)) {
                         currentPath.unshift(s.c2);
-                        unvisited.splice(j, 1);
-                        added = true; break;
+                    } else {
+                        continue;
                     }
+                    unvisited.splice(j, 1);
+                    added = true;
+                    break;
                 }
             }
 
-            const isClosed = Math.abs(currentPath[0].x - currentPath[currentPath.length - 1].x) < 0.1 &&
-                Math.abs(currentPath[0].y - currentPath[currentPath.length - 1].y) < 0.1;
+            const isClosed = currentPath.length > 2
+                && Math.abs(currentPath[0].x - currentPath[currentPath.length - 1].x) < 0.1
+                && Math.abs(currentPath[0].y - currentPath[currentPath.length - 1].y) < 0.1;
 
-            if (isClosed && currentPath.length > 2) {
-                currentPath.pop();
-                dAttr += `M ${fmt(currentPath[0].x)},${fmt(currentPath[0].y)} `;
-                for (let k = 1; k < currentPath.length; k++) {
-                    dAttr += `L ${fmt(currentPath[k].x)},${fmt(currentPath[k].y)} `;
-                }
-                dAttr += 'Z ';
-            } else {
-                dAttr += `M ${fmt(currentPath[0].x)},${fmt(currentPath[0].y)} `;
-                for (let k = 1; k < currentPath.length; k++) {
-                    dAttr += `L ${fmt(currentPath[k].x)},${fmt(currentPath[k].y)} `;
-                }
+            if (isClosed) currentPath.pop();
+
+            dAttr += `M ${fmt(currentPath[0].x)},${fmt(currentPath[0].y)} `;
+            for (let k = 1; k < currentPath.length; k++) {
+                dAttr += `L ${fmt(currentPath[k].x)},${fmt(currentPath[k].y)} `;
             }
+            if (isClosed) dAttr += 'Z ';
         }
 
         const dAttrTrimmed = dAttr.trim();
 
-        let defs = document.getElementById('map-defs');
-        if (!defs) {
-            const svg = document.getElementById('hex-map');
-            defs = document.createElementNS("http://www.w3.org/2000/svg", "defs");
-            defs.id = 'map-defs';
-            svg.insertBefore(defs, svg.firstChild);
-        }
+        // Build clip path from district hex polygons
+        const clip = document.createElementNS("http://www.w3.org/2000/svg", "clipPath");
+        clip.id = `clip-d-${i}`;
 
-        let clip = document.getElementById(`clip-d-${i}`);
-        if (!clip) {
-            clip = document.createElementNS("http://www.w3.org/2000/svg", "clipPath");
-            clip.id = `clip-d-${i}`;
-            defs.appendChild(clip);
-        }
-
-        // Build a perfect mask using the district's hex polygons
-        let clipHTML = '';
+        let clipD = '';
         state.districts[i].hexes.forEach(hex => {
             const center = hexToPixel(hex.q, hex.r);
             const corners = hexCorners(center, CONFIG.hexSize);
-            let hexPath = `M ${fmt(corners[0].x)},${fmt(corners[0].y)} `;
-            for (let c = 1; c < 6; c++) hexPath += `L ${fmt(corners[c].x)},${fmt(corners[c].y)} `;
-            hexPath += 'Z';
-            clipHTML += `<path d="${hexPath}"></path>`;
+            clipD += `M ${fmt(corners[0].x)},${fmt(corners[0].y)} `;
+            for (let c = 1; c < 6; c++) clipD += `L ${fmt(corners[c].x)},${fmt(corners[c].y)} `;
+            clipD += 'Z ';
         });
-        clip.innerHTML = clipHTML;
 
+        if (clipD) {
+            const clipPath = document.createElementNS("http://www.w3.org/2000/svg", "path");
+            clipPath.setAttribute("d", clipD.trim());
+            clip.appendChild(clipPath);
+        }
+        $.defs.appendChild(clip);
+
+        // Draw border path
         const d = state.districts[i];
-        let winner = d && d.winner !== 'none' ? d.winner : 'none';
-        const isMM = d && d.isMinorityMajority;
+        const winner = d?.winner !== 'none' ? d.winner : 'none';
 
-        // Draw the thick MAIN party color stroke FIRST
         const path = document.createElementNS("http://www.w3.org/2000/svg", "path");
         path.setAttribute("d", dAttrTrimmed);
         path.setAttribute("clip-path", `url(#clip-d-${i})`);
-
-        if (winner === 'red') path.style.stroke = activeColors.red.dark;
-        else if (winner === 'blue') path.style.stroke = activeColors.blue.dark;
-        else if (winner === 'yellow') path.style.stroke = activeColors.yellow.dark;
-        else path.style.stroke = activeColors.none.dark;
-
+        path.style.stroke = activeColors[winner]?.dark || activeColors.none.dark;
         path.classList.add('district-path', 'outline');
         districtGroups[i].appendChild(path);
 
-        // Draw the thin GREEN overlay SECOND (it will sit on top, right on the boundary edge)
-        if (isMM) {
+        // Minority-majority overlay
+        if (d?.isMinorityMajority) {
             const mmPath = document.createElementNS("http://www.w3.org/2000/svg", "path");
             mmPath.setAttribute("d", dAttrTrimmed);
             mmPath.setAttribute("clip-path", `url(#clip-d-${i})`);
@@ -1077,21 +1117,26 @@ function renderBorders() {
         }
     }
 
+    // Append groups (current district last for z-order)
     for (let i = 1; i <= CONFIG.numDistricts; i++) {
-        if (i !== state.currentDistrict && districtGroups[i]) {
-            borderGroup.appendChild(districtGroups[i]);
+        if (i !== state.currentDistrict) {
+            $.borderGroup.appendChild(districtGroups[i]);
         }
     }
     if (districtGroups[state.currentDistrict]) {
         districtGroups[state.currentDistrict].classList.add('active-district-group');
-        borderGroup.appendChild(districtGroups[state.currentDistrict]);
+        $.borderGroup.appendChild(districtGroups[state.currentDistrict]);
     }
 }
 
 // ─── Metrics ───
 function calculateMetrics() {
     for (let i = 1; i <= CONFIG.numDistricts; i++) {
-        state.districts[i] = { id: i, population: 0, votes: { red: 0, blue: 0, yellow: 0 }, hexes: [], minorityPop: 0, isContiguous: false, compactness: 0, winner: 'none', isMinorityMajority: false };
+        state.districts[i] = {
+            id: i, population: 0, votes: { red: 0, blue: 0, yellow: 0 },
+            hexes: [], minorityPop: 0, isContiguous: false, compactness: 0,
+            winner: 'none', isMinorityMajority: false
+        };
     }
     state.hexes.forEach(hex => {
         const d = state.districts[hex.district];
@@ -1107,10 +1152,9 @@ function calculateMetrics() {
     for (let i = 1; i <= CONFIG.numDistricts; i++) {
         const d = state.districts[i];
         if (d.population > 0) {
-            let max = Math.max(d.votes.red, d.votes.blue, d.votes.yellow);
-            if (max === d.votes.red) d.winner = 'red';
-            else if (max === d.votes.blue) d.winner = 'blue';
-            else d.winner = 'yellow';
+            const { red, blue, yellow } = d.votes;
+            const max = Math.max(red, blue, yellow);
+            d.winner = max === red ? 'red' : max === blue ? 'blue' : 'yellow';
             d.isMinorityMajority = (d.minorityPop / d.population) > 0.5;
             d.isContiguous = checkContiguity(d);
             d.compactness = calculateCompactness(d);
@@ -1120,16 +1164,14 @@ function calculateMetrics() {
 
 function checkContiguity(d) {
     if (d.hexes.length === 0) return true;
-    let visited = new Set();
-    let queue = [d.hexes[0]];
-    visited.add(d.hexes[0].id);
-    const dirs = [{ dq: 1, dr: 0 }, { dq: 0, dr: 1 }, { dq: -1, dr: 1 }, { dq: -1, dr: 0 }, { dq: 0, dr: -1 }, { dq: 1, dr: -1 }];
+    const visited = new Set([d.hexes[0].id]);
+    const queue = [d.hexes[0]];
     let count = 0;
     while (queue.length > 0) {
-        let curr = queue.shift();
+        const curr = queue.shift();
         count++;
-        for (let i = 0; i < 6; i++) {
-            let neighbor = state.hexes.get(`${curr.q + dirs[i].dq},${curr.r + dirs[i].dr}`);
+        for (const dir of HEX_DIRS) {
+            const neighbor = state.hexes.get(`${curr.q + dir.dq},${curr.r + dir.dr}`);
             if (neighbor && neighbor.district === d.id && !visited.has(neighbor.id)) {
                 visited.add(neighbor.id);
                 queue.push(neighbor);
@@ -1142,20 +1184,18 @@ function checkContiguity(d) {
 function calculateCompactness(d) {
     if (d.hexes.length === 0) return 0;
     let perimeter = 0;
-    const dirs = [{ dq: 1, dr: 0 }, { dq: 0, dr: 1 }, { dq: -1, dr: 1 }, { dq: -1, dr: 0 }, { dq: 0, dr: -1 }, { dq: 1, dr: -1 }];
-    d.hexes.forEach(hex => {
-        for (let i = 0; i < 6; i++) {
-            let neighbor = state.hexes.get(`${hex.q + dirs[i].dq},${hex.r + dirs[i].dr}`);
+    for (const hex of d.hexes) {
+        for (const dir of HEX_DIRS) {
+            const neighbor = state.hexes.get(`${hex.q + dir.dq},${hex.r + dir.dr}`);
             if (!neighbor || neighbor.district !== d.id) perimeter++;
         }
-    });
+    }
     if (perimeter === 0) return 100;
     return Math.min(100, Math.round((32.648 * d.hexes.length) / (perimeter * perimeter) * 100));
 }
 
 // ─── Efficiency Gap ───
 function calculateEfficiencyGap() {
-    // Calculate for Red vs Blue (the two major parties)
     let wastedRed = 0, wastedBlue = 0, totalVotes = 0;
     let numActiveDistricts = 0;
 
@@ -1164,27 +1204,24 @@ function calculateEfficiencyGap() {
         if (d.population === 0) continue;
         numActiveDistricts++;
 
-        const redV = d.votes.red;
-        const blueV = d.votes.blue;
-        const districtTotal = redV + blueV; // Only count 2-party votes
+        const { red: redV, blue: blueV } = d.votes;
+        const districtTotal = redV + blueV;
         if (districtTotal === 0) continue;
 
         totalVotes += districtTotal;
         const threshold = Math.floor(districtTotal / 2) + 1;
 
         if (redV > blueV) {
-            // Red wins
-            wastedRed += redV - threshold; // surplus
-            wastedBlue += blueV; // all blue votes wasted
+            wastedRed += redV - threshold;
+            wastedBlue += blueV;
         } else {
-            // Blue wins
             wastedBlue += blueV - threshold;
             wastedRed += redV;
         }
     }
 
     if (totalVotes === 0 || numActiveDistricts < 2) return null;
-    return (wastedRed - wastedBlue) / totalVotes; // positive = favors Blue, negative = favors Red
+    return (wastedRed - wastedBlue) / totalVotes;
 }
 
 // ─── Update UI ───
@@ -1195,7 +1232,6 @@ function updateMetrics() {
     let seats = { red: 0, blue: 0, yellow: 0 };
     let mmdCount = 0;
     let activeDistrictCount = 0;
-    let unassignedCount = 0;
 
     for (let i = 1; i <= CONFIG.numDistricts; i++) {
         const d = state.districts[i];
@@ -1206,35 +1242,33 @@ function updateMetrics() {
         }
     }
 
-    state.hexes.forEach(hex => { if (hex.district === 0) unassignedCount++; });
-
-    animateValue(document.getElementById('red-seats'), seats.red, 600, v => Math.round(v) + (Math.round(v) === 1 ? ' Seat' : ' Seats'), 'seats-red');
-    animateValue(document.getElementById('blue-seats'), seats.blue, 600, v => Math.round(v) + (Math.round(v) === 1 ? ' Seat' : ' Seats'), 'seats-blue');
-    animateValue(document.getElementById('yellow-seats'), seats.yellow, 600, v => Math.round(v) + (Math.round(v) === 1 ? ' Seat' : ' Seats'), 'seats-yellow');
-    document.getElementById('mmd-count').innerText = `${mmdCount} / 2 min`;
-    document.getElementById('district-count').innerText = `${activeDistrictCount} / ${CONFIG.numDistricts}`;
+    animateValue($.redSeats, seats.red, 600, v => Math.round(v), 'seats-red');
+    animateValue($.blueSeats, seats.blue, 600, v => Math.round(v), 'seats-blue');
+    animateValue($.yellowSeats, seats.yellow, 600, v => Math.round(v), 'seats-yellow');
+    if ($.mmdCount) $.mmdCount.textContent = `${mmdCount} / 2 min`;
+    if ($.districtCount) $.districtCount.textContent = `${activeDistrictCount} / ${CONFIG.numDistricts}`;
 
     // Efficiency Gap
     const eg = calculateEfficiencyGap();
-    const egEl = document.getElementById('efficiency-gap');
-    if (eg !== null) {
-        const pct = (eg * 100).toFixed(1);
-        const direction = eg > 0 ? '→ Blue' : '→ Red';
-        egEl.innerText = `${Math.abs(pct)}% ${direction}`;
-        egEl.style.color = Math.abs(eg) > 0.07 ? 'var(--party-red)' : 'var(--text-primary)';
-    } else {
-        egEl.innerText = '—';
-        egEl.style.color = 'var(--text-secondary)';
+    if ($.efficiencyGap) {
+        if (eg !== null) {
+            const pct = (eg * 100).toFixed(1);
+            $.efficiencyGap.textContent = `${Math.abs(pct)}% ${eg > 0 ? '→ Blue' : '→ Red'}`;
+            $.efficiencyGap.style.color = Math.abs(eg) > 0.07 ? 'var(--party-red)' : 'var(--text-primary)';
+        } else {
+            $.efficiencyGap.textContent = '—';
+            $.efficiencyGap.style.color = 'var(--text-secondary)';
+        }
     }
 
     updateSidebarDetails(state.currentDistrict);
     updateProportionality(seats);
     renderDistrictLabels();
+    updateDistrictPalette();
 }
 
 // ─── Popular Vote vs Seats ───
 function updateProportionality(seats) {
-    // Calculate total popular vote across all hexes in assigned districts
     let totalVotes = { red: 0, blue: 0, yellow: 0 };
     let totalSeats = (seats.red || 0) + (seats.blue || 0) + (seats.yellow || 0);
 
@@ -1248,39 +1282,34 @@ function updateProportionality(seats) {
 
     const grandTotal = totalVotes.red + totalVotes.blue + totalVotes.yellow;
 
-    ['red', 'blue', 'yellow'].forEach(party => {
+    for (const party of ['red', 'blue', 'yellow']) {
+        const p = $.prop[party];
+        if (!p) continue;
         const votePct = grandTotal > 0 ? (totalVotes[party] / grandTotal) * 100 : 0;
         const seatPct = totalSeats > 0 ? ((seats[party] || 0) / totalSeats) * 100 : 0;
 
-        const voteBar = document.getElementById(`prop-${party}-votes`);
-        const seatBar = document.getElementById(`prop-${party}-seats`);
-        const voteLbl = document.getElementById(`prop-${party}-vote-pct`);
-        const seatLbl = document.getElementById(`prop-${party}-seat-pct`);
-
-        if (voteBar) voteBar.style.width = `${votePct}%`;
-        if (seatBar) seatBar.style.width = `${seatPct}%`;
-        if (voteLbl) voteLbl.innerText = grandTotal > 0 ? `${Math.round(votePct)}% votes` : '—';
-        if (seatLbl) seatLbl.innerText = totalSeats > 0 ? `${Math.round(seatPct)}% seats` : '—';
-    });
+        if (p.votes) p.votes.style.width = `${votePct}%`;
+        if (p.seats) p.seats.style.width = `${seatPct}%`;
+        if (p.votePct) p.votePct.textContent = grandTotal > 0 ? `${Math.round(votePct)}% votes` : '—';
+        if (p.seatPct) p.seatPct.textContent = totalSeats > 0 ? `${Math.round(seatPct)}% seats` : '—';
+    }
 }
 
-// ─── District Number Labels ───
+// ─── District Labels ───
 function renderDistrictLabels() {
-    const labelGroup = document.getElementById('label-group');
-    if (!labelGroup) return;
-    labelGroup.innerHTML = '';
+    if (!$.labelGroup) return;
+    $.labelGroup.innerHTML = '';
 
     for (let i = 1; i <= CONFIG.numDistricts; i++) {
         const d = state.districts[i];
         if (!d || d.hexes.length === 0) continue;
 
-        // Calculate centroid
         let cx = 0, cy = 0;
-        d.hexes.forEach(hex => {
+        for (const hex of d.hexes) {
             const p = hexToPixel(hex.q, hex.r);
             cx += p.x;
             cy += p.y;
-        });
+        }
         cx /= d.hexes.length;
         cy /= d.hexes.length;
 
@@ -1289,89 +1318,81 @@ function renderDistrictLabels() {
         text.setAttribute("y", cy);
         text.classList.add('district-label');
         text.textContent = i;
-        labelGroup.appendChild(text);
+        $.labelGroup.appendChild(text);
     }
 }
 
 function updateSidebarDetails(dId) {
     const d = state.districts[dId];
     if (!d || d.population === 0) {
-        document.getElementById('selected-district-info').classList.add('hidden');
-        document.getElementById('no-selection-msg').classList.remove('hidden');
+        $.selectedInfo?.classList.add('hidden');
+        $.noSelectionMsg?.classList.remove('hidden');
         return;
     }
 
-    document.getElementById('selected-district-info').classList.remove('hidden');
-    document.getElementById('no-selection-msg').classList.add('hidden');
+    $.selectedInfo?.classList.remove('hidden');
+    $.noSelectionMsg?.classList.add('hidden');
 
-    document.getElementById('detail-title').innerText = `District ${d.id}`;
-
-    if (state.targetPop > 0 && d.population > 0) {
-        const dev = Math.abs((d.population - state.targetPop) / state.targetPop);
-        if (dev > 0.1 || !d.isContiguous) {
-            document.getElementById('detail-title').style.color = 'var(--party-red)';
-        } else {
-            document.getElementById('detail-title').style.color = 'inherit';
+    if ($.detailTitle) {
+        $.detailTitle.textContent = `District ${d.id}`;
+        if (state.targetPop > 0) {
+            const dev = Math.abs((d.population - state.targetPop) / state.targetPop);
+            $.detailTitle.style.color = (dev > 0.1 || !d.isContiguous) ? 'var(--party-red)' : 'inherit';
         }
     }
 
-    const wSpan = document.getElementById('detail-winner');
-    wSpan.innerText = d.winner.charAt(0).toUpperCase() + d.winner.slice(1);
-    wSpan.style.color = d.winner !== 'none' ? activeColors[d.winner].base : 'var(--text-secondary)';
+    if ($.detailWinner) {
+        $.detailWinner.textContent = d.winner.charAt(0).toUpperCase() + d.winner.slice(1);
+        $.detailWinner.style.color = d.winner !== 'none' ? activeColors[d.winner].base : 'var(--text-secondary)';
+    }
 
     const totalVotes = d.votes.red + d.votes.blue + d.votes.yellow;
     if (totalVotes > 0) {
-        let votesArr = [d.votes.red, d.votes.blue, d.votes.yellow].sort((a, b) => b - a);
-        const margin = ((votesArr[0] - votesArr[1]) / totalVotes * 100);
-        animateValue(document.getElementById('detail-margin'), margin, 600, v => `+${v.toFixed(1)}%`, 'detail-margin');
-    } else {
-        document.getElementById('detail-margin').innerText = '-';
+        const sorted = [d.votes.red, d.votes.blue, d.votes.yellow].sort((a, b) => b - a);
+        const margin = (sorted[0] - sorted[1]) / totalVotes * 100;
+        animateValue($.detailMargin, margin, 600, v => `+${v.toFixed(1)}%`, 'detail-margin');
+    } else if ($.detailMargin) {
+        $.detailMargin.textContent = '-';
     }
 
-    animateValue(document.getElementById('detail-pop'), d.population, 600, v => Math.round(v).toLocaleString(), 'detail-pop');
-    document.getElementById('target-pop').innerText = state.targetPop.toLocaleString();
+    animateValue($.detailPop, d.population, 600, v => Math.round(v).toLocaleString(), 'detail-pop');
+    if ($.targetPop) $.targetPop.textContent = state.targetPop.toLocaleString();
 
-    if (state.targetPop > 0) {
-        let dev = ((d.population - state.targetPop) / state.targetPop) * 100;
-        let devEl = document.getElementById('detail-deviation');
-        animateValue(devEl, dev, 600, v => `${v > 0 ? '+' : ''}${v.toFixed(1)}%`, 'detail-dev');
-        devEl.style.color = Math.abs(dev) > 10 ? 'var(--party-red)' : 'var(--text-secondary)';
+    if (state.targetPop > 0 && $.detailDeviation) {
+        const dev = ((d.population - state.targetPop) / state.targetPop) * 100;
+        animateValue($.detailDeviation, dev, 600, v => `${v > 0 ? '+' : ''}${v.toFixed(1)}%`, 'detail-dev');
+        $.detailDeviation.style.color = Math.abs(dev) > 10 ? 'var(--party-red)' : 'var(--text-secondary)';
     }
 
-    animateValue(document.getElementById('detail-compactness'), d.compactness, 600, v => `${Math.round(v)}%`, 'detail-comp');
+    animateValue($.detailCompactness, d.compactness, 600, v => `${Math.round(v)}%`, 'detail-comp');
 
-    const cont = document.getElementById('detail-contiguous');
-    cont.innerText = d.isContiguous ? 'Yes' : 'No';
-    cont.style.color = d.isContiguous ? 'var(--party-green)' : 'var(--party-red)';
+    if ($.detailContiguous) {
+        $.detailContiguous.textContent = d.isContiguous ? 'Yes' : 'No';
+        $.detailContiguous.style.color = d.isContiguous ? 'var(--party-green)' : 'var(--party-red)';
+    }
 
-    const mmEl = document.getElementById('detail-mm');
-    if (mmEl) {
-        mmEl.innerText = d.isMinorityMajority ? 'Yes' : 'No';
-        mmEl.style.color = d.isMinorityMajority ? 'var(--party-green)' : 'var(--text-secondary)';
+    if ($.detailMm) {
+        $.detailMm.textContent = d.isMinorityMajority ? 'Yes' : 'No';
+        $.detailMm.style.color = d.isMinorityMajority ? 'var(--party-green)' : 'var(--text-secondary)';
     }
 
     if (totalVotes > 0) {
         const pR = (d.votes.red / totalVotes) * 100;
         const pB = (d.votes.blue / totalVotes) * 100;
         const pY = (d.votes.yellow / totalVotes) * 100;
-        document.getElementById('vote-bar-red').style.width = `${pR}%`;
-        document.getElementById('vote-bar-blue').style.width = `${pB}%`;
-        document.getElementById('vote-bar-yellow').style.width = `${pY}%`;
-        document.getElementById('vote-pct-red').innerText = `${Math.round(pR)}% Red`;
-        document.getElementById('vote-pct-blue').innerText = `${Math.round(pB)}% Blue`;
-        document.getElementById('vote-pct-yellow').innerText = `${Math.round(pY)}% Yell`;
+        if ($.voteBarRed) $.voteBarRed.style.width = `${pR}%`;
+        if ($.voteBarBlue) $.voteBarBlue.style.width = `${pB}%`;
+        if ($.voteBarYellow) $.voteBarYellow.style.width = `${pY}%`;
+        if ($.votePctRed) $.votePctRed.textContent = `${Math.round(pR)}% Red`;
+        if ($.votePctBlue) $.votePctBlue.textContent = `${Math.round(pB)}% Blue`;
+        if ($.votePctYellow) $.votePctYellow.textContent = `${Math.round(pY)}% Yell`;
     }
 }
 
 // ─── Theme Management ───
 function initTheme() {
     const saved = localStorage.getItem('gerry-theme');
-    if (saved) {
-        document.documentElement.dataset.theme = saved;
-    } else {
-        const prefersDark = window.matchMedia('(prefers-color-scheme: dark)').matches;
-        document.documentElement.dataset.theme = prefersDark ? 'dark' : 'light';
-    }
+    document.documentElement.dataset.theme = saved || 'light';
     syncTheme();
 
     window.matchMedia('(prefers-color-scheme: dark)').addEventListener('change', (e) => {
@@ -1395,81 +1416,39 @@ function toggleTheme() {
     document.documentElement.dataset.theme = next;
     localStorage.setItem('gerry-theme', next);
     syncTheme();
-    // Re-render all hex visuals and borders for the new palette
-    state.hexes.forEach((hex, qr) => updateHexVisuals(qr));
+    state.hexes.forEach((_, qr) => updateHexVisuals(qr));
     renderBorders();
 }
 
 function updateThemeIcon() {
-    const btn = document.getElementById('theme-btn');
-    if (!btn) return;
+    if (!$.themeBtn) return;
     const isDark = document.documentElement.dataset.theme === 'dark';
-    const sun = btn.querySelector('.icon-sun');
-    const moon = btn.querySelector('.icon-moon');
+    const sun = $.themeBtn.querySelector('.icon-sun');
+    const moon = $.themeBtn.querySelector('.icon-moon');
     if (sun) sun.style.display = isDark ? 'block' : 'none';
     if (moon) moon.style.display = isDark ? 'none' : 'block';
 }
 
-// ─── Sidebar Resize ───
-function initSidebarResize() {
-    const handle = document.getElementById('sidebar-resize-handle');
-    const sidebar = document.getElementById('sidebar');
-    if (!handle || !sidebar) return;
-
-    let isResizing = false;
-    let startX, startWidth;
-
-    handle.addEventListener('mousedown', (e) => {
-        e.preventDefault();
-        isResizing = true;
-        startX = e.clientX;
-        startWidth = sidebar.offsetWidth;
-        handle.classList.add('active');
-        document.body.style.cursor = 'col-resize';
-        document.body.style.userSelect = 'none';
-        sidebar.style.transition = 'none';
-    });
-
-    document.addEventListener('mousemove', (e) => {
-        if (!isResizing) return;
-        const dx = startX - e.clientX;
-        const newWidth = Math.max(300, Math.min(560, startWidth + dx));
-        sidebar.style.width = `${newWidth}px`;
-    });
-
-    document.addEventListener('mouseup', () => {
-        if (!isResizing) return;
-        isResizing = false;
-        handle.classList.remove('active');
-        document.body.style.cursor = '';
-        document.body.style.userSelect = '';
-        sidebar.style.transition = '';
-    });
-}
-
-// ─── Touch Handlers (mobile pinch-to-zoom & paint) ───
+// ─── Touch Handlers ───
 function initTouchHandlers() {
-    const svg = document.getElementById('hex-map');
-    const container = document.getElementById('map-container');
-    if (!svg || !container) return;
+    if (!$.svg || !$.mapContainer) return;
 
     let lastPinchDist = 0;
     let lastPinchCenter = null;
     let isTouchPainting = false;
 
-    container.addEventListener('touchstart', (e) => {
+    $.mapContainer.addEventListener('touchstart', (e) => {
         if (e.touches.length === 1) {
             e.preventDefault();
             isTouchPainting = true;
             const touch = e.touches[0];
             const el = document.elementFromPoint(touch.clientX, touch.clientY);
             if (el) {
-                const simEvent = new MouseEvent('mousedown', {
+                el.dispatchEvent(new MouseEvent('mousedown', {
                     clientX: touch.clientX,
                     clientY: touch.clientY,
                     button: state.eraseMode ? 2 : 0
-                });
-                el.dispatchEvent(simEvent);
+                }));
             }
         } else if (e.touches.length === 2) {
             e.preventDefault();
@@ -1484,18 +1463,17 @@ function initTouchHandlers() {
         }
     }, { passive: false });
 
-    container.addEventListener('touchmove', (e) => {
+    $.mapContainer.addEventListener('touchmove', (e) => {
         if (e.touches.length === 1 && isTouchPainting) {
             e.preventDefault();
             const touch = e.touches[0];
             const el = document.elementFromPoint(touch.clientX, touch.clientY);
             if (el) {
-                const simEvent = new MouseEvent('mousemove', {
+                el.dispatchEvent(new MouseEvent('mousemove', {
                     clientX: touch.clientX,
                     clientY: touch.clientY,
                     button: 0
-                });
-                el.dispatchEvent(simEvent);
+                }));
             }
         } else if (e.touches.length === 2) {
             e.preventDefault();
@@ -1509,7 +1487,7 @@ function initTouchHandlers() {
             if (lastPinchDist > 0) {
                 const scale = lastPinchDist / dist;
                 const vb = state.viewBox;
-                const rect = svg.getBoundingClientRect();
+                const rect = $.svg.getBoundingClientRect();
 
                 const mx = (center.x - rect.left) / rect.width;
                 const my = (center.y - rect.top) / rect.height;
@@ -1527,18 +1505,16 @@ function initTouchHandlers() {
                     vb.w = newW;
                     vb.h = newH;
                     state.zoomLevel = state.origViewBox.w / vb.w;
-                    svg.setAttribute('viewBox', `${vb.x} ${vb.y} ${vb.w} ${vb.h}`);
-                    updateZoomDisplay();
                 }
 
                 // Pan with two-finger drag
                 if (lastPinchCenter) {
-                    const dx = (lastPinchCenter.x - center.x) / rect.width * vb.w;
-                    const dy = (lastPinchCenter.y - center.y) / rect.height * vb.h;
-                    vb.x += dx;
-                    vb.y += dy;
-                    svg.setAttribute('viewBox', `${vb.x} ${vb.y} ${vb.w} ${vb.h}`);
+                    vb.x += (lastPinchCenter.x - center.x) / rect.width * vb.w;
+                    vb.y += (lastPinchCenter.y - center.y) / rect.height * vb.h;
                 }
+
+                $.svg.setAttribute('viewBox', `${vb.x} ${vb.y} ${vb.w} ${vb.h}`);
+                updateZoomDisplay();
             }
 
             lastPinchDist = dist;
@@ -1546,7 +1522,7 @@ function initTouchHandlers() {
         }
     }, { passive: false });
 
-    container.addEventListener('touchend', (e) => {
+    $.mapContainer.addEventListener('touchend', (e) => {
         if (e.touches.length === 0) {
             if (isTouchPainting) {
                 isTouchPainting = false;
@@ -1560,7 +1536,7 @@ function initTouchHandlers() {
         }
     });
 
-    container.addEventListener('touchcancel', () => {
+    $.mapContainer.addEventListener('touchcancel', () => {
         isTouchPainting = false;
         lastPinchDist = 0;
         lastPinchCenter = null;
@@ -1568,10 +1544,10 @@ function initTouchHandlers() {
     });
 }
 
-// Initialize
+// ─── Initialize ───
 document.addEventListener('DOMContentLoaded', () => {
+    cacheDOMElements();
     initTheme();
     init();
-    initSidebarResize();
     initTouchHandlers();
 });

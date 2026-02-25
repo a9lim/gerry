@@ -11,7 +11,7 @@
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link
-        href="https://fonts.googleapis.com/css2?family=Geist:wght@400;500;600&family=Geist+Mono:wght@300;400;500;600;700&family=Instrument+Serif:ital@0;1&display=swap"
+        href="https://fonts.googleapis.com/css2?family=Geist:wght@300;400;500;600;700&family=Geist+Mono:wght@300;400;500;600;700&family=Instrument+Serif:ital@0;1&display=swap"
         rel="stylesheet">
 </head>
 
@@ -19,41 +19,121 @@
 
     <!-- ─── Intro Screen ─── -->
     <div id="intro-screen">
+        <div class="intro-bg"></div>
         <div class="intro-content">
-            <h1 class="intro-title">Redistricting Simulator</h1>
+            <span class="intro-overline">Interactive Simulation</span>
+            <h1 class="intro-title">Redistricting<br>Simulator</h1>
             <p class="intro-desc">Explore how district boundaries shape electoral outcomes.<br>
                 Paint, erase, and redraw to see gerrymandering in action.</p>
-            <div class="intro-instructions">
-                <div class="intro-key"><span class="key-icon">◀</span> Left-click to paint districts</div>
-                <div class="intro-key"><span class="key-icon">▶</span> Right-click to erase</div>
-                <div class="intro-key"><span class="key-icon">⊞</span> Scroll to zoom, middle-drag to pan</div>
+            <div class="intro-cards">
+                <div class="intro-card">
+                    <div class="intro-card-icon">
+                        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                            stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                            <path d="M12 19l7-7 3 3-7 7-3-3z" />
+                            <path d="M18 13l-1.5-7.5L2 2l3.5 14.5L13 18l5-5z" />
+                            <path d="M2 2l7.586 7.586" />
+                            <circle cx="11" cy="11" r="2" />
+                        </svg>
+                    </div>
+                    <div class="intro-card-text">
+                        <strong>Paint</strong>
+                        <span>Left-click to assign hexes</span>
+                    </div>
+                </div>
+                <div class="intro-card">
+                    <div class="intro-card-icon">
+                        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                            stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                            <path
+                                d="M20 20H7L3 16c-.8-.8-.8-2 0-2.8L14.6 1.6c.8-.8 2-.8 2.8 0L21 5.2c.8.8.8 2 0 2.8L11 18" />
+                        </svg>
+                    </div>
+                    <div class="intro-card-text">
+                        <strong>Erase</strong>
+                        <span>Right-click to remove</span>
+                    </div>
+                </div>
+                <div class="intro-card">
+                    <div class="intro-card-icon">
+                        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                            stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                            <circle cx="11" cy="11" r="8" />
+                            <line x1="21" y1="21" x2="16.65" y2="16.65" />
+                            <line x1="11" y1="8" x2="11" y2="14" />
+                            <line x1="8" y1="11" x2="14" y2="11" />
+                        </svg>
+                    </div>
+                    <div class="intro-card-text">
+                        <strong>Navigate</strong>
+                        <span>Scroll to zoom, drag to pan</span>
+                    </div>
+                </div>
             </div>
-            <button id="intro-start">Begin</button>
+            <button id="intro-start">Begin Drawing</button>
         </div>
     </div>
 
-    <header>
-        <div class="header-left">
+    <!-- ─── Floating Toolbar ─── -->
+    <header id="toolbar">
+        <div class="toolbar-brand">
             <h1>Redistricting Simulator</h1>
-            <p class="subtitle">Paint districts on the map to explore the impact of borders on electoral outcomes.</p>
         </div>
-        <div class="header-actions">
-            <button id="undo-btn" class="icon-btn" title="Undo (Ctrl+Z)" aria-label="Undo" disabled>
+        <div class="toolbar-actions">
+            <button id="undo-btn" class="tool-btn" title="Undo (Ctrl+Z)" aria-label="Undo" disabled>
                 <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
                     stroke-linecap="round" stroke-linejoin="round">
                     <polyline points="1 4 1 10 7 10"></polyline>
                     <path d="M3.51 15a9 9 0 1 0 2.13-9.36L1 10"></path>
                 </svg>
             </button>
-            <button id="redo-btn" class="icon-btn" title="Redo (Ctrl+Y)" aria-label="Redo" disabled>
+            <button id="redo-btn" class="tool-btn" title="Redo (Ctrl+Y)" aria-label="Redo" disabled>
                 <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
                     stroke-linecap="round" stroke-linejoin="round">
                     <polyline points="23 4 23 10 17 10"></polyline>
                     <path d="M20.49 15a9 9 0 1 1-2.13-9.36L23 10"></path>
                 </svg>
             </button>
-            <div class="btn-sep"></div>
-            <button id="theme-btn" class="icon-btn" title="Toggle theme" aria-label="Toggle light/dark theme">
+            <div class="tool-sep"></div>
+            <button id="erase-btn" class="tool-btn" title="Eraser mode" aria-label="Eraser mode">
+                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
+                    stroke-linecap="round" stroke-linejoin="round">
+                    <path
+                        d="M20 20H7L3 16c-.8-.8-.8-2 0-2.8L14.6 1.6c.8-.8 2-.8 2.8 0L21 5.2c.8.8.8 2 0 2.8L11 18">
+                    </path>
+                    <line x1="6" y1="20" x2="20" y2="20"></line>
+                </svg>
+            </button>
+            <button id="delete-btn" class="tool-btn" title="Delete district" aria-label="Delete district">
+                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
+                    stroke-linecap="round" stroke-linejoin="round">
+                    <polyline points="3 6 5 6 21 6"></polyline>
+                    <path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2">
+                    </path>
+                    <line x1="10" y1="11" x2="10" y2="17"></line>
+                    <line x1="14" y1="11" x2="14" y2="17"></line>
+                </svg>
+            </button>
+            <div class="tool-sep"></div>
+            <button id="randomize-btn" class="tool-btn" title="New map" aria-label="Randomize map">
+                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
+                    stroke-linecap="round" stroke-linejoin="round">
+                    <path d="M16 3h5v5"></path>
+                    <path d="M4 20L21 3"></path>
+                    <path d="M21 16v5h-5"></path>
+                    <path d="M15 15l6 6"></path>
+                    <path d="M4 4l5 5"></path>
+                </svg>
+            </button>
+            <button id="reset-btn" class="tool-btn" title="Reset districts" aria-label="Reset all districts">
+                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
+                    stroke-linecap="round" stroke-linejoin="round">
+                    <path d="M3 12a9 9 0 1 0 9-9 9.75 9.75 0 0 0-6.74 2.74L3 8"></path>
+                    <path d="M3 3v5h5"></path>
+                </svg>
+            </button>
+            <div class="tool-sep hide-sm"></div>
+            <button id="theme-btn" class="tool-btn hide-sm" title="Toggle theme" aria-label="Toggle theme">
                 <svg class="icon-sun" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor"
                     stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
                     <circle cx="12" cy="12" r="5"></circle>
@@ -71,45 +151,18 @@
                     <path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"></path>
                 </svg>
             </button>
-            <button id="erase-btn" class="icon-btn" title="Eraser mode" aria-label="Eraser mode">
+            <button id="stats-toggle" class="tool-btn" title="Toggle analysis" aria-label="Toggle statistics panel">
                 <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
                     stroke-linecap="round" stroke-linejoin="round">
-                    <path d="M20 20H7L3 16c-.8-.8-.8-2 0-2.8L14.6 1.6c.8-.8 2-.8 2.8 0L21 5.2c.8.8.8 2 0 2.8L11 18">
-                    </path>
-                    <line x1="6" y1="20" x2="20" y2="20"></line>
-                </svg>
-            </button>
-            <button id="delete-btn" class="icon-btn" title="Delete district" aria-label="Delete district toggle">
-                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
-                    stroke-linecap="round" stroke-linejoin="round">
-                    <polyline points="3 6 5 6 21 6"></polyline>
-                    <path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2">
-                    </path>
-                    <line x1="10" y1="11" x2="10" y2="17"></line>
-                    <line x1="14" y1="11" x2="14" y2="17"></line>
-                </svg>
-            </button>
-            <div class="btn-sep"></div>
-            <button id="randomize-btn" class="icon-btn" title="Randomize map" aria-label="Randomize map">
-                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
-                    stroke-linecap="round" stroke-linejoin="round">
-                    <path d="M16 3h5v5"></path>
-                    <path d="M4 20L21 3"></path>
-                    <path d="M21 16v5h-5"></path>
-                    <path d="M15 15l6 6"></path>
-                    <path d="M4 4l5 5"></path>
-                </svg>
-            </button>
-            <button id="reset-btn" class="icon-btn" title="Reset all districts" aria-label="Reset all districts">
-                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
-                    stroke-linecap="round" stroke-linejoin="round">
-                    <polyline points="1 4 1 10 7 10"></polyline>
-                    <path d="M3.51 15a9 9 0 1 0 2.13-9.36L1 10"></path>
+                    <line x1="18" y1="20" x2="18" y2="10"></line>
+                    <line x1="12" y1="20" x2="12" y2="4"></line>
+                    <line x1="6" y1="20" x2="6" y2="14"></line>
                 </svg>
             </button>
         </div>
     </header>
 
+    <!-- ─── Full-viewport Map ─── -->
     <main>
         <div id="map-container">
             <svg id="hex-map" xmlns="http://www.w3.org/2000/svg">
@@ -119,8 +172,6 @@
                 <g id="label-group"></g>
             </svg>
             <div id="hex-tooltip" class="hex-tooltip"></div>
-
-            <!-- Floating map controls -->
             <div id="map-controls">
                 <button class="map-ctrl-btn" id="zoom-in-btn" title="Zoom in" aria-label="Zoom in">
                     <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor"
@@ -148,46 +199,63 @@
                 </button>
             </div>
         </div>
+    </main>
 
-        <div id="sidebar-resize-handle" role="separator" aria-orientation="vertical"
-            aria-label="Resize sidebar"></div>
-        <aside id="sidebar">
+    <!-- ─── District Palette (floating bottom bar) ─── -->
+    <div id="district-palette"></div>
+
+    <!-- ─── Stats Panel (floating right) ─── -->
+    <aside id="sidebar">
+        <div class="stats-header">
+            <h2 class="stats-title">Analysis</h2>
+            <button id="close-stats" class="tool-btn" title="Close" aria-label="Close panel">
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"
+                    stroke-linecap="round">
+                    <line x1="18" y1="6" x2="6" y2="18"></line>
+                    <line x1="6" y1="6" x2="18" y2="18"></line>
+                </svg>
+            </button>
+        </div>
+        <div class="stats-scroll">
+            <!-- Statewide Results -->
             <div class="panel">
                 <h2>Statewide Results</h2>
                 <div id="state-results">
-                    <div class="result-row">
-                        <span class="party-label red">Red Party</span>
-                        <span class="seat-count" id="red-seats">0 Seats</span>
+                    <div class="seats-grid">
+                        <div class="seat-block red">
+                            <span class="seat-num" id="red-seats">0</span>
+                            <span class="seat-label">Red</span>
+                        </div>
+                        <div class="seat-block blue">
+                            <span class="seat-num" id="blue-seats">0</span>
+                            <span class="seat-label">Blue</span>
+                        </div>
+                        <div class="seat-block yellow">
+                            <span class="seat-num" id="yellow-seats">0</span>
+                            <span class="seat-label">Yellow</span>
+                        </div>
                     </div>
-                    <div class="result-row">
-                        <span class="party-label blue">Blue Party</span>
-                        <span class="seat-count" id="blue-seats">0 Seats</span>
+                    <div class="stat-row">
+                        <span class="stat-label">Districts Created</span>
+                        <span class="stat-value" id="district-count">0 / 10</span>
                     </div>
-                    <div class="result-row">
-                        <span class="party-label minority">Maj-Minority Districts</span>
-                        <span class="seat-count" id="mmd-count">0 / 2 min</span>
+                    <div class="stat-row">
+                        <span class="stat-label">Maj-Minority Districts</span>
+                        <span class="stat-value" id="mmd-count">0 / 2 min</span>
                     </div>
-                    <div class="result-row">
-                        <span class="party-label yellow">Yellow Party</span>
-                        <span class="seat-count" id="yellow-seats">0 Seats</span>
-                    </div>
-                    <div class="result-row divider-top">
-                        <span class="label">Districts Created</span>
-                        <span class="value" id="district-count">0 / 10</span>
-                    </div>
-                    <div class="result-row divider-top">
-                        <span class="label">Efficiency Gap <span class="info-tip"
+                    <div class="stat-row">
+                        <span class="stat-label">Efficiency Gap <span class="info-tip"
                                 data-tip="Measures wasted votes between Red and Blue. Values above 7% may indicate partisan gerrymandering. Based on the standard used in Gill v. Whitford.">?</span></span>
-                        <span class="value" id="efficiency-gap">—</span>
+                        <span class="stat-value" id="efficiency-gap">—</span>
                     </div>
-                    <p class="instruction" id="eg-note">EG > 7% may indicate gerrymandering</p>
+                    <p class="stat-note" id="eg-note">EG > 7% may indicate gerrymandering</p>
                 </div>
             </div>
 
+            <!-- Popular Vote vs Seats -->
             <div class="panel" id="popular-vote-panel">
                 <h2>Popular Vote vs Seats</h2>
-                <p class="instruction" style="margin-bottom: 0.5rem">When seat share diverges from vote share,
-                    gerrymandering may be at work.</p>
+                <p class="panel-hint">When seat share diverges from vote share, gerrymandering may be at work.</p>
                 <div class="proportionality-row">
                     <span class="prop-label red-text">Red</span>
                     <div class="prop-bars">
@@ -241,42 +309,28 @@
                 </div>
             </div>
 
+            <!-- District Details -->
             <div class="panel">
                 <h2>District Details</h2>
                 <div id="selected-district-info" class="hidden">
                     <h3 id="detail-title">District 1</h3>
-                    <div class="metric">
-                        <span class="label">Winner</span>
-                        <span class="value" id="detail-winner">-</span>
-                    </div>
-                    <div class="metric">
-                        <span class="label">Margin of Victory</span>
-                        <span class="value" id="detail-margin">-</span>
-                    </div>
-                    <div class="metric">
-                        <span class="label">Population</span>
-                        <span class="value" id="detail-pop">0</span>
-                    </div>
+                    <div class="metric"><span class="label">Winner</span><span class="value"
+                            id="detail-winner">-</span></div>
+                    <div class="metric"><span class="label">Margin of Victory</span><span class="value"
+                            id="detail-margin">-</span></div>
+                    <div class="metric"><span class="label">Population</span><span class="value"
+                            id="detail-pop">0</span></div>
                     <div class="metric-note">Target: <span id="target-pop"></span> (<span
-                            id="detail-deviation"></span>)
-                    </div>
-
-                    <div class="metric">
-                        <span class="label">Compactness <span class="info-tip"
-                                data-tip="Polsby-Popper score. Higher values mean a more compact, regular shape. Gerrymandered districts tend to have low compactness.">?</span></span>
-                        <span class="value" id="detail-compactness">0%</span>
-                    </div>
-                    <div class="metric">
-                        <span class="label">Contiguous <span class="info-tip"
-                                data-tip="A district is contiguous if every hex can be reached from every other hex without leaving the district. Non-contiguous districts are generally illegal.">?</span></span>
-                        <span class="value" id="detail-contiguous">Yes</span>
-                    </div>
-                    <div class="metric">
-                        <span class="label">Minority-Majority <span class="info-tip"
-                                data-tip="A district where over 50% of the population is a minority group. The Voting Rights Act may require creating minority-majority districts to ensure fair representation.">?</span></span>
-                        <span class="value" id="detail-mm">No</span>
-                    </div>
-
+                            id="detail-deviation"></span>)</div>
+                    <div class="metric"><span class="label">Compactness <span class="info-tip"
+                                data-tip="Polsby-Popper score. Higher values mean a more compact, regular shape. Gerrymandered districts tend to have low compactness.">?</span></span><span
+                            class="value" id="detail-compactness">0%</span></div>
+                    <div class="metric"><span class="label">Contiguous <span class="info-tip"
+                                data-tip="A district is contiguous if every hex can be reached from every other hex without leaving the district. Non-contiguous districts are generally illegal.">?</span></span><span
+                            class="value" id="detail-contiguous">Yes</span></div>
+                    <div class="metric"><span class="label">Minority-Majority <span class="info-tip"
+                                data-tip="A district where over 50% of the population is a minority group. The Voting Rights Act may require creating minority-majority districts to ensure fair representation.">?</span></span><span
+                            class="value" id="detail-mm">No</span></div>
                     <div class="vote-bar-container">
                         <div class="vote-bar red" id="vote-bar-red" style="width: 0%"></div>
                         <div class="vote-bar blue" id="vote-bar-blue" style="width: 0%"></div>
@@ -288,10 +342,10 @@
                         <span id="vote-pct-blue" class="blue-text">0%</span>
                     </div>
                 </div>
-                <p id="no-selection-msg" class="instruction">Hover or select a district on the map to view details.</p>
+                <p id="no-selection-msg" class="panel-hint">Hover or select a district to view details.</p>
             </div>
-        </aside>
-    </main>
+        </div>
+    </aside>
 
     <script src="script.js"></script>
 </body>

@@ -357,20 +357,25 @@ function generateHexes() {
         const roll = Math.random();
 
         if (isUrban) {
-            const blueChance = 0.52 + (regionalLean - 0.5) * 0.3;
-            party = roll < blueChance ? 'blue' : roll < blueChance + 0.38 ? 'red' : 'yellow';
+            // Cities lean strongly blue
+            const blueChance = 0.62 + (regionalLean - 0.5) * 0.2;
+            const redChance = 0.25 - (regionalLean - 0.5) * 0.1;
+            party = roll < blueChance ? 'blue' : roll < blueChance + redChance ? 'red' : 'yellow';
         } else if (isSuburban) {
+            // Suburbs are competitive, slight lean from regional noise
             if (regionalLean > 0.55) {
-                party = roll < 0.48 ? 'blue' : roll < 0.90 ? 'red' : 'yellow';
+                party = roll < 0.45 ? 'blue' : roll < 0.85 ? 'red' : 'yellow';
             } else {
-                party = roll < 0.48 ? 'red' : roll < 0.90 ? 'blue' : 'yellow';
+                party = roll < 0.45 ? 'red' : roll < 0.85 ? 'blue' : 'yellow';
             }
         } else {
-            const redChance = 0.48 + (0.5 - regionalLean) * 0.3;
-            party = roll < redChance ? 'red' : roll < redChance + 0.42 ? 'blue' : 'yellow';
+            // Rural areas lean strongly red
+            const redChance = 0.62 + (0.5 - regionalLean) * 0.2;
+            const blueChance = 0.25 + (regionalLean - 0.5) * 0.1;
+            party = roll < redChance ? 'red' : roll < redChance + blueChance ? 'blue' : 'yellow';
         }
 
-        // Vote distribution
+        // Vote distribution — urban/rural density affects margins
         const votes = { red: 0, blue: 0, yellow: 0 };
         if (party === 'yellow') {
             const yellowBoost = 0.30 + Math.random() * 0.10;
@@ -383,7 +388,9 @@ function generateHexes() {
             const yellowPct = 0.05 + Math.random() * 0.10;
             votes.yellow = Math.floor(pop * yellowPct);
             const majorRemainder = pop - votes.yellow;
-            const winningPct = 0.50 + Math.random() * 0.30;
+            // Urban hexes have wider margins for the winner; rural too
+            const baseMargin = isUrban ? 0.58 : (isSuburban ? 0.52 : 0.56);
+            const winningPct = baseMargin + Math.random() * 0.25;
             votes[party] = Math.floor(majorRemainder * winningPct);
             const loser = party === 'red' ? 'blue' : 'red';
             votes[loser] = majorRemainder - votes[party];
@@ -654,15 +661,25 @@ function updateDistrictPalette() {
 
         if (d && d.population > 0 && d.winner !== 'none') {
             btn.classList.add('has-district');
-            btn.style.background = PALETTE_COLOR_MAP[d.winner] || '';
+            btn.style.color = dId === state.currentDistrict ? '' : (PALETTE_COLOR_MAP[d.winner] || '');
+            btn.style.background = '';
         } else {
             btn.classList.remove('has-district');
+            btn.style.color = '';
             btn.style.background = '';
         }
     }
 }
 
 // ─── Zoom & Pan ───
+function clampViewBox(vb) {
+    const o = state.origViewBox;
+    const padX = vb.w * 0.5;
+    const padY = vb.h * 0.5;
+    vb.x = Math.max(o.x - padX, Math.min(o.x + o.w - vb.w + padX, vb.x));
+    vb.y = Math.max(o.y - padY, Math.min(o.y + o.h - vb.h + padY, vb.y));
+}
+
 function onWheel(e) {
     e.preventDefault();
     const vb = state.viewBox;
@@ -677,13 +694,14 @@ function onWheel(e) {
     const newH = vb.h * zoomFactor;
 
     const minW = state.origViewBox.w * 0.3;
-    const maxW = state.origViewBox.w * 3;
+    const maxW = state.origViewBox.w * 1.5;
     if (newW < minW || newW > maxW) return;
 
     vb.x = svgX - mx * newW;
     vb.y = svgY - my * newH;
     vb.w = newW;
     vb.h = newH;
+    clampViewBox(vb);
     state.zoomLevel = state.origViewBox.w / vb.w;
 
     $.svg.setAttribute('viewBox', `${vb.x} ${vb.y} ${vb.w} ${vb.h}`);
@@ -700,7 +718,7 @@ function smoothZoom(direction) {
     const targetH = vb.h * factor;
 
     const minW = state.origViewBox.w * 0.3;
-    const maxW = state.origViewBox.w * 3;
+    const maxW = state.origViewBox.w * 1.5;
     if (targetW < minW || targetW > maxW) return;
 
     const startVb = { ...vb };
@@ -725,6 +743,7 @@ function animateViewBox(startVb, endVb, duration) {
         vb.y = startVb.y + (endVb.y - startVb.y) * ease;
         vb.w = startVb.w + (endVb.w - startVb.w) * ease;
         vb.h = startVb.h + (endVb.h - startVb.h) * ease;
+        clampViewBox(vb);
         state.zoomLevel = state.origViewBox.w / vb.w;
 
         $.svg.setAttribute('viewBox', `${vb.x} ${vb.y} ${vb.w} ${vb.h}`);
@@ -768,6 +787,7 @@ function onMouseMove(e) {
         const dy = (e.clientY - state.panStart.y) / rect.height * state.viewBox.h;
         state.viewBox.x -= dx;
         state.viewBox.y -= dy;
+        clampViewBox(state.viewBox);
         state.panStart = { x: e.clientX, y: e.clientY };
         $.svg.setAttribute('viewBox', `${state.viewBox.x} ${state.viewBox.y} ${state.viewBox.w} ${state.viewBox.h}`);
         return;
@@ -1498,7 +1518,7 @@ function initTouchHandlers() {
                 const newH = vb.h * scale;
 
                 const minW = state.origViewBox.w * 0.3;
-                const maxW = state.origViewBox.w * 3;
+                const maxW = state.origViewBox.w * 1.5;
                 if (newW >= minW && newW <= maxW) {
                     vb.x = svgX - mx * newW;
                     vb.y = svgY - my * newH;
@@ -1513,6 +1533,7 @@ function initTouchHandlers() {
                     vb.y += (lastPinchCenter.y - center.y) / rect.height * vb.h;
                 }
 
+                clampViewBox(vb);
                 $.svg.setAttribute('viewBox', `${vb.x} ${vb.y} ${vb.w} ${vb.h}`);
                 updateZoomDisplay();
             }

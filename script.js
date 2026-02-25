@@ -358,38 +358,36 @@ function generateHexes() {
 
         if (isUrban) {
             // Cities lean strongly blue
-            const blueChance = 0.62 + (regionalLean - 0.5) * 0.2;
-            const redChance = 0.25 - (regionalLean - 0.5) * 0.1;
+            const blueChance = 0.70 + (regionalLean - 0.5) * 0.15;
+            const redChance = 0.22 - (regionalLean - 0.5) * 0.1;
             party = roll < blueChance ? 'blue' : roll < blueChance + redChance ? 'red' : 'yellow';
         } else if (isSuburban) {
-            // Suburbs are competitive, slight lean from regional noise
-            if (regionalLean > 0.55) {
-                party = roll < 0.45 ? 'blue' : roll < 0.85 ? 'red' : 'yellow';
-            } else {
-                party = roll < 0.45 ? 'red' : roll < 0.85 ? 'blue' : 'yellow';
-            }
-        } else {
-            // Rural areas lean strongly red
-            const redChance = 0.62 + (0.5 - regionalLean) * 0.2;
+            // Suburbs lean solidly red, modulated by regional noise
+            const redChance = 0.62 + (0.5 - regionalLean) * 0.15;
             const blueChance = 0.25 + (regionalLean - 0.5) * 0.1;
+            party = roll < redChance ? 'red' : roll < redChance + blueChance ? 'blue' : 'yellow';
+        } else {
+            // Rural areas lean heavily red
+            const redChance = 0.76 + (0.5 - regionalLean) * 0.12;
+            const blueChance = 0.16 + (regionalLean - 0.5) * 0.08;
             party = roll < redChance ? 'red' : roll < redChance + blueChance ? 'blue' : 'yellow';
         }
 
         // Vote distribution — urban/rural density affects margins
         const votes = { red: 0, blue: 0, yellow: 0 };
         if (party === 'yellow') {
-            const yellowBoost = 0.30 + Math.random() * 0.10;
+            const yellowBoost = 0.28 + Math.random() * 0.08;
             votes.yellow = Math.floor(pop * yellowBoost);
             const rest = pop - votes.yellow;
             const redShare = 0.3 + Math.random() * 0.4;
             votes.red = Math.floor(rest * redShare);
             votes.blue = rest - votes.red;
         } else {
-            const yellowPct = 0.05 + Math.random() * 0.10;
+            const yellowPct = 0.04 + Math.random() * 0.08;
             votes.yellow = Math.floor(pop * yellowPct);
             const majorRemainder = pop - votes.yellow;
             // Urban hexes have wider margins for the winner; rural too
-            const baseMargin = isUrban ? 0.58 : (isSuburban ? 0.52 : 0.56);
+            const baseMargin = isUrban ? 0.58 : (isSuburban ? 0.54 : 0.58);
             const winningPct = baseMargin + Math.random() * 0.25;
             votes[party] = Math.floor(majorRemainder * winningPct);
             const loser = party === 'red' ? 'blue' : 'red';

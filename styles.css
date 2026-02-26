@@ -521,7 +521,7 @@ main {
 }
 
 .app-ready #map-controls {
-    animation: fadeIn 0.4s var(--ease-out) 0.35s both;
+    animation: slideInLeft 0.4s var(--ease-out) 0.35s both;
     pointer-events: auto;
 }
 
@@ -644,10 +644,14 @@ main {
     box-shadow: var(--shadow-lg);
     overflow: hidden;
     transform: translateX(calc(100% + 24px));
-    transition: transform 0.45s var(--ease-out), background-color 0.4s, border-color 0.3s;
+    transition: background-color 0.4s, border-color 0.3s;
 }
 
-#sidebar.open {
+.app-ready #sidebar {
+    transition: transform 0.55s var(--ease-out), background-color 0.4s, border-color 0.3s;
+}
+
+.app-ready #sidebar.open {
     transform: translateX(0);
 }
 
@@ -1120,11 +1124,14 @@ main {
         max-height: 55vh;
         border-radius: var(--radius-lg) var(--radius-lg) 0 0;
         transform: translateY(100%);
-        transition: transform 0.4s var(--ease-out), background-color 0.4s, border-color 0.3s;
         z-index: 110;
     }
 
-    #sidebar.open {
+    .app-ready #sidebar {
+        animation: slideInRight 0.5s var(--ease-out) 0.15s both;
+    }
+
+    .app-ready #sidebar.open {
         transform: translateY(0);
     }
 

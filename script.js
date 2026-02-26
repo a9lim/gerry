@@ -1443,8 +1443,8 @@ function updateThemeIcon() {
     const isDark = document.documentElement.dataset.theme === 'dark';
     const sun = $.themeBtn.querySelector('.icon-sun');
     const moon = $.themeBtn.querySelector('.icon-moon');
-    if (sun) sun.style.display = isDark ? 'block' : 'none';
-    if (moon) moon.style.display = isDark ? 'none' : 'block';
+    if (sun) sun.style.display = isDark ? 'none' : 'block';
+    if (moon) moon.style.display = isDark ? 'block' : 'none';
 }
 
 // ─── Touch Handlers ───

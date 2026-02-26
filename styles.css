@@ -684,10 +684,9 @@ main {
     flex: 1;
     overflow-y: auto;
     overflow-x: hidden;
-    padding: 8px;
+    padding: 10px 16px;
     display: flex;
     flex-direction: column;
-    gap: 8px;
     scrollbar-width: thin;
     scrollbar-color: var(--border-strong) transparent;
 }
@@ -705,15 +704,16 @@ main {
     border-radius: 4px;
 }
 
-/* ─── Panels (sections inside stats) ─── */
-.panel {
-    padding: 10px 16px;
-    background: transparent;
-    border: none;
-    border-radius: 0;
+/* ─── Stat Groups (sections inside stats) ─── */
+.stat-group {
+    margin-bottom: 0.7rem;
 }
 
-.panel h2 {
+.stat-group:last-child {
+    margin-bottom: 0;
+}
+
+.group-label {
     font-family: 'Sora', var(--font-body);
     font-size: 0.68rem;
     font-weight: 600;
@@ -727,9 +727,15 @@ main {
 
 .panel-hint {
     color: var(--text-muted);
-    font-size: 0.72rem;
+    font-size: clamp(0.62rem, 0.9vw, 0.7rem);
     line-height: 1.5;
+    font-style: italic;
     font-family: var(--font-body);
+    margin-top: 0.5rem;
+    padding: 0.4rem 0.55rem;
+    border-radius: var(--radius-sm);
+    background: var(--accent-subtle);
+    border: 1px solid var(--accent-glow);
 }
 
 /* ─── Seats Grid ─── */
@@ -826,45 +832,6 @@ main {
     display: block;
 }
 
-#selected-district-info h3 {
-    font-family: 'Sora', var(--font-body);
-    font-size: 0.68rem;
-    font-weight: 600;
-    text-transform: uppercase;
-    letter-spacing: 0.12em;
-    margin-bottom: 0.6rem;
-    color: var(--text-secondary);
-}
-
-.metric {
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-    margin-bottom: 1px;
-    font-size: 0.8rem;
-    padding: 4px 8px;
-    border-radius: 5px;
-    transition: background 0.15s;
-}
-
-.metric:hover {
-    background: var(--bg-hover);
-}
-
-.label {
-    font-family: var(--font-body);
-    color: var(--text-secondary);
-    font-weight: 400;
-    font-size: 0.78rem;
-}
-
-.value {
-    font-family: var(--font-mono);
-    font-weight: 600;
-    color: var(--text-primary);
-    font-size: 0.78rem;
-    font-variant-numeric: tabular-nums;
-}
 
 .metric-note {
     font-family: var(--font-body);
@@ -958,7 +925,7 @@ main {
     flex-direction: column;
     align-items: flex-end;
     gap: 0;
-    width: 58px;
+    width: 68px;
     flex-shrink: 0;
 }
 
@@ -1177,8 +1144,8 @@ main {
         gap: 6px;
     }
 
-    .panel {
-        padding: 8px 14px;
+    .stat-group {
+        padding: 0;
     }
 
 }

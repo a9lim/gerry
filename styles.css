@@ -3,53 +3,9 @@
    Inspired by ndstudio.gov, trumprx.gov, realfood.gov
    ═══════════════════════════════════════════════ */
 
-/* ─── Design Tokens: Light ─── */
+/* ─── Layout Tokens (colors/fonts injected by colors.js) ─── */
 :root,
 [data-theme="light"] {
-    --bg-canvas: #F0EDE4;
-    --bg-panel: rgba(252, 250, 244, 0.82);
-    --bg-panel-solid: #FCFAF4;
-    --bg-elevated: #FDFBF5;
-    --bg-hover: rgba(26, 22, 18, 0.04);
-
-    --text-primary: #1A1612;
-    --text-secondary: #78706A;
-    --text-muted: #A8A098;
-
-    --border: rgba(26, 22, 18, 0.08);
-    --border-strong: rgba(26, 22, 18, 0.14);
-
-    --shadow-sm: 0 1px 4px rgba(0,0,0,0.04), 0 0 0 1px rgba(0,0,0,0.02);
-    --shadow-md: 0 4px 20px rgba(0,0,0,0.06), 0 0 0 1px rgba(0,0,0,0.02);
-    --shadow-lg: 0 12px 48px rgba(0,0,0,0.10), 0 0 0 1px rgba(0,0,0,0.02);
-
-    --accent: #D97757;
-    --accent-light: #E89B80;
-    --accent-glow: rgba(217, 119, 87, 0.20);
-    --accent-subtle: rgba(217, 119, 87, 0.07);
-
-    --party-red: #C42838;
-    --party-red-dark: #8A1C28;
-    --party-blue: #1A54B0;
-    --party-blue-dark: #0E3470;
-    --party-yellow: #B88A00;
-    --party-yellow-dark: #7A5C00;
-    --party-green: #2B8650;
-    --party-none: #A8A098;
-
-    --hex-stroke: rgba(26, 22, 18, 0.06);
-    --hex-hover-stroke: rgba(26, 22, 18, 0.28);
-    --hex-min-opacity: 0.22;
-
-    --bar-track: rgba(26, 22, 18, 0.07);
-
-    --tooltip-bg: #1A1612;
-    --tooltip-fg: #F0EDE4;
-
-    --font-heading: 'Instrument Serif', Georgia, serif;
-    --font-body: 'Geist', system-ui, -apple-system, sans-serif;
-    --font-mono: 'Geist Mono', 'SF Mono', monospace;
-
     --radius-sm: 8px;
     --radius-md: 14px;
     --radius-lg: 20px;
@@ -66,48 +22,7 @@
     color-scheme: light;
 }
 
-/* ─── Design Tokens: Dark ─── */
 [data-theme="dark"] {
-    --bg-canvas: #0C0B09;
-    --bg-panel: rgba(24, 22, 18, 0.88);
-    --bg-panel-solid: #181612;
-    --bg-elevated: #1E1C18;
-    --bg-hover: rgba(232, 226, 212, 0.05);
-
-    --text-primary: #E8E2D4;
-    --text-secondary: #8A8278;
-    --text-muted: #5A544C;
-
-    --border: rgba(232, 226, 212, 0.06);
-    --border-strong: rgba(232, 226, 212, 0.12);
-
-    --shadow-sm: 0 1px 4px rgba(0,0,0,0.20), 0 0 0 1px rgba(255,255,255,0.03);
-    --shadow-md: 0 4px 20px rgba(0,0,0,0.30), 0 0 0 1px rgba(255,255,255,0.03);
-    --shadow-lg: 0 12px 48px rgba(0,0,0,0.40), 0 0 0 1px rgba(255,255,255,0.03);
-
-    --accent: #E89B80;
-    --accent-light: #F0B8A0;
-    --accent-glow: rgba(232, 155, 128, 0.18);
-    --accent-subtle: rgba(232, 155, 128, 0.08);
-
-    --party-red: #E86070;
-    --party-red-dark: #C44050;
-    --party-blue: #6498E6;
-    --party-blue-dark: #3868B8;
-    --party-yellow: #E0B830;
-    --party-yellow-dark: #B89020;
-    --party-green: #50B878;
-    --party-none: #5A544C;
-
-    --hex-stroke: rgba(232, 226, 212, 0.04);
-    --hex-hover-stroke: rgba(232, 226, 212, 0.22);
-    --hex-min-opacity: 0.30;
-
-    --bar-track: rgba(232, 226, 212, 0.06);
-
-    --tooltip-bg: #E8E2D4;
-    --tooltip-fg: #0C0B09;
-
     color-scheme: dark;
 }
 

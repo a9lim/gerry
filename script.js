@@ -21,11 +21,33 @@ const HEX_CORNER_OFFSETS = Array.from({ length: 6 }, (_, i) => {
     return { dx: Math.cos(angle), dy: Math.sin(angle) };
 });
 
+const HEX_RENDER_SIZE = CONFIG.hexSize + 0.5; // slight overlap to eliminate AA seams
+
 const PALETTE_COLOR_MAP = {
     red: 'var(--party-red)',
     blue: 'var(--party-blue)',
     yellow: 'var(--party-yellow)'
 };
+
+// ─── Cubic Bezier Easing (matches CSS cubic-bezier) ───
+function cubicBezier(x1, y1, x2, y2) {
+    return function(t) {
+        if (t <= 0) return 0;
+        if (t >= 1) return 1;
+        let u = t;
+        for (let i = 0; i < 8; i++) {
+            const a = 1 - u;
+            const xu = 3 * a * a * u * x1 + 3 * a * u * u * x2 + u * u * u - t;
+            const dxu = 3 * a * a * x1 + 6 * a * u * (x2 - x1) + 3 * u * u * (1 - x2);
+            if (Math.abs(dxu) < 1e-6) break;
+            u -= xu / dxu;
+        }
+        u = Math.max(0, Math.min(1, u));
+        const a = 1 - u;
+        return 3 * a * a * u * y1 + 3 * a * u * u * y2 + u * u * u;
+    };
+}
+const EASE_OUT = cubicBezier(0.23, 1, 0.32, 1);
 
 // ─── DOM Cache ───
 const $ = {};
@@ -44,12 +66,18 @@ function cacheDOMElements() {
     $.redoBtn = document.getElementById('redo-btn');
     $.deleteBtn = document.getElementById('delete-btn');
     $.eraseBtn = document.getElementById('erase-btn');
+    $.moveBtn = document.getElementById('move-btn');
     $.themeBtn = document.getElementById('theme-btn');
     $.statsToggle = document.getElementById('stats-toggle');
     $.closeStats = document.getElementById('close-stats');
     $.zoomLevel = document.getElementById('zoom-level');
     $.introScreen = document.getElementById('intro-screen');
     $.introStart = document.getElementById('intro-start');
+    $.resetBtn = document.getElementById('reset-btn');
+    $.randomizeBtn = document.getElementById('randomize-btn');
+    $.zoomInBtn = document.getElementById('zoom-in-btn');
+    $.zoomOutBtn = document.getElementById('zoom-out-btn');
+    $.zoomFitBtn = document.getElementById('zoom-fit-btn');
 
     // Stats elements
     $.redSeats = document.getElementById('red-seats');
@@ -101,8 +129,8 @@ function cacheDOMElements() {
 // ─── Hex Element Index (avoids querySelector on every hover/paint) ───
 const hexElements = new Map();
 
-// Resolved color reference — updated on theme change
-let activeColors = _PALETTE.light;
+// Party/accent colors — shared across themes, no longer swapped
+const activeColors = _PALETTE;
 
 const state = {
     hexes: new Map(),
@@ -121,6 +149,7 @@ const state = {
     redoStack: [],
     deleteMode: false,
     eraseMode: false,
+    panMode: false,
     maxPop: 100
 };
 
@@ -427,9 +456,7 @@ function restoreSnapshot(snap) {
         const hex = state.hexes.get(key);
         if (hex) hex.district = districtId;
     }
-    calculateMetrics();
     state.hexes.forEach((_, qr) => updateHexVisuals(qr));
-    renderBorders();
     updateMetrics();
 }
 
@@ -461,13 +488,28 @@ function updateUndoRedoState() {
 }
 
 // ─── Map Operations ───
-function clearModes() {
-    state.deleteMode = false;
-    state.eraseMode = false;
-    if ($.deleteBtn) $.deleteBtn.classList.remove('active');
-    if ($.eraseBtn) $.eraseBtn.classList.remove('active');
-    if ($.mapContainer) $.mapContainer.classList.remove('delete-mode', 'erase-mode');
+const MODES = {
+    delete: { stateKey: 'deleteMode', btn: 'deleteBtn', cssClass: 'delete-mode' },
+    erase:  { stateKey: 'eraseMode', btn: 'eraseBtn',  cssClass: 'erase-mode' },
+    pan:    { stateKey: 'panMode',   btn: 'moveBtn',   cssClass: 'pan-mode' },
+};
+
+function setMode(name) {
+    const toggling = MODES[name];
+    const wasActive = toggling && state[toggling.stateKey];
+    for (const m of Object.values(MODES)) {
+        state[m.stateKey] = false;
+        $[m.btn]?.classList.remove('active');
+        $.mapContainer?.classList.remove(m.cssClass);
+    }
+    if (toggling && !wasActive) {
+        state[toggling.stateKey] = true;
+        $[toggling.btn]?.classList.add('active');
+        $.mapContainer?.classList.add(toggling.cssClass);
+    }
 }
+
+function clearModes() { setMode(null); }
 
 function randomizeMap() {
     clearModes();
@@ -489,9 +531,7 @@ function randomizeMap() {
 function resetMap() {
     clearModes();
     state.hexes.forEach(hex => { hex.district = 0; });
-    calculateMetrics();
     state.hexes.forEach((_, qr) => updateHexVisuals(qr));
-    renderBorders();
     updateMetrics();
     pushUndoSnapshot();
 }
@@ -506,9 +546,7 @@ function deleteDistrict(dId) {
         }
     });
     if (changed) {
-        calculateMetrics();
         state.hexes.forEach((_, qr) => updateHexVisuals(qr));
-        renderBorders();
         updateMetrics();
         pushUndoSnapshot();
     }
@@ -520,54 +558,27 @@ function setupUI() {
     $.svg.addEventListener('mouseup', onMouseUp);
     $.svg.addEventListener('mouseleave', (e) => {
         onMouseUp(e);
-        if ($.tooltip) $.tooltip.classList.remove('visible');
-        if (state.hoveredHex) {
-            const oldEl = hexElements.get(state.hoveredHex);
-            if (oldEl) oldEl.classList.remove('hovered');
-            state.hoveredHex = null;
-        }
+        clearHover();
     });
     $.svg.addEventListener('mousemove', onMouseMove);
     $.svg.addEventListener('wheel', onWheel, { passive: false });
     $.svg.addEventListener('contextmenu', e => e.preventDefault());
 
     // Toolbar buttons
-    document.getElementById('reset-btn')?.addEventListener('click', resetMap);
-    document.getElementById('randomize-btn')?.addEventListener('click', randomizeMap);
+    $.resetBtn?.addEventListener('click', resetMap);
+    $.randomizeBtn?.addEventListener('click', randomizeMap);
 
-    if ($.deleteBtn) {
-        $.deleteBtn.addEventListener('click', () => {
-            state.deleteMode = !state.deleteMode;
-            $.deleteBtn.classList.toggle('active', state.deleteMode);
-            $.mapContainer.classList.toggle('delete-mode', state.deleteMode);
-            if (state.deleteMode && state.eraseMode) {
-                state.eraseMode = false;
-                $.eraseBtn?.classList.remove('active');
-                $.mapContainer.classList.remove('erase-mode');
-            }
-        });
-    }
-
-    if ($.eraseBtn) {
-        $.eraseBtn.addEventListener('click', () => {
-            state.eraseMode = !state.eraseMode;
-            $.eraseBtn.classList.toggle('active', state.eraseMode);
-            $.mapContainer.classList.toggle('erase-mode', state.eraseMode);
-            if (state.eraseMode && state.deleteMode) {
-                state.deleteMode = false;
-                $.deleteBtn?.classList.remove('active');
-                $.mapContainer.classList.remove('delete-mode');
-            }
-        });
-    }
+    $.deleteBtn?.addEventListener('click', () => setMode('delete'));
+    $.eraseBtn?.addEventListener('click', () => setMode('erase'));
+    $.moveBtn?.addEventListener('click', () => setMode('pan'));
 
     if ($.undoBtn) $.undoBtn.addEventListener('click', undo);
     if ($.redoBtn) $.redoBtn.addEventListener('click', redo);
     if ($.themeBtn) $.themeBtn.addEventListener('click', toggleTheme);
 
-    document.getElementById('zoom-in-btn')?.addEventListener('click', () => smoothZoom(1));
-    document.getElementById('zoom-out-btn')?.addEventListener('click', () => smoothZoom(-1));
-    document.getElementById('zoom-fit-btn')?.addEventListener('click', zoomToFit);
+    $.zoomInBtn?.addEventListener('click', () => smoothZoom(1));
+    $.zoomOutBtn?.addEventListener('click', () => smoothZoom(-1));
+    $.zoomFitBtn?.addEventListener('click', zoomToFit);
 
     document.addEventListener('keydown', (e) => {
         if (e.ctrlKey && e.key === 'z') { e.preventDefault(); undo(); }
@@ -577,7 +588,7 @@ function setupUI() {
     // Stats panel toggle
     function shiftMapForSidebar(opening) {
         if (window.innerWidth <= 900) return; // bottom sheet on mobile, no shift
-        const panelW = 350; // --panel-w
+        const panelW = parseInt(getComputedStyle(document.documentElement).getPropertyValue('--panel-w'));
         const scale = Math.min(window.innerWidth / state.viewBox.w, window.innerHeight / state.viewBox.h);
         const dx = panelW / (2 * scale);
         const endVb = { ...state.viewBox };
@@ -619,9 +630,12 @@ function setupUI() {
 }
 
 // ─── District Palette ───
+const paletteButtons = [];
+
 function renderDistrictPalette() {
     if (!$.palette) return;
     $.palette.innerHTML = '';
+    paletteButtons.length = 0;
 
     for (let i = 1; i <= CONFIG.numDistricts; i++) {
         const btn = document.createElement('button');
@@ -641,14 +655,14 @@ function renderDistrictPalette() {
         });
 
         $.palette.appendChild(btn);
+        paletteButtons.push(btn);
     }
 
     updateDistrictPalette();
 }
 
 function updateDistrictPalette() {
-    const buttons = document.querySelectorAll('.palette-btn');
-    for (const btn of buttons) {
+    for (const btn of paletteButtons) {
         const dId = parseInt(btn.dataset.district);
         const d = state.districts[dId];
 
@@ -657,11 +671,9 @@ function updateDistrictPalette() {
         if (d && d.population > 0 && d.winner !== 'none') {
             btn.classList.add('has-district');
             btn.style.color = dId === state.currentDistrict ? '' : (PALETTE_COLOR_MAP[d.winner] || '');
-            btn.style.background = '';
         } else {
             btn.classList.remove('has-district');
             btn.style.color = '';
-            btn.style.background = '';
         }
     }
 }
@@ -730,14 +742,14 @@ function zoomToFit() {
     animateViewBox({ ...state.viewBox }, endVb, 300);
 }
 
-function animateViewBox(startVb, endVb, duration) {
+function animateViewBox(startVb, endVb, duration, easeFn = EASE_OUT) {
     const vb = state.viewBox;
     let start = null;
 
     function step(ts) {
         if (!start) start = ts;
         const t = Math.min((ts - start) / duration, 1);
-        const ease = 1 - Math.pow(1 - t, 3);
+        const ease = easeFn(t);
 
         vb.x = startVb.x + (endVb.x - startVb.x) * ease;
         vb.y = startVb.y + (endVb.y - startVb.y) * ease;
@@ -759,9 +771,18 @@ function updateZoomDisplay() {
     if ($.zoomLevel) $.zoomLevel.textContent = `${Math.round(state.zoomLevel * 100)}%`;
 }
 
+function clearHover() {
+    if (state.hoveredHex) {
+        const el = hexElements.get(state.hoveredHex);
+        if (el) el.classList.remove('hovered');
+        state.hoveredHex = null;
+    }
+    if ($.tooltip) $.tooltip.classList.remove('visible');
+}
+
 // ─── Mouse Handlers ───
 function onMouseDown(e) {
-    if (e.button === 1) {
+    if (e.button === 1 || (e.button === 0 && state.panMode)) {
         e.preventDefault();
         state.isPanning = true;
         state.panStart = { x: e.clientX, y: e.clientY };
@@ -796,12 +817,7 @@ function onMouseMove(e) {
     if (qr) {
         handleHover(e, qr);
     } else {
-        if ($.tooltip) $.tooltip.classList.remove('visible');
-        if (state.hoveredHex) {
-            const oldEl = hexElements.get(state.hoveredHex);
-            if (oldEl) oldEl.classList.remove('hovered');
-            state.hoveredHex = null;
-        }
+        clearHover();
     }
 }
 
@@ -819,31 +835,36 @@ function scheduleBorderUpdate() {
 }
 
 // ─── Painting ───
+// Start painting at a hex key. Returns true if painting started, false otherwise.
+function startPaintingAt(qr, isErase) {
+    const hex = state.hexes.get(qr);
+    if (!hex) return false;
+
+    if (state.deleteMode) {
+        if (hex.district > 0) deleteDistrict(hex.district);
+        return false;
+    }
+
+    if (isErase) {
+        state.isPainting = 'erase';
+    } else if (hex.district > 0) {
+        state.isPainting = hex.district;
+    } else {
+        state.isPainting = state.currentDistrict;
+    }
+    state.currentDistrict = typeof state.isPainting === 'number' ? state.isPainting : state.currentDistrict;
+    paintHexByKey(qr);
+    updateSidebarDetails(state.currentDistrict);
+    updateDistrictPalette();
+    return true;
+}
+
 function startPainting(e) {
     e.preventDefault();
     const qr = getHexFromEvent(e);
     if (!qr) return;
-    const hex = state.hexes.get(qr);
-
-    if (state.deleteMode) {
-        if (hex && hex.district > 0) deleteDistrict(hex.district);
-        return;
-    }
-
-    if (e.button === 2 || (e.button === 0 && state.eraseMode)) {
-        state.isPainting = 'erase';
-    } else if (e.button === 0) {
-        if (hex.district > 0) {
-            state.isPainting = hex.district;
-        } else {
-            // Use currently selected district from palette
-            state.isPainting = state.currentDistrict;
-        }
-    }
-    state.currentDistrict = typeof state.isPainting === 'number' ? state.isPainting : state.currentDistrict;
-    paintHex(e);
-    updateSidebarDetails(state.currentDistrict);
-    updateDistrictPalette();
+    const isErase = e.button === 2 || (e.button === 0 && state.eraseMode);
+    startPaintingAt(qr, isErase);
 }
 
 function stopPainting() {
@@ -864,14 +885,42 @@ function getHexFromEvent(e) {
     return target?.classList?.contains('hex') ? target.dataset.qr : null;
 }
 
-function paintHex(e) {
+// Convert screen coordinates to hex key via SVG coordinate math (reliable for touch)
+function getHexFromPoint(clientX, clientY) {
+    const rect = $.svg.getBoundingClientRect();
+    const vb = state.viewBox;
+    const svgX = vb.x + ((clientX - rect.left) / rect.width) * vb.w;
+    const svgY = vb.y + ((clientY - rect.top) / rect.height) * vb.h;
+
+    // Inverse of hexToPixel: x = HEX_W * (q + r/2), y = HEX_H * r
+    const r_frac = svgY / HEX_H;
+    const q_frac = svgX / HEX_W - r_frac / 2;
+    const s_frac = -q_frac - r_frac;
+
+    // Cube coordinate rounding
+    let q = Math.round(q_frac);
+    let r = Math.round(r_frac);
+    let s = Math.round(s_frac);
+    const q_diff = Math.abs(q - q_frac);
+    const r_diff = Math.abs(r - r_frac);
+    const s_diff = Math.abs(s - s_frac);
+    if (q_diff > r_diff && q_diff > s_diff) {
+        q = -r - s;
+    } else if (r_diff > s_diff) {
+        r = -q - s;
+    }
+
+    const key = `${q},${r}`;
+    return state.hexes.has(key) ? key : null;
+}
+
+function paintHexByKey(qr) {
     if (state.isPainting === false) return;
-    const qr = getHexFromEvent(e);
-    if (!qr) return;
     const hex = state.hexes.get(qr);
+    if (!hex) return;
     const targetDistrict = state.isPainting === 'erase' ? 0 : state.isPainting;
 
-    // Population cap using cached district state (avoid full hex iteration)
+    // Population cap using cached district state
     if (targetDistrict > 0 && hex.district !== targetDistrict && state.targetPop > 0) {
         const d = state.districts[targetDistrict];
         if (d && d.population + hex.population > state.targetPop * 1.1) return;
@@ -880,7 +929,6 @@ function paintHex(e) {
     if (hex.district !== targetDistrict) {
         hex.district = targetDistrict;
         updateHexVisuals(qr);
-        // Paint flash micro-animation
         const g = hexElements.get(qr);
         if (g) {
             g.classList.remove('just-painted');
@@ -890,23 +938,35 @@ function paintHex(e) {
     }
 }
 
+
+function updateHoverTarget(qr) {
+    if (state.hoveredHex === qr) return;
+    if (state.hoveredHex) {
+        const oldEl = hexElements.get(state.hoveredHex);
+        if (oldEl) oldEl.classList.remove('hovered');
+    }
+    state.hoveredHex = qr;
+    const el = hexElements.get(qr);
+    if (el) el.classList.add('hovered');
+}
+
+function paintIfActive(qr) {
+    if (!state.isPainting) return;
+    paintHexByKey(qr);
+    calculateMetrics();
+    updateSidebarDetails(state.currentDistrict);
+    scheduleBorderUpdate();
+}
+
 function handleHover(e, qr) {
-    if (state.hoveredHex !== qr) {
-        if (state.hoveredHex) {
-            const oldEl = hexElements.get(state.hoveredHex);
-            if (oldEl) oldEl.classList.remove('hovered');
-        }
-        state.hoveredHex = qr;
-        const el = hexElements.get(qr);
-        if (el) el.classList.add('hovered');
-    }
-    if (state.isPainting) {
-        paintHex(e);
-        calculateMetrics();
-        updateSidebarDetails(state.currentDistrict);
-        scheduleBorderUpdate();
-    }
+    updateHoverTarget(qr);
+    paintIfActive(qr);
     showHexTooltip(e, qr);
+}
+
+function handleHoverAt(qr) {
+    updateHoverTarget(qr);
+    paintIfActive(qr);
 }
 
 function showHexTooltip(e, qr) {
@@ -915,10 +975,8 @@ function showHexTooltip(e, qr) {
     const hex = state.hexes.get(qr);
     if (!hex) { $.tooltip.classList.remove('visible'); return; }
 
-    const total = hex.votes.red + hex.votes.blue + hex.votes.yellow;
-    const pR = total > 0 ? Math.round(hex.votes.red / total * 100) : 0;
-    const pB = total > 0 ? Math.round(hex.votes.blue / total * 100) : 0;
-    const pY = total > 0 ? Math.round(hex.votes.yellow / total * 100) : 0;
+    const pct = votePcts(hex.votes);
+    const pR = Math.round(pct.red), pB = Math.round(pct.blue), pY = Math.round(pct.yellow);
 
     $.tooltip.innerHTML = `<span class="tt-pop">Pop: ${hex.population.toLocaleString()}</span>`
         + `<div class="tt-votes"><span class="tt-r">R ${pR}%</span> <span class="tt-b">B ${pB}%</span> <span class="tt-y">Y ${pY}%</span></div>`
@@ -931,11 +989,13 @@ function showHexTooltip(e, qr) {
     $.tooltip.classList.add('visible');
 }
 
-// ─── Rendering ───
-function getPartyColor(party) {
-    return activeColors[party];
+function votePcts(votes) {
+    const total = votes.red + votes.blue + votes.yellow;
+    if (total === 0) return { red: 0, blue: 0, yellow: 0 };
+    return { red: votes.red / total * 100, blue: votes.blue / total * 100, yellow: votes.yellow / total * 100 };
 }
 
+// ─── Rendering ───
 let _cachedMinOpacity = 0.22;
 
 function refreshMinOpacity() {
@@ -951,7 +1011,7 @@ function updateHexVisuals(qr) {
     const hex = state.hexes.get(qr);
     const g = hexElements.get(qr);
     if (g) {
-        g.querySelector('polygon').style.fill = getPartyColor(hex.partyWinner);
+        g.firstChild.style.fill = activeColors[hex.partyWinner];
         g.style.opacity = hexOpacity(hex.population);
     }
 }
@@ -961,6 +1021,8 @@ function renderMap() {
     $.minorityGroup.innerHTML = '';
     hexElements.clear();
 
+    const hexFrag = document.createDocumentFragment();
+    const minFrag = document.createDocumentFragment();
     let minX = Infinity, maxX = -Infinity, minY = Infinity, maxY = -Infinity;
     const mapCenterX = CONFIG.cols / 2;
     const mapCenterY = CONFIG.rows / 2;
@@ -979,15 +1041,15 @@ function renderMap() {
         g.style.opacity = hexOpacity(hex.population);
 
         const poly = document.createElementNS("http://www.w3.org/2000/svg", "polygon");
-        poly.setAttribute("points", cornersToString(hexCorners(center, CONFIG.hexSize)));
-        poly.style.fill = getPartyColor(hex.partyWinner);
+        poly.setAttribute("points", cornersToString(hexCorners(center, HEX_RENDER_SIZE)));
+        poly.style.fill = activeColors[hex.partyWinner];
 
         // Staggered radial pop-in
         const dist = Math.sqrt((hex.q + hex.r / 2 - mapCenterX) ** 2 + (hex.r - mapCenterY) ** 2);
         poly.style.animationDelay = `${dist * 0.04 + Math.random() * 0.03}s`;
 
         g.appendChild(poly);
-        $.hexGroup.appendChild(g);
+        hexFrag.appendChild(g);
         hexElements.set(qr, g);
 
         if (hex.minority) {
@@ -997,9 +1059,12 @@ function renderMap() {
             circle.setAttribute("r", CONFIG.hexSize * 0.25);
             circle.classList.add('minority-marker');
             circle.style.animationDelay = `${dist * 0.04 + Math.random() * 0.03 + 0.15}s`;
-            $.minorityGroup.appendChild(circle);
+            minFrag.appendChild(circle);
         }
     });
+
+    $.hexGroup.appendChild(hexFrag);
+    $.minorityGroup.appendChild(minFrag);
 
     const padding = CONFIG.hexSize * 2;
     const cW = maxX - minX + padding * 2;
@@ -1054,54 +1119,77 @@ function renderBorders() {
     });
 
     const fmt = n => n.toFixed(2);
+    const ptKey = p => `${(p.x * 100 + 0.5) | 0},${(p.y * 100 + 0.5) | 0}`;
 
     for (let i = 1; i <= CONFIG.numDistricts; i++) {
         const segments = districtSegments[i];
         if (segments.length === 0) continue;
 
-        // Chain segments into continuous paths
+        // Build adjacency map keyed by rounded endpoint for O(n) chaining
+        const adj = new Map();
+        const addEdge = (key, seg, pt) => {
+            let list = adj.get(key);
+            if (!list) { list = []; adj.set(key, list); }
+            list.push({ seg, pt });
+        };
+        for (const seg of segments) {
+            seg._used = false;
+            addEdge(ptKey(seg.c1), seg, seg.c2);
+            addEdge(ptKey(seg.c2), seg, seg.c1);
+        }
+
         let dAttr = '';
-        const unvisited = [...segments];
-        while (unvisited.length > 0) {
-            const currentPath = [];
-            const startSeg = unvisited.pop();
-            currentPath.push(startSeg.c1, startSeg.c2);
+        for (const seg of segments) {
+            if (seg._used) continue;
+            seg._used = true;
+            const chain = [seg.c1, seg.c2];
 
-            let added = true;
-            while (added) {
-                added = false;
-                const lastPt = currentPath[currentPath.length - 1];
-                const firstPt = currentPath[0];
-                for (let j = 0; j < unvisited.length; j++) {
-                    const s = unvisited[j];
-                    const close = (p1, p2) => Math.abs(p1.x - p2.x) < 0.1 && Math.abs(p1.y - p2.y) < 0.1;
-
-                    if (close(s.c1, lastPt)) {
-                        currentPath.push(s.c2);
-                    } else if (close(s.c2, lastPt)) {
-                        currentPath.push(s.c1);
-                    } else if (close(s.c2, firstPt)) {
-                        currentPath.unshift(s.c1);
-                    } else if (close(s.c1, firstPt)) {
-                        currentPath.unshift(s.c2);
-                    } else {
-                        continue;
+            // Extend tail
+            let tailKey = ptKey(chain[chain.length - 1]);
+            let found = true;
+            while (found) {
+                found = false;
+                const list = adj.get(tailKey);
+                if (list) {
+                    for (let j = 0; j < list.length; j++) {
+                        if (!list[j].seg._used) {
+                            list[j].seg._used = true;
+                            chain.push(list[j].pt);
+                            tailKey = ptKey(list[j].pt);
+                            found = true;
+                            break;
+                        }
                     }
-                    unvisited.splice(j, 1);
-                    added = true;
-                    break;
                 }
             }
 
-            const isClosed = currentPath.length > 2
-                && Math.abs(currentPath[0].x - currentPath[currentPath.length - 1].x) < 0.1
-                && Math.abs(currentPath[0].y - currentPath[currentPath.length - 1].y) < 0.1;
+            // Extend head
+            let headKey = ptKey(chain[0]);
+            found = true;
+            while (found) {
+                found = false;
+                const list = adj.get(headKey);
+                if (list) {
+                    for (let j = 0; j < list.length; j++) {
+                        if (!list[j].seg._used) {
+                            list[j].seg._used = true;
+                            chain.unshift(list[j].pt);
+                            headKey = ptKey(list[j].pt);
+                            found = true;
+                            break;
+                        }
+                    }
+                }
+            }
 
-            if (isClosed) currentPath.pop();
+            const isClosed = chain.length > 2
+                && Math.abs(chain[0].x - chain[chain.length - 1].x) < 0.1
+                && Math.abs(chain[0].y - chain[chain.length - 1].y) < 0.1;
+            if (isClosed) chain.pop();
 
-            dAttr += `M ${fmt(currentPath[0].x)},${fmt(currentPath[0].y)} `;
-            for (let k = 1; k < currentPath.length; k++) {
-                dAttr += `L ${fmt(currentPath[k].x)},${fmt(currentPath[k].y)} `;
+            dAttr += `M ${fmt(chain[0].x)},${fmt(chain[0].y)} `;
+            for (let k = 1; k < chain.length; k++) {
+                dAttr += `L ${fmt(chain[k].x)},${fmt(chain[k].y)} `;
             }
             if (isClosed) dAttr += 'Z ';
         }
@@ -1198,10 +1286,9 @@ function checkContiguity(d) {
     if (d.hexes.length === 0) return true;
     const visited = new Set([d.hexes[0].id]);
     const queue = [d.hexes[0]];
-    let count = 0;
-    while (queue.length > 0) {
-        const curr = queue.shift();
-        count++;
+    let head = 0;
+    while (head < queue.length) {
+        const curr = queue[head++];
         for (const dir of HEX_DIRS) {
             const neighbor = state.hexes.get(`${curr.q + dir.dq},${curr.r + dir.dr}`);
             if (neighbor && neighbor.district === d.id && !visited.has(neighbor.id)) {
@@ -1210,7 +1297,7 @@ function checkContiguity(d) {
             }
         }
     }
-    return count === d.hexes.length;
+    return queue.length === d.hexes.length;
 }
 
 function calculateCompactness(d) {
@@ -1301,16 +1388,17 @@ function updateMetrics() {
 
 // ─── Popular Vote vs Seats ───
 function updateProportionality(seats) {
-    let totalVotes = { red: 0, blue: 0, yellow: 0 };
-    let totalSeats = (seats.red || 0) + (seats.blue || 0) + (seats.yellow || 0);
+    const totalVotes = { red: 0, blue: 0, yellow: 0 };
+    const totalSeats = (seats.red || 0) + (seats.blue || 0) + (seats.yellow || 0);
 
-    state.hexes.forEach(hex => {
-        if (hex.district > 0) {
-            totalVotes.red += hex.votes.red;
-            totalVotes.blue += hex.votes.blue;
-            totalVotes.yellow += hex.votes.yellow;
+    for (let i = 1; i <= CONFIG.numDistricts; i++) {
+        const d = state.districts[i];
+        if (d.population > 0) {
+            totalVotes.red += d.votes.red;
+            totalVotes.blue += d.votes.blue;
+            totalVotes.yellow += d.votes.yellow;
         }
-    });
+    }
 
     const grandTotal = totalVotes.red + totalVotes.blue + totalVotes.yellow;
 
@@ -1409,15 +1497,13 @@ function updateSidebarDetails(dId) {
     }
 
     if (totalVotes > 0) {
-        const pR = (d.votes.red / totalVotes) * 100;
-        const pB = (d.votes.blue / totalVotes) * 100;
-        const pY = (d.votes.yellow / totalVotes) * 100;
-        if ($.voteBarRed) $.voteBarRed.style.width = `${pR}%`;
-        if ($.voteBarBlue) $.voteBarBlue.style.width = `${pB}%`;
-        if ($.voteBarYellow) $.voteBarYellow.style.width = `${pY}%`;
-        if ($.votePctRed) $.votePctRed.textContent = `${Math.round(pR)}% Red`;
-        if ($.votePctBlue) $.votePctBlue.textContent = `${Math.round(pB)}% Blue`;
-        if ($.votePctYellow) $.votePctYellow.textContent = `${Math.round(pY)}% Yell`;
+        const pct = votePcts(d.votes);
+        if ($.voteBarRed) $.voteBarRed.style.width = `${pct.red}%`;
+        if ($.voteBarBlue) $.voteBarBlue.style.width = `${pct.blue}%`;
+        if ($.voteBarYellow) $.voteBarYellow.style.width = `${pct.yellow}%`;
+        if ($.votePctRed) $.votePctRed.textContent = `${Math.round(pct.red)}% Red`;
+        if ($.votePctBlue) $.votePctBlue.textContent = `${Math.round(pct.blue)}% Blue`;
+        if ($.votePctYellow) $.votePctYellow.textContent = `${Math.round(pct.yellow)}% Yell`;
     }
 }
 
@@ -1437,9 +1523,7 @@ function initTheme() {
 
 function syncTheme() {
     const isDark = document.documentElement.dataset.theme === 'dark';
-    activeColors = isDark ? _PALETTE.dark : _PALETTE.light;
     refreshMinOpacity();
-    updateThemeIcon();
 }
 
 function toggleTheme() {
@@ -1452,15 +1536,6 @@ function toggleTheme() {
     renderBorders();
 }
 
-function updateThemeIcon() {
-    if (!$.themeBtn) return;
-    const isDark = document.documentElement.dataset.theme === 'dark';
-    const sun = $.themeBtn.querySelector('.icon-sun');
-    const moon = $.themeBtn.querySelector('.icon-moon');
-    if (sun) sun.style.display = isDark ? 'none' : 'block';
-    if (moon) moon.style.display = isDark ? 'block' : 'none';
-}
-
 // ─── Touch Handlers ───
 function initTouchHandlers() {
     if (!$.svg || !$.mapContainer) return;
@@ -1468,24 +1543,43 @@ function initTouchHandlers() {
     let lastPinchDist = 0;
     let lastPinchCenter = null;
     let isTouchPainting = false;
+    let isTouchPanning = false;
+    let touchPanStart = null;
+    let wasMultiTouch = false;
 
     $.mapContainer.addEventListener('touchstart', (e) => {
         if (e.touches.length === 1) {
             e.preventDefault();
-            isTouchPainting = true;
             const touch = e.touches[0];
-            const el = document.elementFromPoint(touch.clientX, touch.clientY);
-            if (el) {
-                el.dispatchEvent(new MouseEvent('mousedown', {
-                    clientX: touch.clientX,
-                    clientY: touch.clientY,
-                    button: state.eraseMode ? 2 : 0
-                }));
+
+            // After pinch-zoom, ignore the remaining finger to prevent accidental paint
+            if (wasMultiTouch) {
+                wasMultiTouch = false;
+                return;
+            }
+
+            if (state.panMode) {
+                isTouchPanning = true;
+                touchPanStart = { x: touch.clientX, y: touch.clientY };
+                $.mapContainer.classList.add('panning');
+                return;
+            }
+
+            const qr = getHexFromPoint(touch.clientX, touch.clientY);
+            if (qr) {
+                isTouchPainting = startPaintingAt(qr, state.eraseMode);
             }
         } else if (e.touches.length === 2) {
             e.preventDefault();
-            isTouchPainting = false;
-            stopPainting();
+            if (isTouchPainting) {
+                isTouchPainting = false;
+                stopPainting();
+            }
+            if (isTouchPanning) {
+                isTouchPanning = false;
+                $.mapContainer.classList.remove('panning');
+            }
+            wasMultiTouch = true;
             const [t1, t2] = [e.touches[0], e.touches[1]];
             lastPinchDist = Math.hypot(t2.clientX - t1.clientX, t2.clientY - t1.clientY);
             lastPinchCenter = {
@@ -1496,16 +1590,25 @@ function initTouchHandlers() {
     }, { passive: false });
 
     $.mapContainer.addEventListener('touchmove', (e) => {
-        if (e.touches.length === 1 && isTouchPainting) {
+        if (e.touches.length === 1) {
             e.preventDefault();
             const touch = e.touches[0];
-            const el = document.elementFromPoint(touch.clientX, touch.clientY);
-            if (el) {
-                el.dispatchEvent(new MouseEvent('mousemove', {
-                    clientX: touch.clientX,
-                    clientY: touch.clientY,
-                    button: 0
-                }));
+
+            if (isTouchPanning) {
+                const rect = $.svg.getBoundingClientRect();
+                const dx = (touch.clientX - touchPanStart.x) / rect.width * state.viewBox.w;
+                const dy = (touch.clientY - touchPanStart.y) / rect.height * state.viewBox.h;
+                state.viewBox.x -= dx;
+                state.viewBox.y -= dy;
+                clampViewBox(state.viewBox);
+                touchPanStart = { x: touch.clientX, y: touch.clientY };
+                $.svg.setAttribute('viewBox', `${state.viewBox.x} ${state.viewBox.y} ${state.viewBox.w} ${state.viewBox.h}`);
+                return;
+            }
+
+            if (isTouchPainting) {
+                const qr = getHexFromPoint(touch.clientX, touch.clientY);
+                if (qr) handleHoverAt(qr);
             }
         } else if (e.touches.length === 2) {
             e.preventDefault();
@@ -1561,6 +1664,11 @@ function initTouchHandlers() {
                 isTouchPainting = false;
                 stopPainting();
             }
+            if (isTouchPanning) {
+                isTouchPanning = false;
+                $.mapContainer.classList.remove('panning');
+            }
+            clearHover();
             lastPinchDist = 0;
             lastPinchCenter = null;
         } else if (e.touches.length === 1) {
@@ -1571,8 +1679,11 @@ function initTouchHandlers() {
 
     $.mapContainer.addEventListener('touchcancel', () => {
         isTouchPainting = false;
+        isTouchPanning = false;
         lastPinchDist = 0;
         lastPinchCenter = null;
+        touchPanStart = null;
+        $.mapContainer.classList.remove('panning');
         stopPainting();
     });
 }

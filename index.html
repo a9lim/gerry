@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="en" data-theme="light">
 
 <head>
     <meta charset="UTF-8">
@@ -39,7 +39,7 @@
                     </div>
                     <div class="intro-card-text">
                         <strong>Paint</strong>
-                        <span>Left-click to assign hexes</span>
+                        <span>Tap or click to assign hexes</span>
                     </div>
                 </div>
                 <div class="intro-card">
@@ -52,7 +52,7 @@
                     </div>
                     <div class="intro-card-text">
                         <strong>Erase</strong>
-                        <span>Right-click to remove</span>
+                        <span>Toggle eraser to remove</span>
                     </div>
                 </div>
                 <div class="intro-card">
@@ -67,7 +67,7 @@
                     </div>
                     <div class="intro-card-text">
                         <strong>Navigate</strong>
-                        <span>Scroll to zoom, drag to pan</span>
+                        <span>Scroll or pinch to zoom</span>
                     </div>
                 </div>
             </div>
@@ -76,49 +76,51 @@
     </div>
 
     <!-- ─── Floating Toolbar ─── -->
-    <header id="toolbar">
+    <header id="toolbar" class="glass">
         <div class="toolbar-brand">
             <h1>Redistricting <em>Simulator</em></h1>
         </div>
         <div class="toolbar-actions">
-            <button id="undo-btn" class="tool-btn" title="Undo (Ctrl+Z)" aria-label="Undo" disabled>
-                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
-                    stroke-linecap="round" stroke-linejoin="round">
+            <button id="undo-btn" class="tool-btn" aria-label="Undo" disabled>
+                <svg width="18" height="18" viewBox="0 0 24 24">
                     <polyline points="1 4 1 10 7 10"></polyline>
                     <path d="M3.51 15a9 9 0 1 0 2.13-9.36L1 10"></path>
                 </svg>
             </button>
-            <button id="redo-btn" class="tool-btn" title="Redo (Ctrl+Y)" aria-label="Redo" disabled>
-                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
-                    stroke-linecap="round" stroke-linejoin="round">
+            <button id="redo-btn" class="tool-btn" aria-label="Redo" disabled>
+                <svg width="18" height="18" viewBox="0 0 24 24">
                     <polyline points="23 4 23 10 17 10"></polyline>
                     <path d="M20.49 15a9 9 0 1 1-2.13-9.36L23 10"></path>
                 </svg>
             </button>
             <div class="tool-sep"></div>
-            <button id="erase-btn" class="tool-btn" title="Eraser mode" aria-label="Eraser mode">
-                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
-                    stroke-linecap="round" stroke-linejoin="round">
-                    <path
-                        d="M20 20H7L3 16c-.8-.8-.8-2 0-2.8L14.6 1.6c.8-.8 2-.8 2.8 0L21 5.2c.8.8.8 2 0 2.8L11 18">
-                    </path>
+            <button id="erase-btn" class="tool-btn" aria-label="Eraser mode">
+                <svg width="18" height="18" viewBox="0 0 24 24">
+                    <path d="M20 20H7L3 16c-.8-.8-.8-2 0-2.8L14.6 1.6c.8-.8 2-.8 2.8 0L21 5.2c.8.8.8 2 0 2.8L11 18"></path>
                     <line x1="6" y1="20" x2="20" y2="20"></line>
                 </svg>
             </button>
-            <button id="delete-btn" class="tool-btn" title="Delete district" aria-label="Delete district">
-                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
-                    stroke-linecap="round" stroke-linejoin="round">
+            <button id="delete-btn" class="tool-btn" aria-label="Delete district">
+                <svg width="18" height="18" viewBox="0 0 24 24">
                     <polyline points="3 6 5 6 21 6"></polyline>
-                    <path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2">
-                    </path>
+                    <path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path>
                     <line x1="10" y1="11" x2="10" y2="17"></line>
                     <line x1="14" y1="11" x2="14" y2="17"></line>
                 </svg>
             </button>
+            <button id="move-btn" class="tool-btn" aria-label="Pan mode">
+                <svg width="18" height="18" viewBox="0 0 24 24">
+                    <polyline points="5 9 2 12 5 15"></polyline>
+                    <polyline points="9 5 12 2 15 5"></polyline>
+                    <polyline points="15 19 12 22 9 19"></polyline>
+                    <polyline points="19 9 22 12 19 15"></polyline>
+                    <line x1="2" y1="12" x2="22" y2="12"></line>
+                    <line x1="12" y1="2" x2="12" y2="22"></line>
+                </svg>
+            </button>
             <div class="tool-sep"></div>
-            <button id="randomize-btn" class="tool-btn" title="New map" aria-label="Randomize map">
-                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
-                    stroke-linecap="round" stroke-linejoin="round">
+            <button id="randomize-btn" class="tool-btn" aria-label="Randomize map">
+                <svg width="18" height="18" viewBox="0 0 24 24">
                     <path d="M16 3h5v5"></path>
                     <path d="M4 20L21 3"></path>
                     <path d="M21 16v5h-5"></path>
@@ -126,17 +128,15 @@
                     <path d="M4 4l5 5"></path>
                 </svg>
             </button>
-            <button id="reset-btn" class="tool-btn" title="Reset districts" aria-label="Reset all districts">
-                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
-                    stroke-linecap="round" stroke-linejoin="round">
+            <button id="reset-btn" class="tool-btn" aria-label="Reset all districts">
+                <svg width="18" height="18" viewBox="0 0 24 24">
                     <path d="M3 12a9 9 0 1 0 9-9 9.75 9.75 0 0 0-6.74 2.74L3 8"></path>
                     <path d="M3 3v5h5"></path>
                 </svg>
             </button>
             <div class="tool-sep hide-sm"></div>
-            <button id="theme-btn" class="tool-btn hide-sm" title="Toggle theme" aria-label="Toggle theme">
-                <svg class="icon-sun" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor"
-                    stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <button id="theme-btn" class="tool-btn hide-sm" aria-label="Toggle theme">
+                <svg class="icon-sun" width="18" height="18" viewBox="0 0 24 24">
                     <circle cx="12" cy="12" r="5"></circle>
                     <line x1="12" y1="1" x2="12" y2="3"></line>
                     <line x1="12" y1="21" x2="12" y2="23"></line>
@@ -147,14 +147,12 @@
                     <line x1="4.22" y1="19.78" x2="5.64" y2="18.36"></line>
                     <line x1="18.36" y1="5.64" x2="19.78" y2="4.22"></line>
                 </svg>
-                <svg class="icon-moon" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor"
-                    stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <svg class="icon-moon" width="18" height="18" viewBox="0 0 24 24">
                     <path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"></path>
                 </svg>
             </button>
-            <button id="stats-toggle" class="tool-btn" title="Toggle analysis" aria-label="Toggle statistics panel">
-                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
-                    stroke-linecap="round" stroke-linejoin="round">
+            <button id="stats-toggle" class="tool-btn" aria-label="Toggle statistics panel">
+                <svg width="18" height="18" viewBox="0 0 24 24">
                     <line x1="18" y1="20" x2="18" y2="10"></line>
                     <line x1="12" y1="20" x2="12" y2="4"></line>
                     <line x1="6" y1="20" x2="6" y2="14"></line>
@@ -166,32 +164,29 @@
     <!-- ─── Full-viewport Map ─── -->
     <main>
         <div id="map-container">
-            <svg id="hex-map" xmlns="http://www.w3.org/2000/svg">
+            <svg id="hex-map">
                 <g id="hex-group"></g>
                 <g id="border-group"></g>
                 <g id="minority-group"></g>
                 <g id="label-group"></g>
             </svg>
             <div id="hex-tooltip" class="hex-tooltip"></div>
-            <div id="map-controls">
-                <button class="map-ctrl-btn" id="zoom-in-btn" title="Zoom in" aria-label="Zoom in">
-                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor"
-                        stroke-width="2.5" stroke-linecap="round">
+            <div id="map-controls" class="glass">
+                <button class="tool-btn map-ctrl-btn" id="zoom-in-btn" aria-label="Zoom in">
+                    <svg width="16" height="16" viewBox="0 0 24 24">
                         <line x1="12" y1="5" x2="12" y2="19"></line>
                         <line x1="5" y1="12" x2="19" y2="12"></line>
                     </svg>
                 </button>
                 <span id="zoom-level">100%</span>
-                <button class="map-ctrl-btn" id="zoom-out-btn" title="Zoom out" aria-label="Zoom out">
-                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor"
-                        stroke-width="2.5" stroke-linecap="round">
+                <button class="tool-btn map-ctrl-btn" id="zoom-out-btn" aria-label="Zoom out">
+                    <svg width="16" height="16" viewBox="0 0 24 24">
                         <line x1="5" y1="12" x2="19" y2="12"></line>
                     </svg>
                 </button>
                 <div class="ctrl-sep"></div>
-                <button class="map-ctrl-btn" id="zoom-fit-btn" title="Fit to view" aria-label="Fit to view">
-                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
-                        stroke-linecap="round" stroke-linejoin="round">
+                <button class="tool-btn map-ctrl-btn" id="zoom-fit-btn" aria-label="Fit to view">
+                    <svg width="16" height="16" viewBox="0 0 24 24">
                         <path d="M15 3h6v6"></path>
                         <path d="M9 21H3v-6"></path>
                         <path d="M21 3l-7 7"></path>
@@ -203,15 +198,14 @@
     </main>
 
     <!-- ─── District Palette (floating bottom bar) ─── -->
-    <div id="district-palette"></div>
+    <div id="district-palette" class="glass"></div>
 
     <!-- ─── Stats Panel (floating right) ─── -->
-    <aside id="sidebar">
+    <aside id="sidebar" class="glass">
         <div class="stats-header">
             <h2 class="stats-title">Analysis</h2>
-            <button id="close-stats" class="tool-btn" title="Close" aria-label="Close panel">
-                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"
-                    stroke-linecap="round">
+            <button id="close-stats" class="tool-btn" aria-label="Close panel">
+                <svg width="16" height="16" viewBox="0 0 24 24">
                     <line x1="18" y1="6" x2="6" y2="18"></line>
                     <line x1="6" y1="6" x2="18" y2="18"></line>
                 </svg>
@@ -261,10 +255,10 @@
                     <span class="prop-label red-text">Red</span>
                     <div class="prop-bars">
                         <div class="prop-bar-track">
-                            <div class="prop-bar-fill vote-fill red" id="prop-red-votes" style="width: 0%"></div>
+                            <div class="prop-bar-fill vote-fill red" id="prop-red-votes"></div>
                         </div>
                         <div class="prop-bar-track">
-                            <div class="prop-bar-fill seat-fill red" id="prop-red-seats" style="width: 0%"></div>
+                            <div class="prop-bar-fill seat-fill red" id="prop-red-seats"></div>
                         </div>
                     </div>
                     <div class="prop-values">
@@ -276,10 +270,10 @@
                     <span class="prop-label blue-text">Blue</span>
                     <div class="prop-bars">
                         <div class="prop-bar-track">
-                            <div class="prop-bar-fill vote-fill blue" id="prop-blue-votes" style="width: 0%"></div>
+                            <div class="prop-bar-fill vote-fill blue" id="prop-blue-votes"></div>
                         </div>
                         <div class="prop-bar-track">
-                            <div class="prop-bar-fill seat-fill blue" id="prop-blue-seats" style="width: 0%"></div>
+                            <div class="prop-bar-fill seat-fill blue" id="prop-blue-seats"></div>
                         </div>
                     </div>
                     <div class="prop-values">
@@ -291,12 +285,10 @@
                     <span class="prop-label yellow-text">Yell</span>
                     <div class="prop-bars">
                         <div class="prop-bar-track">
-                            <div class="prop-bar-fill vote-fill yellow" id="prop-yellow-votes" style="width: 0%">
-                            </div>
+                            <div class="prop-bar-fill vote-fill yellow" id="prop-yellow-votes"></div>
                         </div>
                         <div class="prop-bar-track">
-                            <div class="prop-bar-fill seat-fill yellow" id="prop-yellow-seats" style="width: 0%">
-                            </div>
+                            <div class="prop-bar-fill seat-fill yellow" id="prop-yellow-seats"></div>
                         </div>
                     </div>
                     <div class="prop-values">
@@ -333,9 +325,9 @@
                                 data-tip="A district where over 50% of the population is a minority group. The Voting Rights Act may require creating minority-majority districts to ensure fair representation.">?</span></span><span
                             class="stat-value" id="detail-mm">No</span></div>
                     <div class="vote-bar-container">
-                        <div class="vote-bar red" id="vote-bar-red" style="width: 0%"></div>
-                        <div class="vote-bar blue" id="vote-bar-blue" style="width: 0%"></div>
-                        <div class="vote-bar yellow" id="vote-bar-yellow" style="width: 0%"></div>
+                        <div class="vote-bar red" id="vote-bar-red"></div>
+                        <div class="vote-bar blue" id="vote-bar-blue"></div>
+                        <div class="vote-bar yellow" id="vote-bar-yellow"></div>
                     </div>
                     <div class="vote-labels">
                         <span id="vote-pct-red" class="red-text">0%</span>
@@ -343,7 +335,7 @@
                         <span id="vote-pct-blue" class="blue-text">0%</span>
                     </div>
                 </div>
-                <p id="no-selection-msg" class="panel-hint">Hover or select a district to view details.</p>
+                <p id="no-selection-msg" class="panel-hint">Select a district to view details.</p>
             </div>
         </div>
     </aside>

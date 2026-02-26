@@ -33,8 +33,8 @@ function _hsl2hex(h, s, l) {
 }
 const _darken = (hex) => {
   const [h, s, l] = _rgb2hsl(..._parseHex(hex));
-  return _hsl2hex(h, s, l * 0.7);
-};
+  return _hsl2hex(h, s * 0.92, l * 0.75);
+}
 
 // ---------- Font Constants ----------
 const _FONT = Object.freeze({
@@ -45,128 +45,133 @@ const _FONT = Object.freeze({
 
 // ---------- Palette ----------
 const _PALETTE = Object.freeze({
-  light: Object.freeze({
-    canvas:      '#F0EDE4',
-    panelSolid:  '#FCFAF4',
-    elevated:    '#FDFBF5',
-    text:        '#1A1612',
-    textSecondary: '#78706A',
-    textMuted:   '#A8A098',
-    accent:      '#FE3B01',
-    accentLight: '#FF6B3D',
+  accent:      '#FE3B01',
+  accentLight: '#FF6B3D',
+  red:         '#c85c74',
+  blue:        '#5898ba',
+  yellow:      '#d9924c',
+  none:        '#847a70',
+  green:       '#52a87a',
 
-    red:    '#C42838',
-    blue:   '#1A54B0',
-    yellow: '#B88A00',
-    none:   '#d1d5db',
-    green: '#2B8650',
+  light: Object.freeze({
+    canvas:        '#F0EDE4',
+    panelSolid:    '#FCFAF4',
+    elevated:      '#FDFBF5',
+    text:          '#1A1612',
+    textSecondary: '#78706A',
+    textMuted:     '#A8A098',
   }),
 
   dark: Object.freeze({
-    canvas:      '#0C0B09',
-    panelSolid:  '#181612',
-    elevated:    '#1E1C18',
-    text:        '#E8E2D4',
+    canvas:        '#0C0B09',
+    panelSolid:    '#181612',
+    elevated:      '#1E1C18',
+    text:          '#E8E2D4',
     textSecondary: '#8A8278',
-    textMuted:   '#5A544C',
-    accent:      '#FE3B01',
-    accentLight: '#FF6B3D',
-
-    red:    '#E86070',
-    blue:   '#6498E6',
-    yellow: '#E0B830',
-    none:   '#5a564e',
-    green: '#50B878',
+    textMuted:     '#5A544C',
   }),
 });
 
 // ---------- CSS Custom Property Injection ----------
 (function injectPaletteVars() {
-  const L = _PALETTE.light, D = _PALETTE.dark;
+  const P = _PALETTE, L = P.light, D = P.dark;
+
+  // Shared: identical both themes, emitted once in :root
+  // [css-var, shared-key] or [css-var, shared-key, alpha]
+  const shared = [
+    ['accent',            'accent'],
+    ['accent-light',      'accentLight'],
+    ['accent-glow',       'accent',        0.18],
+    ['accent-subtle',     'accent',        0.078],
+    ['intro-warm',        'accentLight',   0.08],
+    ['intro-warm-hover',  'accentLight',   0.12],
+    ['intro-cool',        'blue',          0.04],
+  ];
+
+  // Themed: differs per theme
+  // [css-var, palette-key] or [css-var, palette-key, alpha] or [css-var, palette-key, lightA, darkA]
+  const themed = [
+    ['bg-canvas',         'canvas'],
+    ['bg-panel',          'panelSolid',    0.55,  0.58],
+    ['bg-panel-solid',    'panelSolid'],
+    ['bg-elevated',       'elevated'],
+    ['bg-hover',          'text',          0.039, 0.051],
+
+    ['text-primary',      'text'],
+    ['text-secondary',    'textSecondary'],
+    ['text-muted',        'textMuted'],
+
+    ['border',            'text',          0.078, 0.059],
+    ['border-strong',     'text',          0.141, 0.122],
+
+    ['party-none',        'textMuted'],
+
+    ['hex-stroke',        'text',          0.06,  0.04],
+    ['hex-hover-stroke',  'text',          0.28,  0.22],
+
+    ['bar-track',         'text',          0.07,  0.06],
+
+    ['tooltip-bg',        'text'],
+    ['tooltip-fg',        'canvas'],
+  ];
+
+  const genShared = () => shared.map(([name, key, a]) =>
+    `  --${name}: ${a != null ? _r(P[key], a) : P[key]};`
+  ).join('\n');
+
+  // Light: party colors darkened, tips = base
+  // Dark:  party colors = base, tips darkened
+  const genParty = (darkenParty) => {
+    const lines = [];
+    for (const c of ['red', 'blue', 'yellow', 'green']) {
+      const base = P[c], dark = _darken(base);
+      const party = darkenParty ? dark : base;
+      const tip   = darkenParty ? base : dark;
+      lines.push(`  --party-${c}: ${party};`);
+      if (c !== 'green') {
+        lines.push(`  --party-${c}-tint: ${_r(party, 0.08)};`);
+        lines.push(`  --party-${c}-wash: ${_r(party, 0.18)};`);
+      }
+      lines.push(`  --tip-${c}: ${tip};`);
+    }
+    return lines.join('\n');
+  };
+
+  const genThemed = (P, dark) => themed.map(([name, key, lA, dA]) => {
+    const a = dark ? (dA ?? lA) : lA;
+    return `  --${name}: ${a != null ? _r(P[key], a) : P[key]};`;
+  }).join('\n');
 
   const style = document.createElement('style');
   style.id = 'palette-vars';
-  style.textContent =
-`:root,
+  style.textContent = `:root,
 [data-theme="light"] {
-  --font-heading:     ${_FONT.heading};
-  --font-body:        ${_FONT.body};
-  --font-mono:        ${_FONT.mono};
+  --font-heading: ${_FONT.heading};
+  --font-body: ${_FONT.body};
+  --font-mono: ${_FONT.mono};
 
-  --bg-canvas:        ${L.canvas};
-  --bg-panel:         ${_r(L.panelSolid, 0.55)};
-  --bg-panel-solid:   ${L.panelSolid};
-  --bg-elevated:      ${L.elevated};
-  --bg-hover:         ${_r(L.text, 0.039)};
+${genShared()}
 
-  --text-primary:     ${L.text};
-  --text-secondary:   ${L.textSecondary};
-  --text-muted:       ${L.textMuted};
+${genParty(true)}
 
-  --border:           ${_r(L.text, 0.078)};
-  --border-strong:    ${_r(L.text, 0.141)};
+${genThemed(L, false)}
 
-  --shadow-sm: 0 1px 4px rgba(0,0,0,0.04), 0 0 0 1px rgba(0,0,0,0.02);
-  --shadow-md: 0 4px 20px rgba(0,0,0,0.06), 0 0 0 1px rgba(0,0,0,0.02);
-  --shadow-lg: 0 12px 48px rgba(0,0,0,0.10), 0 0 0 1px rgba(0,0,0,0.02);
-
-  --accent:           ${L.accent};
-  --accent-light:     ${L.accentLight};
-  --accent-glow:      ${_r(L.accent, 0.18)};
-  --accent-subtle:    ${_r(L.accent, 0.078)};
-
-  --party-red:        ${L.red};
-  --party-blue:       ${L.blue};
-  --party-yellow:     ${L.yellow};
-  --party-green:      ${L.green};
-  --party-none:       ${L.textMuted};
-
-  --hex-stroke:       ${_r(L.text, 0.06)};
-  --hex-hover-stroke: ${_r(L.text, 0.28)};
-  --hex-min-opacity:  0.22;
-
-  --bar-track:        ${_r(L.text, 0.07)};
-
-  --tooltip-bg:       ${L.text};
-  --tooltip-fg:       ${L.canvas};
+  --shadow-sm: 0 1px 4px #0000000A, 0 0 0 1px #00000005;
+  --shadow-md: 0 4px 20px #0000000F, 0 0 0 1px #00000005;
+  --shadow-lg: 0 12px 48px #0000001A, 0 0 0 1px #00000005;
+  --hex-min-opacity: 0.22;
+  --label-fill: #FFFFFFE6;
+  --label-stroke: #00000080;
 }
 [data-theme="dark"] {
-  --bg-canvas:        ${D.canvas};
-  --bg-panel:         ${_r(D.panelSolid, 0.58)};
-  --bg-panel-solid:   ${D.panelSolid};
-  --bg-elevated:      ${D.elevated};
-  --bg-hover:         ${_r(D.text, 0.051)};
+${genParty(false)}
 
-  --text-primary:     ${D.text};
-  --text-secondary:   ${D.textSecondary};
-  --text-muted:       ${D.textMuted};
+${genThemed(D, true)}
 
-  --border:           ${_r(D.text, 0.059)};
-  --border-strong:    ${_r(D.text, 0.122)};
-
-  --shadow-sm: 0 1px 4px rgba(0,0,0,0.20), 0 0 0 1px rgba(255,255,255,0.03);
-  --shadow-md: 0 4px 20px rgba(0,0,0,0.30), 0 0 0 1px rgba(255,255,255,0.03);
-  --shadow-lg: 0 12px 48px rgba(0,0,0,0.40), 0 0 0 1px rgba(255,255,255,0.03);
-
-  --accent:           ${D.accent};
-  --accent-light:     ${D.accentLight};
-  --accent-glow:      ${_r(D.accent, 0.18)};
-  --accent-subtle:    ${_r(D.accent, 0.078)};
-
-  --party-red:        ${D.red};
-  --party-blue:       ${D.blue};
-  --party-yellow:     ${D.yellow};
-  --party-green:      ${D.green};
-  --party-none:       ${D.textMuted};
-
-  --hex-stroke:       ${_r(D.text, 0.04)};
-  --hex-hover-stroke: ${_r(D.text, 0.22)};
-  --hex-min-opacity:  0.30;
-
-  --bar-track:        ${_r(D.text, 0.06)};
-
-  --tooltip-bg:       ${D.text};
-  --tooltip-fg:       ${D.canvas};
+  --shadow-sm: 0 1px 4px #00000033, 0 0 0 1px #FFFFFF08;
+  --shadow-md: 0 4px 20px #0000004D, 0 0 0 1px #FFFFFF08;
+  --shadow-lg: 0 12px 48px #00000066, 0 0 0 1px #FFFFFF08;
+  --hex-min-opacity: 0.30;
 
   color-scheme: dark;
 }`;

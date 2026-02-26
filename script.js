@@ -4,22 +4,6 @@ const CONFIG = {
     rows: 18,
     cols: 25,
     hexSize: 18,
-    colors: {
-        light: {
-            red: { base: '#C42838', dark: '#8A1C28', light: '#E84858', muted: '#e1a6b0', district: '#C42838' },
-            blue: { base: '#1A54B0', dark: '#0E3470', light: '#4D88E8', muted: '#a5bccc', district: '#1A54B0' },
-            yellow: { base: '#B88A00', dark: '#7A5C00', light: '#E0B830', muted: '#ebe4ab', district: '#B88A00' },
-            none: { base: '#d1d5db', dark: '#374151', light: '#e5e7eb', muted: '#f3f4f6', district: '#9ca3af' },
-            minority: '#2B8650'
-        },
-        dark: {
-            red: { base: '#E86070', dark: '#C44050', light: '#F08888', muted: '#4a1820', district: '#E86070' },
-            blue: { base: '#6498E6', dark: '#3868B8', light: '#88B0F0', muted: '#182848', district: '#6498E6' },
-            yellow: { base: '#E0B830', dark: '#B89020', light: '#F0D060', muted: '#3a3010', district: '#E0B830' },
-            none: { base: '#5a564e', dark: '#3a3830', light: '#706860', muted: '#2a2820', district: '#5a564e' },
-            minority: '#50B878'
-        }
-    }
 };
 
 // ─── Precomputed Constants ───
@@ -118,7 +102,7 @@ function cacheDOMElements() {
 const hexElements = new Map();
 
 // Resolved color reference — updated on theme change
-let activeColors = CONFIG.colors.light;
+let activeColors = _PALETTE.light;
 
 const state = {
     hexes: new Map(),
@@ -1423,7 +1407,7 @@ function initTheme() {
 
 function syncTheme() {
     const isDark = document.documentElement.dataset.theme === 'dark';
-    activeColors = isDark ? CONFIG.colors.dark : CONFIG.colors.light;
+    activeColors = isDark ? _PALETTE.dark : _PALETTE.light;
     refreshMinOpacity();
     updateThemeIcon();
 }

@@ -18,7 +18,23 @@ Open `http://localhost:8000`. There is no package.json, no test suite, and no li
 
 ## Architecture
 
-Three files: `index.html` (~350 lines), `script.js` (~1555 lines), `styles.css` (~1330 lines).
+Four files: `colors.js` (~150 lines), `index.html` (~355 lines), `script.js` (~1555 lines), `styles.css` (~1230 lines).
+
+### Color System (colors.js)
+
+Single source of truth for all colors and fonts, loaded before `styles.css` in `<head>`. Exposes three globals:
+- **`_r(hex, alpha)`**: alpha helper — appends 2-digit hex alpha to a color string
+- **`_FONT`**: frozen object with `heading`, `body`, `mono` font stacks
+- **`_PALETTE`**: frozen object with `light` and `dark` sub-objects, each containing:
+  - Surface colors: `canvas`, `panelSolid`, `elevated`
+  - Text: `text`, `textSecondary`, `textMuted`
+  - Accent: `accent`, `accentLight`
+  - Party colors (frozen sub-objects): `red`, `blue`, `yellow`, `none` — each with `{ base, dark, light, muted, district }`
+  - `green` (minority marker, single hex string)
+
+An IIFE injects `<style id="palette-vars">` into `<head>` with all CSS custom properties (`:root`/`[data-theme="light"]` and `[data-theme="dark"]`). Layout-only tokens (`--radius-*`, `--toolbar-h`, `--panel-w`, `--ease-*`, `color-scheme`) remain in `styles.css`.
+
+In `script.js`, `activeColors` points to `_PALETTE.light` or `_PALETTE.dark` (swapped in `syncTheme()`). Party colors in CSS are accessed via `var(--party-red)` etc.; in JS via `activeColors.red.base`, `.dark`, etc.
 
 ### State Management (script.js)
 
@@ -65,7 +81,7 @@ Map-first floating-panel layout (not sidebar-based):
 
 ### Styling (styles.css)
 
-CSS custom properties on `:root` and `[data-theme="dark"]` control theming. Light/dark themes with warm cream (#F0EDE4) / near-black (#0C0B09) canvases. Terracotta accent (#D97757). Party colors: Red (#C42838), Blue (#1A54B0), Yellow (#B88A00). Glass-morphism panels with `backdrop-filter`. Typography: Instrument Serif (headings), Sora (sidebar/section headers, uppercase), Geist (body), Geist Mono (data). Fonts loaded via `<link>` in HTML — do NOT add duplicate `@import` in CSS.
+All color/font CSS custom properties are injected by `colors.js` (see Color System above). `styles.css` contains only layout tokens and component styles. Light/dark themes with warm cream (#F0EDE4) / near-black (#0C0B09) canvases. Terracotta accent (#D97757). Party colors: Red (#C42838), Blue (#1A54B0), Yellow (#B88A00). Glass-morphism panels with `backdrop-filter`. Typography: Instrument Serif (headings), Sora (sidebar/section headers, uppercase), Geist (body), Geist Mono (data). Fonts loaded via `<link>` in HTML — do NOT add duplicate `@import` in CSS.
 
 ### User Interactions
 

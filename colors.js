@@ -112,8 +112,8 @@ const _PALETTE = Object.freeze({
 
   --accent:           ${L.accent};
   --accent-light:     ${L.accentLight};
-  --accent-glow:      ${_r(P.accent, 0.18)};
-  --accent-subtle:    ${_r(P.accent, 0.078)};
+  --accent-glow:      ${_r(L.accent, 0.18)};
+  --accent-subtle:    ${_r(L.accent, 0.078)};
 
   --party-red:        ${L.red};
   --party-blue:       ${L.blue};
@@ -150,8 +150,8 @@ const _PALETTE = Object.freeze({
 
   --accent:           ${D.accent};
   --accent-light:     ${D.accentLight};
-  --accent-glow:      ${_r(P.accent, 0.18)};
-  --accent-subtle:    ${_r(P.accent, 0.078)};
+  --accent-glow:      ${_r(D.accent, 0.18)};
+  --accent-subtle:    ${_r(D.accent, 0.078)};
 
   --party-red:        ${D.red};
   --party-blue:       ${D.blue};

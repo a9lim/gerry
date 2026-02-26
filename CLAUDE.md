@@ -39,10 +39,11 @@ User input (mouse/keyboard) → Paint/Erase/Zoom handler → Mutate state
 
 Map-first floating-panel layout (not sidebar-based):
 - **Intro screen**: themed splash with instruction cards and CTA, dismissed on click
-- **Toolbar**: fixed glass bar at top (12px inset) with tool buttons
+- **Toolbar**: fixed glass bar at top (12px inset) with tool buttons; title uses `<em>` for italic accent-gradient second word
 - **Map**: full-viewport SVG canvas (`<main>` is `position: fixed; inset: 0`)
 - **District palette**: fixed pill-shaped bar at bottom center with plain text numbers (active = bold + accent color, assigned = party color text)
-- **Stats panel**: toggleable floating panel (right side on desktop, bottom sheet on mobile ≤900px)
+- **Stats panel**: toggleable floating panel (right side, extends to bottom edge; bottom sheet on mobile ≤900px)
+- **Zoom controls**: floating left side, extends to bottom edge
 - Entrance animations gated by `.app-ready` class added to `<body>` when intro is dismissed
 
 ### Key Algorithms

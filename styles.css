@@ -336,6 +336,14 @@ body {
     white-space: nowrap;
 }
 
+.toolbar-brand h1 em {
+    font-style: italic;
+    background: linear-gradient(135deg, var(--accent-light) 20%, var(--accent) 80%);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+}
+
 .toolbar-actions {
     display: flex;
     gap: 3px;
@@ -558,7 +566,7 @@ main {
 /* ─── Map Controls (floating zoom) ─── */
 #map-controls {
     position: absolute;
-    bottom: calc(var(--palette-h) + 24px);
+    bottom: 12px;
     left: 16px;
     display: flex;
     flex-direction: column;
@@ -720,7 +728,7 @@ main {
     top: calc(12px + var(--toolbar-h) + 12px);
     right: 12px;
     width: var(--panel-w);
-    bottom: calc(12px + var(--palette-h) + 12px);
+    bottom: 12px;
     display: flex;
     flex-direction: column;
     background: var(--bg-panel);
@@ -1227,7 +1235,7 @@ main {
     }
 
     #map-controls {
-        bottom: calc(var(--palette-h) + 18px);
+        bottom: 8px;
         left: 10px;
     }
 

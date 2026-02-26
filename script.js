@@ -575,10 +575,22 @@ function setupUI() {
     });
 
     // Stats panel toggle
+    function shiftMapForSidebar(opening) {
+        if (window.innerWidth <= 900) return; // bottom sheet on mobile, no shift
+        const panelW = 350; // --panel-w
+        const scale = Math.min(window.innerWidth / state.viewBox.w, window.innerHeight / state.viewBox.h);
+        const dx = panelW / (2 * scale);
+        const endVb = { ...state.viewBox };
+        endVb.x += opening ? dx : -dx;
+        clampViewBox(endVb);
+        animateViewBox({ ...state.viewBox }, endVb, 450);
+    }
     if ($.statsToggle && $.sidebar) {
         $.statsToggle.addEventListener('click', () => {
+            const opening = !$.sidebar.classList.contains('open');
             $.sidebar.classList.toggle('open');
             $.statsToggle.classList.toggle('active');
+            shiftMapForSidebar(opening);
         });
         if (window.innerWidth > 900) {
             $.sidebar.classList.add('open');
@@ -589,6 +601,7 @@ function setupUI() {
         $.closeStats.addEventListener('click', () => {
             $.sidebar.classList.remove('open');
             $.statsToggle?.classList.remove('active');
+            shiftMapForSidebar(false);
         });
     }
 
@@ -672,12 +685,12 @@ function onWheel(e) {
     const svgY = vb.y + my * vb.h;
 
     const zoomFactor = e.deltaY > 0 ? 1.12 : 1 / 1.12;
-    const newW = vb.w * zoomFactor;
-    const newH = vb.h * zoomFactor;
-
-    const minW = state.origViewBox.w * 0.3;
-    const maxW = state.origViewBox.w * 1.5;
-    if (newW < minW || newW > maxW) return;
+    const minW = state.origViewBox.w / 3;
+    const maxW = state.origViewBox.w;
+    const ratio = vb.h / vb.w;
+    const newW = Math.max(minW, Math.min(maxW, vb.w * zoomFactor));
+    if (newW === vb.w) return;
+    const newH = newW * ratio;
 
     vb.x = svgX - mx * newW;
     vb.y = svgY - my * newH;
@@ -696,12 +709,12 @@ function smoothZoom(direction) {
     const cy = vb.y + vb.h / 2;
 
     const factor = direction > 0 ? 1 / 1.25 : 1.25;
-    const targetW = vb.w * factor;
-    const targetH = vb.h * factor;
-
-    const minW = state.origViewBox.w * 0.3;
-    const maxW = state.origViewBox.w * 1.5;
-    if (targetW < minW || targetW > maxW) return;
+    const minW = state.origViewBox.w / 3;
+    const maxW = state.origViewBox.w;
+    const ratio = vb.h / vb.w;
+    const targetW = Math.max(minW, Math.min(maxW, vb.w * factor));
+    if (targetW === vb.w) return;
+    const targetH = targetW * ratio;
 
     const startVb = { ...vb };
     const endVb = { x: cx - targetW / 2, y: cy - targetH / 2, w: targetW, h: targetH };
@@ -709,7 +722,12 @@ function smoothZoom(direction) {
 }
 
 function zoomToFit() {
-    animateViewBox({ ...state.viewBox }, { ...state.origViewBox }, 300);
+    const endVb = { ...state.origViewBox };
+    if ($.sidebar?.classList.contains('open') && window.innerWidth > 900) {
+        const scale = Math.min(window.innerWidth / endVb.w, window.innerHeight / endVb.h);
+        endVb.x += 350 / (2 * scale);
+    }
+    animateViewBox({ ...state.viewBox }, endVb, 300);
 }
 
 function animateViewBox(startVb, endVb, duration) {
@@ -915,7 +933,7 @@ function showHexTooltip(e, qr) {
 
 // ─── Rendering ───
 function getPartyColor(party) {
-    return activeColors[party].base;
+    return activeColors[party];
 }
 
 let _cachedMinOpacity = 0.22;
@@ -984,11 +1002,23 @@ function renderMap() {
     });
 
     const padding = CONFIG.hexSize * 2;
-    const w = maxX - minX + padding * 2;
-    const h = maxY - minY + padding * 2;
-    const vb = { x: minX - padding, y: minY - padding, w, h };
-    state.viewBox = { ...vb };
+    const cW = maxX - minX + padding * 2;
+    const cH = maxY - minY + padding * 2;
+
+    // Expand viewBox vertically so hex content clears toolbar & palette at 100% zoom
+    const vpH = window.innerHeight;
+    const uiClearance = 172; // toolbar (12+52+12) + palette (12+56+12) + margin
+    const vScale = vpH / Math.max(vpH - uiClearance, 200);
+    const h = cH * vScale;
+
+    const vb = { x: minX - padding, y: minY - padding - (h - cH) / 2, w: cW, h };
     state.origViewBox = { ...vb };
+    // Shift map left if sidebar is already open (desktop auto-open)
+    if ($.sidebar?.classList.contains('open') && window.innerWidth > 900) {
+        const scale = Math.min(window.innerWidth / vb.w, vpH / vb.h);
+        vb.x += 350 / (2 * scale); // --panel-w / 2
+    }
+    state.viewBox = { ...vb };
     $.svg.setAttribute('viewBox', `${vb.x} ${vb.y} ${vb.w} ${vb.h}`);
 
     renderBorders();
@@ -1105,7 +1135,7 @@ function renderBorders() {
         const path = document.createElementNS("http://www.w3.org/2000/svg", "path");
         path.setAttribute("d", dAttrTrimmed);
         path.setAttribute("clip-path", `url(#clip-d-${i})`);
-        path.style.stroke = activeColors[winner]?.dark || activeColors.none.dark;
+        path.style.stroke = _darken(activeColors[winner] || activeColors.none);
         path.classList.add('district-path', 'outline');
         districtGroups[i].appendChild(path);
 
@@ -1345,7 +1375,7 @@ function updateSidebarDetails(dId) {
 
     if ($.detailWinner) {
         $.detailWinner.textContent = d.winner.charAt(0).toUpperCase() + d.winner.slice(1);
-        $.detailWinner.style.color = d.winner !== 'none' ? activeColors[d.winner].base : 'var(--text-secondary)';
+        $.detailWinner.style.color = d.winner !== 'none' ? activeColors[d.winner] : 'var(--text-secondary)';
     }
 
     const totalVotes = d.votes.red + d.votes.blue + d.votes.yellow;
@@ -1496,12 +1526,12 @@ function initTouchHandlers() {
                 const svgX = vb.x + mx * vb.w;
                 const svgY = vb.y + my * vb.h;
 
-                const newW = vb.w * scale;
-                const newH = vb.h * scale;
-
-                const minW = state.origViewBox.w * 0.3;
-                const maxW = state.origViewBox.w * 1.5;
-                if (newW >= minW && newW <= maxW) {
+                const minW = state.origViewBox.w / 3;
+                const maxW = state.origViewBox.w;
+                const ratio = vb.h / vb.w;
+                const newW = Math.max(minW, Math.min(maxW, vb.w * scale));
+                if (newW !== vb.w) {
+                    const newH = newW * ratio;
                     vb.x = svgX - mx * newW;
                     vb.y = svgY - my * newH;
                     vb.w = newW;

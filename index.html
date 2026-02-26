@@ -219,8 +219,8 @@
         </div>
         <div class="stats-scroll">
             <!-- Statewide Results -->
-            <div class="panel">
-                <h2>Statewide Results</h2>
+            <div class="stat-group">
+                <div class="group-label">Statewide Results</div>
                 <div id="state-results">
                     <div class="seats-grid">
                         <div class="seat-block red">
@@ -254,8 +254,8 @@
             </div>
 
             <!-- Popular Vote vs Seats -->
-            <div class="panel" id="popular-vote-panel">
-                <h2>Popular Vote vs Seats</h2>
+            <div class="stat-group" id="popular-vote-panel">
+                <div class="group-label">Popular Vote vs Seats</div>
                 <p class="panel-hint">When seat share diverges from vote share, gerrymandering may be at work.</p>
                 <div class="proportionality-row">
                     <span class="prop-label red-text">Red</span>
@@ -311,27 +311,27 @@
             </div>
 
             <!-- District Details -->
-            <div class="panel">
-                <h2>District Details</h2>
+            <div class="stat-group">
+                <div class="group-label">District Details</div>
                 <div id="selected-district-info" class="hidden">
-                    <h3 id="detail-title">District 1</h3>
-                    <div class="metric"><span class="label">Winner</span><span class="value"
+                    <div class="group-label" id="detail-title">District 1</div>
+                    <div class="stat-row"><span class="stat-label">Winner</span><span class="stat-value"
                             id="detail-winner">-</span></div>
-                    <div class="metric"><span class="label">Margin of Victory</span><span class="value"
+                    <div class="stat-row"><span class="stat-label">Margin of Victory</span><span class="stat-value"
                             id="detail-margin">-</span></div>
-                    <div class="metric"><span class="label">Population</span><span class="value"
+                    <div class="stat-row"><span class="stat-label">Population</span><span class="stat-value"
                             id="detail-pop">0</span></div>
                     <div class="metric-note">Target: <span id="target-pop"></span> (<span
                             id="detail-deviation"></span>)</div>
-                    <div class="metric"><span class="label">Compactness <span class="info-tip"
+                    <div class="stat-row"><span class="stat-label">Compactness <span class="info-tip"
                                 data-tip="Polsby-Popper score. Higher values mean a more compact, regular shape. Gerrymandered districts tend to have low compactness.">?</span></span><span
-                            class="value" id="detail-compactness">0%</span></div>
-                    <div class="metric"><span class="label">Contiguous <span class="info-tip"
+                            class="stat-value" id="detail-compactness">0%</span></div>
+                    <div class="stat-row"><span class="stat-label">Contiguous <span class="info-tip"
                                 data-tip="A district is contiguous if every hex can be reached from every other hex without leaving the district. Non-contiguous districts are generally illegal.">?</span></span><span
-                            class="value" id="detail-contiguous">Yes</span></div>
-                    <div class="metric"><span class="label">Minority-Majority <span class="info-tip"
+                            class="stat-value" id="detail-contiguous">Yes</span></div>
+                    <div class="stat-row"><span class="stat-label">Minority-Majority <span class="info-tip"
                                 data-tip="A district where over 50% of the population is a minority group. The Voting Rights Act may require creating minority-majority districts to ensure fair representation.">?</span></span><span
-                            class="value" id="detail-mm">No</span></div>
+                            class="stat-value" id="detail-mm">No</span></div>
                     <div class="vote-bar-container">
                         <div class="vote-bar red" id="vote-bar-red" style="width: 0%"></div>
                         <div class="vote-bar blue" id="vote-bar-blue" style="width: 0%"></div>

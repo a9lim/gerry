@@ -18,23 +18,25 @@ Open `http://localhost:8000`. There is no package.json, no test suite, and no li
 
 ## Architecture
 
-Four files: `colors.js` (~150 lines), `index.html` (~355 lines), `script.js` (~1555 lines), `styles.css` (~1230 lines).
+Four files: `colors.js` (~175 lines), `index.html` (~355 lines), `script.js` (~1585 lines), `styles.css` (~1200 lines).
 
 ### Color System (colors.js)
 
-Single source of truth for all colors and fonts, loaded before `styles.css` in `<head>`. Exposes three globals:
+Single source of truth for all colors and fonts, loaded before `styles.css` in `<head>`. Exposes globals:
 - **`_r(hex, alpha)`**: alpha helper — appends 2-digit hex alpha to a color string
+- **`_parseHex`**, **`_rgb2hsl`**, **`_hsl2hex`**: HSL color math helpers (same as biosim's `enzymes.js`)
+- **`_darken(hex)`**: derives a darker variant (`l * 0.7`) — used for district border strokes
 - **`_FONT`**: frozen object with `heading`, `body`, `mono` font stacks
 - **`_PALETTE`**: frozen object with `light` and `dark` sub-objects, each containing:
   - Surface colors: `canvas`, `panelSolid`, `elevated`
   - Text: `text`, `textSecondary`, `textMuted`
   - Accent: `accent`, `accentLight`
-  - Party colors (frozen sub-objects): `red`, `blue`, `yellow`, `none` — each with `{ base, dark, light, muted, district }`
+  - Party colors (plain hex strings): `red`, `blue`, `yellow`, `none`
   - `green` (minority marker, single hex string)
 
 An IIFE injects `<style id="palette-vars">` into `<head>` with all CSS custom properties (`:root`/`[data-theme="light"]` and `[data-theme="dark"]`). Layout-only tokens (`--radius-*`, `--toolbar-h`, `--panel-w`, `--ease-*`, `color-scheme`) remain in `styles.css`.
 
-In `script.js`, `activeColors` points to `_PALETTE.light` or `_PALETTE.dark` (swapped in `syncTheme()`). Party colors in CSS are accessed via `var(--party-red)` etc.; in JS via `activeColors.red.base`, `.dark`, etc.
+In `script.js`, `activeColors` points to `_PALETTE.light` or `_PALETTE.dark` (swapped in `syncTheme()`). Party colors in CSS are accessed via `var(--party-red)` etc.; in JS directly as `activeColors.red` (plain hex strings). Darker variants are computed on the fly via `_darken()`.
 
 ### State Management (script.js)
 
@@ -58,7 +60,7 @@ Map-first floating-panel layout (not sidebar-based):
 - **Toolbar**: fixed glass bar at top (12px inset) with tool buttons; title uses `<em>` for italic accent-gradient second word
 - **Map**: full-viewport SVG canvas (`<main>` is `position: fixed; inset: 0`)
 - **District palette**: fixed pill-shaped bar at bottom center with plain text numbers (active = bold + accent color, assigned = party color text)
-- **Stats panel**: toggleable floating panel (right side, extends to bottom edge; bottom sheet on mobile ≤900px)
+- **Stats panel**: toggleable floating panel (right side, extends to bottom edge; bottom sheet on mobile ≤900px). Internal sections use `.stat-group` / `.group-label` pattern (shared with biosim's dashboard). Data rows use `.stat-row` / `.stat-label` / `.stat-value`. Hint text uses `.panel-hint` (italic, accent-subtle bg, accent-glow border).
 - **Zoom controls**: floating left side, extends to bottom edge
 - Entrance animations gated by `.app-ready` class added to `<body>` when intro is dismissed
 
@@ -81,7 +83,7 @@ Map-first floating-panel layout (not sidebar-based):
 
 ### Styling (styles.css)
 
-All color/font CSS custom properties are injected by `colors.js` (see Color System above). `styles.css` contains only layout tokens and component styles. Light/dark themes with warm cream (#F0EDE4) / near-black (#0C0B09) canvases. Terracotta accent (#D97757). Party colors: Red (#C42838), Blue (#1A54B0), Yellow (#B88A00). Glass-morphism panels with `backdrop-filter`. Typography: Instrument Serif (headings), Sora (sidebar/section headers, uppercase), Geist (body), Geist Mono (data). Fonts loaded via `<link>` in HTML — do NOT add duplicate `@import` in CSS.
+All color/font CSS custom properties are injected by `colors.js` (see Color System above). `styles.css` contains only layout tokens and component styles. Light/dark themes with warm cream (#F0EDE4) / near-black (#0C0B09) canvases. Orange-red accent (#FE3B01). Party colors: Red (#C42838), Blue (#1A54B0), Yellow (#B88A00). Glass-morphism panels with `backdrop-filter`. Typography: Instrument Serif (headings), Sora (sidebar/section headers, uppercase), Geist (body), Geist Mono (data). Fonts loaded via `<link>` in HTML — do NOT add duplicate `@import` in CSS.
 
 ### User Interactions
 

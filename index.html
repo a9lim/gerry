@@ -9,6 +9,7 @@
         content="An interactive gerrymandering and redistricting simulator. Paint districts on a hex map to explore how borders shape electoral outcomes.">
     <script src="/shared-tokens.js"></script>
     <script src="colors.js"></script>
+    <script src="/shared-touch.js"></script>
     <link rel="stylesheet" href="/shared-base.css">
     <link rel="stylesheet" href="styles.css">
     <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -80,6 +81,7 @@
     <!-- ─── Floating Toolbar ─── -->
     <header id="toolbar" class="sim-toolbar glass">
         <div class="toolbar-brand">
+            <a href="/" class="sim-home" title="a9l.im"><img src="/logo.svg" alt="a9l.im" height="28"></a>
             <h1 class="sim-brand">Redistricting <em>Simulator</em></h1>
         </div>
         <div class="toolbar-actions sim-toolbar-actions">
@@ -204,6 +206,7 @@
 
     <!-- ─── Stats Panel (floating right) ─── -->
     <aside id="sidebar" class="sim-panel glass">
+        <div class="sheet-handle"></div>
         <div class="stats-header">
             <h2 class="stats-title">Analysis</h2>
             <button id="close-stats" class="tool-btn" aria-label="Close panel">

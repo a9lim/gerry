@@ -7,7 +7,9 @@
     <title>Redistricting Simulator</title>
     <meta name="description"
         content="An interactive gerrymandering and redistricting simulator. Paint districts on a hex map to explore how borders shape electoral outcomes.">
+    <script src="/shared-tokens.js"></script>
     <script src="colors.js"></script>
+    <link rel="stylesheet" href="/shared-base.css">
     <link rel="stylesheet" href="styles.css">
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -76,11 +78,11 @@
     </div>
 
     <!-- ─── Floating Toolbar ─── -->
-    <header id="toolbar" class="glass">
+    <header id="toolbar" class="sim-toolbar glass">
         <div class="toolbar-brand">
-            <h1>Redistricting <em>Simulator</em></h1>
+            <h1 class="sim-brand">Redistricting <em>Simulator</em></h1>
         </div>
-        <div class="toolbar-actions">
+        <div class="toolbar-actions sim-toolbar-actions">
             <button id="undo-btn" class="tool-btn" aria-label="Undo" disabled>
                 <svg width="18" height="18" viewBox="0 0 24 24">
                     <polyline points="1 4 1 10 7 10"></polyline>
@@ -171,14 +173,14 @@
                 <g id="label-group"></g>
             </svg>
             <div id="hex-tooltip" class="hex-tooltip"></div>
-            <div id="map-controls" class="glass">
+            <div id="map-controls" class="sim-controls glass">
                 <button class="tool-btn map-ctrl-btn" id="zoom-in-btn" aria-label="Zoom in">
                     <svg width="16" height="16" viewBox="0 0 24 24">
                         <line x1="12" y1="5" x2="12" y2="19"></line>
                         <line x1="5" y1="12" x2="19" y2="12"></line>
                     </svg>
                 </button>
-                <span id="zoom-level">100%</span>
+                <span id="zoom-level" class="zoom-level">100%</span>
                 <button class="tool-btn map-ctrl-btn" id="zoom-out-btn" aria-label="Zoom out">
                     <svg width="16" height="16" viewBox="0 0 24 24">
                         <line x1="5" y1="12" x2="19" y2="12"></line>
@@ -198,10 +200,10 @@
     </main>
 
     <!-- ─── District Palette (floating bottom bar) ─── -->
-    <div id="district-palette" class="glass"></div>
+    <div id="district-palette" class="sim-bar glass"></div>
 
     <!-- ─── Stats Panel (floating right) ─── -->
-    <aside id="sidebar" class="glass">
+    <aside id="sidebar" class="sim-panel glass">
         <div class="stats-header">
             <h2 class="stats-title">Analysis</h2>
             <button id="close-stats" class="tool-btn" aria-label="Close panel">
@@ -211,7 +213,7 @@
                 </svg>
             </button>
         </div>
-        <div class="stats-scroll">
+        <div class="stats-scroll scrollbar-thin">
             <!-- Statewide Results -->
             <div class="stat-group">
                 <div class="group-label">Statewide Results</div>

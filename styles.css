@@ -5,327 +5,23 @@
 
 /* ─── Layout Tokens (colors/fonts injected by colors.js) ─── */
 :root {
-    --radius-sm: 8px;
-    --radius-md: 14px;
-    --radius-lg: 20px;
-    --radius-pill: 9999px;
-
-    --toolbar-h: 52px;
     --palette-h: 56px;
-    --panel-w: 350px;
-
-    --ease-out: cubic-bezier(0.23, 1, 0.32, 1);
-    --ease-spring: cubic-bezier(0.34, 1.56, 0.64, 1);
-    --ease-in-out: cubic-bezier(0.4, 0, 0.2, 1);
-}
-
-/* ─── Glass Panel Utility ─── */
-.glass {
-    background: var(--bg-panel);
-    backdrop-filter: blur(24px) saturate(1.3);
-    -webkit-backdrop-filter: blur(24px) saturate(1.3);
-    border: 1px solid var(--border);
-    box-shadow: var(--shadow-md);
-}
-
-/* ─── Reset ─── */
-*, *::before, *::after {
-    box-sizing: border-box;
-    margin: 0;
-    padding: 0;
 }
 
 /* ─── Base ─── */
 body {
-    background: var(--bg-canvas);
-    color: var(--text);
-    font-family: var(--font-body);
     font-size: 14px;
     line-height: 1.5;
     height: 100vh;
     height: 100dvh;
     overflow: hidden;
-    -webkit-font-smoothing: antialiased;
-    -moz-osx-font-smoothing: grayscale;
-    transition: background-color 0.5s var(--ease-out), color 0.4s var(--ease-out);
 }
 
-/* ═══════════════════════════════════
-   Intro Screen
-   ═══════════════════════════════════ */
-#intro-screen {
-    position: fixed;
-    inset: 0;
-    z-index: 1000;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    background: var(--bg-canvas);
-    transition: opacity 0.85s var(--ease-out), transform 0.85s var(--ease-out);
-}
-
-#intro-screen.hidden {
-    opacity: 0;
-    transform: scale(1.02);
-    pointer-events: none;
-}
-
-.intro-bg {
-    position: absolute;
-    inset: 0;
-    background:
-        radial-gradient(ellipse at 25% 35%, var(--intro-warm) 0%, transparent 55%),
-        radial-gradient(ellipse at 75% 65%, var(--intro-cool) 0%, transparent 45%);
-    animation: introBgPulse 10s ease-in-out infinite alternate;
-}
-
-@keyframes introBgPulse {
-    0% { opacity: 0.5; transform: scale(1); }
-    100% { opacity: 1; transform: scale(1.05); }
-}
-
-.intro-content {
-    text-align: center;
-    max-width: 620px;
-    padding: 2.5rem;
-    position: relative;
-    z-index: 1;
-    animation: introContentIn 1s var(--ease-out) 0.15s both;
-}
-
-@keyframes introContentIn {
-    from { opacity: 0; transform: translateY(30px); }
-    to { opacity: 1; transform: translateY(0); }
-}
-
-.intro-overline {
-    display: block;
-    font-family: var(--font-mono);
-    font-size: 0.72rem;
-    font-weight: 500;
-    letter-spacing: 0.15em;
-    text-transform: uppercase;
-    color: var(--accent);
-    margin-bottom: 1.2rem;
-}
-
-.intro-title {
-    font-family: var(--font-display);
-    font-size: clamp(3.2rem, 8vw, 5.5rem);
-    font-weight: 400;
-    color: var(--text);
-    line-height: 0.92;
-    letter-spacing: -0.03em;
-    margin-bottom: 1.5rem;
-}
-
-.intro-desc {
-    font-family: var(--font-body);
-    color: var(--text-secondary);
-    font-size: clamp(0.88rem, 1.4vw, 1rem);
-    line-height: 1.7;
-    margin-bottom: 2.8rem;
-    font-weight: 400;
-}
-
-.intro-cards {
-    display: flex;
-    gap: 1rem;
-    margin-bottom: 3rem;
-    justify-content: center;
-    flex-wrap: wrap;
-}
-
-.intro-card {
-    display: flex;
-    align-items: center;
-    gap: 0.75rem;
-    padding: 0.7rem 1rem;
-    background: var(--bg-hover);
-    border: 1px solid var(--border);
-    border-radius: var(--radius-md);
-    text-align: left;
-    transition: background 0.25s;
-}
-
-.intro-card:hover {
-    background: var(--border-strong);
-}
-
-.intro-card-icon {
-    width: 36px;
-    height: 36px;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    border-radius: 10px;
-    background: var(--accent-subtle);
-    color: var(--accent);
-    flex-shrink: 0;
-}
-
-.intro-card-text {
-    display: flex;
-    flex-direction: column;
-}
-
-.intro-card-text strong {
-    color: var(--text);
-    font-size: 0.82rem;
-    font-weight: 600;
-    line-height: 1.2;
-}
-
-.intro-card-text span {
-    color: var(--text-muted);
-    font-size: 0.72rem;
-    line-height: 1.4;
-}
-
-#intro-start {
-    font-family: var(--font-body);
-    font-size: 0.92rem;
-    font-weight: 500;
-    color: #FDFBF5;
-    background: var(--accent);
-    border: none;
-    border-radius: var(--radius-pill);
-    padding: 0.8rem 2.8rem;
-    cursor: pointer;
-    letter-spacing: 0.02em;
-    transition: all 0.3s var(--ease-out);
-    box-shadow: 0 0 40px var(--accent-glow), 0 0 80px var(--intro-warm);
-}
-
-#intro-start:hover {
-    background: var(--accent-light);
-    transform: translateY(-2px);
-    box-shadow: 0 0 50px var(--accent-glow), 0 0 100px var(--intro-warm-hover);
-}
-
-#intro-start:active {
-    transform: translateY(0);
-    box-shadow: 0 0 30px var(--accent-glow);
-}
-
-/* ═══════════════════════════════════
-   Floating Toolbar
-   ═══════════════════════════════════ */
-#toolbar {
-    position: fixed;
-    top: 12px;
-    left: 12px;
-    right: 12px;
-    height: var(--toolbar-h);
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
-    padding: 0 12px 0 20px;
-    border-radius: var(--radius-lg);
-    z-index: 100;
-    opacity: 0;
-    pointer-events: none;
-    transition: background-color 0.4s var(--ease-out), border-color 0.3s var(--ease-out);
-}
-
-.app-ready #toolbar {
-    animation: slideDown 0.55s var(--ease-out) 0.08s both;
-    pointer-events: auto;
-}
-
-@keyframes slideDown {
-    from { opacity: 0; transform: translateY(-16px); }
-    to { opacity: 1; transform: translateY(0); }
-}
-
-.toolbar-brand h1 {
-    font-family: var(--font-display);
-    font-size: clamp(1.1rem, 2vw, 1.5rem);
-    font-weight: 400;
-    color: var(--text);
-    letter-spacing: -0.025em;
-    line-height: 1.1;
-    white-space: nowrap;
-}
-
-.toolbar-brand h1 em {
-    font-style: italic;
-    background: linear-gradient(135deg, var(--accent-light) 20%, var(--accent) 80%);
-    -webkit-background-clip: text;
-    -webkit-text-fill-color: transparent;
-    background-clip: text;
-}
-
-.toolbar-actions {
-    display: flex;
-    gap: 3px;
-    align-items: center;
-    flex-shrink: 0;
-}
-
-/* ─── Tool Buttons ─── */
-.tool-btn {
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    width: 34px;
-    height: 34px;
-    background: transparent;
-    border: 1px solid transparent;
-    border-radius: var(--radius-sm);
-    color: var(--text-muted);
-    cursor: pointer;
-    transition: color 0.2s, background 0.2s, border-color 0.2s, opacity 0.2s, box-shadow 0.2s;
-    padding: 0;
-    flex-shrink: 0;
-    outline: none;
-    -webkit-appearance: none;
-}
-
-.tool-btn svg {
-    fill: none;
-    stroke: currentColor;
-    stroke-width: 2;
-    stroke-linecap: round;
-    stroke-linejoin: round;
-}
-
+/* ─── Tool Buttons (overrides) ─── */
 #zoom-in-btn svg,
 #zoom-out-btn svg,
 #close-stats svg {
     stroke-width: 2.5;
-}
-
-.tool-btn:hover {
-    color: var(--text);
-    background: var(--bg-hover);
-    border-color: var(--border);
-}
-
-.tool-btn:active {
-    background: var(--border-strong);
-    transition-duration: 0.05s;
-}
-
-.tool-btn:focus-visible {
-    outline: 2px solid var(--accent);
-    outline-offset: 2px;
-}
-
-.tool-btn:disabled,
-.tool-btn[disabled] {
-    opacity: 0.22;
-    cursor: default;
-    pointer-events: none;
-}
-
-.tool-sep {
-    width: 1px;
-    height: 18px;
-    background: var(--border-strong);
-    margin: 0 4px;
-    flex-shrink: 0;
-    opacity: 0.6;
 }
 
 /* Active tool states */
@@ -349,12 +45,6 @@ body {
 
 #reset-btn:hover { color: var(--party-red); }
 #randomize-btn:hover { color: var(--party-blue); }
-
-#stats-toggle.active {
-    color: var(--accent);
-    background: var(--accent-subtle);
-    border-color: var(--accent-glow);
-}
 
 /* Theme toggle icon visibility — CSS-driven, no JS needed */
 #theme-btn .icon-sun,
@@ -502,34 +192,7 @@ main {
     letter-spacing: 0.02em;
 }
 
-/* ─── Map Controls (floating zoom) ─── */
-#map-controls {
-    position: absolute;
-    bottom: 12px;
-    left: 16px;
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    gap: 1px;
-    border-radius: var(--radius-md);
-    padding: 3px;
-    z-index: 20;
-    font-variant-numeric: tabular-nums;
-    opacity: 0;
-    pointer-events: none;
-    transition: background-color 0.4s var(--ease-out), border-color 0.3s var(--ease-out);
-}
-
-.app-ready #map-controls {
-    animation: slideInLeft 0.4s var(--ease-out) 0.35s both;
-    pointer-events: auto;
-}
-
-@keyframes fadeIn {
-    from { opacity: 0; }
-    to { opacity: 1; }
-}
-
+/* ─── Map Controls ─── */
 .map-ctrl-btn {
     height: 30px;
     color: var(--text-secondary);
@@ -540,55 +203,9 @@ main {
     border-color: transparent;
 }
 
-#zoom-level {
-    font-family: var(--font-mono);
-    font-size: 0.56rem;
-    font-weight: 500;
-    color: var(--text-muted);
-    padding: 0 4px;
-    text-align: center;
-    min-width: 34px;
-    user-select: none;
-    line-height: 1.5;
-    letter-spacing: -0.02em;
-}
-
-.ctrl-sep {
-    width: 20px;
-    height: 1px;
-    background: var(--border);
-    margin: 2px auto;
-}
-
 /* ═══════════════════════════════════
-   District Palette (floating bottom)
+   District Palette
    ═══════════════════════════════════ */
-#district-palette {
-    position: fixed;
-    bottom: 12px;
-    left: 50%;
-    transform: translateX(-50%);
-    display: flex;
-    align-items: center;
-    gap: 5px;
-    padding: 5px 8px;
-    border-radius: var(--radius-pill);
-    z-index: 100;
-    opacity: 0;
-    pointer-events: none;
-    transition: background-color 0.4s var(--ease-out), border-color 0.3s var(--ease-out);
-}
-
-.app-ready #district-palette {
-    animation: paletteEnter 0.5s var(--ease-out) 0.2s both;
-    pointer-events: auto;
-}
-
-@keyframes paletteEnter {
-    from { opacity: 0; transform: translateX(-50%) translateY(12px); }
-    to { opacity: 1; transform: translateX(-50%) translateY(0); }
-}
-
 .palette-btn {
     width: 28px;
     height: 28px;
@@ -629,50 +246,8 @@ main {
 }
 
 /* ═══════════════════════════════════
-   Stats Panel (floating right)
+   Stats Panel
    ═══════════════════════════════════ */
-#sidebar {
-    position: fixed;
-    top: calc(12px + var(--toolbar-h) + 12px);
-    right: 12px;
-    width: var(--panel-w);
-    bottom: 12px;
-    display: flex;
-    flex-direction: column;
-    border-radius: var(--radius-lg);
-    z-index: 90;
-    box-shadow: var(--shadow-lg);
-    overflow: hidden;
-    transform: translateX(calc(100% + 24px));
-    transition: background-color 0.4s, border-color 0.3s;
-}
-
-.app-ready #sidebar {
-    transition: transform 0.55s var(--ease-out), background-color 0.4s, border-color 0.3s;
-}
-
-.app-ready #sidebar.open {
-    transform: translateX(0);
-}
-
-.stats-header {
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
-    padding: 14px 16px 10px;
-    border-bottom: 1px solid var(--border);
-    flex-shrink: 0;
-}
-
-.stats-title {
-    font-family: var(--font-body);
-    font-size: 0.72rem;
-    font-weight: 600;
-    text-transform: uppercase;
-    letter-spacing: 0.12em;
-    color: var(--text);
-}
-
 .stats-scroll {
     flex: 1;
     overflow-y: auto;
@@ -681,55 +256,6 @@ main {
     display: flex;
     flex-direction: column;
     font-variant-numeric: tabular-nums;
-    scrollbar-width: thin;
-    scrollbar-color: var(--border-strong) transparent;
-}
-
-.stats-scroll::-webkit-scrollbar {
-    width: 4px;
-}
-
-.stats-scroll::-webkit-scrollbar-track {
-    background: transparent;
-}
-
-.stats-scroll::-webkit-scrollbar-thumb {
-    background: var(--border-strong);
-    border-radius: 4px;
-}
-
-/* ─── Stat Groups (sections inside stats) ─── */
-.stat-group {
-    margin-bottom: 0.7rem;
-}
-
-.stat-group:last-child {
-    margin-bottom: 0;
-}
-
-.group-label {
-    font-family: var(--font-body);
-    font-size: 0.68rem;
-    font-weight: 600;
-    text-transform: uppercase;
-    letter-spacing: 0.12em;
-    color: var(--text-muted);
-    margin-bottom: 0.65rem;
-    padding-bottom: 0.4rem;
-    border-bottom: 1px solid var(--border);
-}
-
-.panel-hint {
-    color: var(--text-muted);
-    font-size: clamp(0.62rem, 0.9vw, 0.7rem);
-    line-height: 1.5;
-    font-style: italic;
-    font-family: var(--font-body);
-    margin-top: 0.5rem;
-    padding: 0.4rem 0.55rem;
-    border-radius: var(--radius-sm);
-    background: var(--accent-subtle);
-    border: 1px solid var(--accent-glow);
 }
 
 /* ─── Seats Grid ─── */
@@ -776,36 +302,7 @@ main {
     color: var(--text-muted);
 }
 
-/* ─── Stat Rows ─── */
-.stat-row {
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-    padding: 6px 8px;
-    margin-bottom: 1px;
-    border-radius: 6px;
-    font-size: 0.8rem;
-    transition: background 0.15s;
-}
-
-.stat-row:hover {
-    background: var(--bg-hover);
-}
-
-.stat-label {
-    font-family: var(--font-body);
-    color: var(--text-secondary);
-    font-weight: 400;
-    font-size: 0.78rem;
-}
-
-.stat-value {
-    font-family: var(--font-mono);
-    font-weight: 600;
-    color: var(--text);
-    font-size: 0.78rem;
-}
-
+/* ─── Stat Rows (overrides) ─── */
 .stat-note {
     color: var(--text-muted);
     font-size: 0.68rem;
@@ -816,10 +313,6 @@ main {
 }
 
 /* ─── District Details ─── */
-.hidden {
-    display: none !important;
-}
-
 #selected-district-info {
     display: block;
 }
@@ -1041,17 +534,6 @@ main {
 .hex-tooltip .tt-y { color: var(--tip-yellow); }
 .hex-tooltip .tt-m { color: var(--tip-green); }
 
-/* ─── Focus & Selection ─── */
-:focus-visible {
-    outline: 2px solid var(--accent);
-    outline-offset: 2px;
-}
-
-::selection {
-    background: var(--accent-glow);
-    color: var(--text);
-}
-
 /* ═══════════════════════════════════
    Responsive
    ═══════════════════════════════════ */
@@ -1066,19 +548,7 @@ main {
 /* Mobile */
 @media (max-width: 900px) {
     :root {
-        --toolbar-h: 48px;
         --palette-h: 52px;
-    }
-
-    #toolbar {
-        top: 8px;
-        left: 8px;
-        right: 8px;
-        padding: 0 8px 0 14px;
-    }
-
-    .toolbar-brand h1 {
-        font-size: 1.05rem;
     }
 
     .tool-btn {
@@ -1089,11 +559,6 @@ main {
     .tool-btn svg {
         width: 16px;
         height: 16px;
-    }
-
-    .tool-sep {
-        height: 14px;
-        margin: 0 2px;
     }
 
     #district-palette {
@@ -1148,21 +613,9 @@ main {
 
 /* Small phones */
 @media (max-width: 600px) {
-    .toolbar-brand h1 {
-        font-size: 0.92rem;
-    }
-
-    .toolbar-actions {
-        gap: 2px;
-    }
-
     .tool-btn {
         width: 34px;
         height: 34px;
-    }
-
-    .tool-sep {
-        margin: 0 1px;
     }
 
     .palette-btn {
@@ -1170,24 +623,10 @@ main {
         height: 28px;
         font-size: 0.72rem;
     }
-
-    .intro-cards {
-        flex-direction: column;
-        align-items: center;
-    }
-
-    .intro-card {
-        width: 100%;
-        max-width: 260px;
-    }
 }
 
 /* Extra small */
 @media (max-width: 440px) {
-    .hide-sm {
-        display: none !important;
-    }
-
     .toolbar-brand {
         display: none;
     }

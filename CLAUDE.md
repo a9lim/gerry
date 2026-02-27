@@ -1,44 +1,40 @@
 # CLAUDE.md
 
-This file provides guidance to Claude Code (claude.ai/code) when working with code in this repository.
+Part of the **a9l.im** portfolio. See parent `site-meta/CLAUDE.md` for the shared design system specification. Sibling projects: `physsim`, `biosim`.
 
-## Project Overview
+## Overview
 
 Interactive redistricting/gerrymandering simulator. Users paint congressional districts on a hex-tile map and observe how boundary placement affects electoral outcomes in real time. Zero dependencies — vanilla HTML/CSS/JS with SVG rendering.
 
 ## Running Locally
 
-No build step. Serve with any static HTTP server:
 ```bash
 python -m http.server 8000
 # or
 npx serve .
 ```
-Open `http://localhost:8000`. There is no package.json, no test suite, and no linter configured.
+
+No package.json, no test suite, no linter configured.
 
 ## Architecture
 
-Four files: `colors.js` (~175 lines), `index.html` (~345 lines), `script.js` (~1675 lines), `styles.css` (~1190 lines).
+Four project files plus two shared files: `colors.js` (~78 lines), `index.html` (~345 lines), `script.js` (~1675 lines), `styles.css` (~640 lines). Loads `/shared-tokens.js` and `/shared-base.css` from the root site.
 
 ### Color System (colors.js)
 
-Single source of truth for all colors and fonts, loaded before `styles.css` in `<head>`. Exposes globals:
-- **`_r(hex, alpha)`**: alpha helper — appends 2-digit hex alpha to a color string
-- **`_parseHex`**, **`_rgb2hsl`**, **`_hsl2hex`**: HSL color math helpers (same as biosim's `enzymes.js`)
-- **`_darken(hex)`**: derives a darker variant (`l * 0.7`) — used for district border strokes
-- **`_FONT`**: frozen object with `display`, `body`, `mono` font stacks
-- **`_PALETTE`**: frozen object with `light` and `dark` sub-objects, each containing:
-  - Surface colors: `canvas`, `panelSolid`, `elevated`
-  - Text: `text`, `textSecondary`, `textMuted`
-  - Accent: `accent`, `accentLight`
-  - Party colors (plain hex strings): `red`, `blue`, `yellow`, `none`
-  - `green` (minority marker, single hex string)
+Extends `shared-tokens.js` with project-specific party colors referencing `_PALETTE.extended.*`:
 
-An IIFE injects `<style id="palette-vars">` into `<head>` with all CSS custom properties (`:root` for light defaults, `[data-theme="dark"]` for dark overrides). Layout-only tokens (`--radius-*`, `--toolbar-h`, `--panel-w`, `--ease-*`, `color-scheme`) remain in `styles.css`.
+| Party | `_PALETTE` key | Extended source |
+|-------|---------------|-----------------|
+| Red | `red` | `extended.rose` |
+| Blue | `blue` | `extended.blue` |
+| Yellow | `yellow` | `extended.orange` |
+| None | `none` | `extended.slate` |
+| Green (minority) | `green` | `extended.green` |
 
-In `script.js`, `activeColors` points to `_PALETTE.light` or `_PALETTE.dark` (swapped in `syncTheme()`). Party colors in CSS are accessed via `var(--party-red)` etc.; in JS directly as `activeColors.red` (plain hex strings). Darker variants are computed on the fly via `_darken()`.
+An IIFE injects `<style id="project-vars">` with themed CSS vars: `--party-*` (with `-tint`/`-wash` variants), `--tip-*`, `--hex-stroke`, `--tooltip-bg/fg`, `--bar-track`. Light theme darkens party colors via `_darken()` (from `shared-tokens.js`); dark theme uses base colors directly.
 
-CSS var naming convention (shared with physsim/biosim): `--bg-canvas`, `--bg-panel`, `--bg-panel-solid`, `--bg-elevated`, `--bg-hover`, `--text`, `--text-secondary`, `--text-muted`, `--border`, `--border-strong`, `--accent`, `--accent-light`, `--accent-subtle`, `--accent-glow`. Font vars: `--font-display`, `--font-body`, `--font-mono`.
+In `script.js`, `activeColors` points to `_PALETTE.light` or `_PALETTE.dark` (swapped in `syncTheme()`). Party colors in CSS via `var(--party-red)` etc.; in JS directly as `_PALETTE.red` (plain hex strings). Darker variants computed on the fly via `_darken()`.
 
 ### State Management (script.js)
 
@@ -55,19 +51,6 @@ User input (mouse/keyboard) → Paint/Erase/Zoom handler → Mutate state
 → recalculate metrics & winners → re-render SVG + sidebar → push undo snapshot
 ```
 
-### Layout
-
-Map-first floating-panel layout (not sidebar-based):
-- **Intro screen**: themed splash with instruction cards and CTA, dismissed on click
-- **Toolbar**: fixed glass bar at top (12px inset) with tool buttons; title uses `<em>` for italic accent-gradient second word
-- **Map**: full-viewport SVG canvas (`<main>` is `position: fixed; inset: 0`)
-- **District palette**: fixed pill-shaped bar at bottom center with plain text numbers (active = bold + accent color, assigned = party color text)
-- **Stats panel**: toggleable floating panel (right side, extends to bottom edge; bottom sheet on mobile ≤900px). Internal sections use `.stat-group` / `.group-label` pattern (shared with biosim's dashboard). Data rows use `.stat-row` / `.stat-label` / `.stat-value`. Hint text uses `.panel-hint` (italic, accent-subtle bg, accent-glow border).
-- **Zoom controls**: floating left side, extends to bottom edge
-- Entrance animations gated by `.app-ready` class added to `<body>` when intro is dismissed
-
-**Responsive breakpoints:** 1100px (panel narrows to 320px), 900px (toolbar/palette shrink, sidebar becomes bottom sheet, `--panel-w` no longer shifts map), 600px (smaller toolbar text/buttons, stacked intro cards), 440px (brand hidden, theme toggle hidden via `.hide-sm`).
-
 ### Key Algorithms
 
 - **Hex grid**: Axial coordinate system (q, r, s). `hexToPixel()` / `hexCorners()` convert to SVG positions. Grid is ~18×25 hexes with an organic boundary generated by trigonometric noise.
@@ -77,31 +60,23 @@ Map-first floating-panel layout (not sidebar-based):
 - **Contiguity**: BFS flood-fill from an arbitrary hex in each district; valid if all district hexes are reachable.
 - **District borders**: Extract boundary edges between differently-assigned hexes, chain into continuous SVG paths, clip to district regions.
 
-### Performance Patterns (script.js)
+## UI & Layout
 
-- **`$` object**: cached DOM element references — always use `$.elementName` instead of `document.getElementById()` in hot paths
-- **All `getElementById` calls must live in `cacheDOMElements()`** — including buttons like `$.resetBtn`, `$.randomizeBtn`, `$.zoomInBtn`, `$.zoomOutBtn`, `$.zoomFitBtn`. Never use `getElementById` in `setupUI()` or event handlers.
-- **`hexElements` Map**: maps `"q,r"` keys to SVG `<g>` elements — use instead of `querySelector('.hex[data-qr="..."]')`
-- **Precomputed constants**: `SQRT3`, `HEX_W`, `HEX_H`, `HEX_CORNER_OFFSETS`, `HEX_DIRS` — avoid recalculating geometry
-- **No per-hex event listeners**: SVG-level listeners handle all hex interaction via event bubbling and `getHexFromEvent()`
-- **`scheduleBorderUpdate()`**: throttles border re-rendering to one `requestAnimationFrame` per paint stroke
+Map-first floating-panel layout:
+- **Intro screen**: themed splash with instruction cards and CTA, dismissed on click
+- **Toolbar** (`#toolbar.sim-toolbar`): fixed glass bar at top (12px inset) with tool buttons; title uses `<em>` for italic accent-gradient second word
+- **Map**: full-viewport SVG canvas (`<main>` is `position: fixed; inset: 0`)
+- **District palette**: fixed pill-shaped bar at bottom center with plain text numbers (active = bold + accent color, assigned = party color text)
+- **Stats panel** (`#sidebar`): toggleable floating panel (right side; bottom sheet on mobile ≤900px). Internal sections use `.stat-group` / `.group-label` pattern (from `shared-base.css`). Data rows use `.stat-row` / `.stat-label` / `.stat-value`. Hint text uses `.panel-hint`.
+- **Zoom controls**: floating left side, extends to bottom edge
+- Entrance animations gated by `.app-ready` class added to `<body>` when intro is dismissed
 
-### Helpers (script.js)
+### Responsive Breakpoints
 
-- **`votePcts(votes)`**: returns `{ red, blue, yellow }` as raw percentages. Used by `showHexTooltip()` and `updateSidebarDetails()` — callers round as needed.
-- **`shiftMapForSidebar()`**: reads `--panel-w` from computed styles — no hardcoded pixel values.
-
-### Styling (styles.css)
-
-All color/font CSS custom properties are injected by `colors.js` (see Color System above). `styles.css` contains only layout tokens and component styles. Light/dark themes with warm cream (#F0EDE4) / near-black (#0C0B09) canvases. Orange-red accent (#FE3B01). Party colors: Red (#C42838), Blue (#1A54B0), Yellow (#B88A00). Glass-morphism panels with `backdrop-filter`. Typography: Instrument Serif (headings), Sora (sidebar/section headers, uppercase), Geist (body), Geist Mono (data). Fonts loaded via `<link>` in HTML — do NOT add duplicate `@import` in CSS.
-
-**Shared utilities:**
-- **`.glass`**: shared backdrop-filter/background/border/box-shadow for `#toolbar`, `#map-controls`, `#district-palette`, `#sidebar`. Add this class in HTML; override `box-shadow`/`transition` per-element as needed.
-- **`.tool-btn`**: shared by both toolbar buttons and map-ctrl-btn (zoom in/out/fit). `.map-ctrl-btn` is a small override for size/color. Add both classes in HTML for map controls.
-- **`.tool-btn svg`**: provides `fill: none; stroke: currentColor; stroke-width: 2; stroke-linecap/linejoin: round` defaults. No need for SVG presentation attributes on button icons in HTML. Override `stroke-width: 2.5` on `#zoom-in-btn svg`, `#zoom-out-btn svg`, `#close-stats svg`.
-- **Theme icons**: CSS-driven via `[data-theme="light"] .icon-sun` / `[data-theme="dark"] .icon-moon` — no JS needed. `<html>` has `data-theme="light"` set in markup so icons work before JS.
-- **`font-variant-numeric: tabular-nums`**: inherited from `.stats-scroll` and `#map-controls` — don't add individually to children.
-- **Bar widths**: `.vote-bar, .prop-bar-fill { width: 0 }` in CSS — no inline `style="width: 0%"` needed in HTML.
+- **1100px**: panel narrows to 320px
+- **900px**: toolbar/palette shrink, sidebar becomes bottom sheet. Shared `shared-base.css` rules handle `--toolbar-h: 48px`, `.sim-toolbar` positioning, `.sim-brand` sizing, `.tool-sep` sizing. Project-specific: `.tool-btn` 36×36, palette/map-controls adjustments.
+- **600px**: shared rules handle `.sim-brand`/`.sim-toolbar-actions`/`.tool-sep` further. Project-specific: `.tool-btn` 34×34, palette sizing.
+- **440px**: shared `.hide-sm` hides non-essential elements. Project-specific: brand hidden, toolbar centered.
 
 ### User Interactions
 
@@ -116,13 +91,35 @@ All color/font CSS custom properties are injected by `colors.js` (see Color Syst
 - District palette: click numbered buttons to select active district
 - Stats toggle: show/hide analysis panel (auto-opens on desktop >900px)
 
+## Key Patterns
+
+### Performance (script.js)
+
+- **`$` object**: cached DOM element references — always use `$.elementName` instead of `document.getElementById()` in hot paths
+- **All `getElementById` calls must live in `cacheDOMElements()`** — including buttons like `$.resetBtn`, `$.randomizeBtn`, `$.zoomInBtn`, `$.zoomOutBtn`, `$.zoomFitBtn`. Never use `getElementById` in `setupUI()` or event handlers.
+- **`hexElements` Map**: maps `"q,r"` keys to SVG `<g>` elements — use instead of `querySelector('.hex[data-qr="..."]')`
+- **Precomputed constants**: `SQRT3`, `HEX_W`, `HEX_H`, `HEX_CORNER_OFFSETS`, `HEX_DIRS` — avoid recalculating geometry
+- **No per-hex event listeners**: SVG-level listeners handle all hex interaction via event bubbling and `getHexFromEvent()`
+- **`scheduleBorderUpdate()`**: throttles border re-rendering to one `requestAnimationFrame` per paint stroke
+
+### Helpers (script.js)
+
+- **`votePcts(votes)`**: returns `{ red, blue, yellow }` as raw percentages. Callers round as needed.
+- **`shiftMapForSidebar()`**: reads `--panel-w` from computed styles — no hardcoded pixel values.
+
+### CSS Patterns
+
+- **`.glass`** (from `shared-base.css`): applied to `#toolbar`, `#map-controls`, `#district-palette`, `#sidebar`. Override `box-shadow`/`transition` per-element as needed.
+- **`.tool-btn`** (from `shared-base.css`): shared by toolbar buttons and map-ctrl-btn. Override `stroke-width: 2.5` on `#zoom-in-btn svg`, `#zoom-out-btn svg`, `#close-stats svg`.
+- **Theme icons**: CSS-driven via `[data-theme="light"] .icon-sun` / `[data-theme="dark"] .icon-moon` — no JS needed.
+- **`font-variant-numeric: tabular-nums`**: inherited from `.stats-scroll` and `#map-controls` — don't add individually to children.
+- **Bar widths**: `.vote-bar, .prop-bar-fill { width: 0 }` in CSS — no inline `style="width: 0%"` needed in HTML.
+- Project-specific override: `--palette-h: 56px`.
+
 ## Gotchas
 
 - **No `@import` in CSS** — fonts are loaded via `<link>` in HTML. Duplicate `@import` in `styles.css` causes FOUC.
 - **`data-theme="light"` must be on `<html>`** — CSS theme rules (icon visibility, color-scheme) depend on it before JS runs.
 - **Media queries use `:root` only** — layout tokens (`--panel-w`, `--toolbar-h`) are not theme-specific. Don't add `[data-theme]` selectors in media queries.
 - **Intro card SVGs keep their attributes** — `.tool-btn svg` defaults don't apply to intro cards. Those SVGs need explicit `fill="none" stroke="currentColor"` etc.
-
-## Related Projects
-
-`biosim` and `physsim` — sibling projects (same parent folder) with shared design language (Sora uppercase headers, warm palette, identical CSS var naming). Reference for styling conventions.
+- **Shared CSS at domain root** — `shared-base.css` is loaded via `/shared-base.css` (absolute path). When serving locally, serve from the parent `a9lim.github.io/` directory or the shared file won't resolve.

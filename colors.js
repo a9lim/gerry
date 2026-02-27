@@ -38,7 +38,7 @@ const _darken = (hex) => {
 
 // ---------- Font Constants ----------
 const _FONT = Object.freeze({
-  heading: "'Instrument Serif', Georgia, 'Times New Roman', serif",
+  display: "'Instrument Serif', Georgia, 'Times New Roman', serif",
   mono:    "'Geist Mono', 'SF Mono', 'Menlo', monospace",
   body:    "'Geist', system-ui, -apple-system, sans-serif",
 });
@@ -97,7 +97,7 @@ const _PALETTE = Object.freeze({
     ['bg-elevated',       'elevated'],
     ['bg-hover',          'text',          0.039, 0.051],
 
-    ['text-primary',      'text'],
+    ['text',              'text'],
     ['text-secondary',    'textSecondary'],
     ['text-muted',        'textMuted'],
 
@@ -144,9 +144,8 @@ const _PALETTE = Object.freeze({
 
   const style = document.createElement('style');
   style.id = 'palette-vars';
-  style.textContent = `:root,
-[data-theme="light"] {
-  --font-heading: ${_FONT.heading};
+  style.textContent = `:root {
+  --font-display: ${_FONT.display};
   --font-body: ${_FONT.body};
   --font-mono: ${_FONT.mono};
 

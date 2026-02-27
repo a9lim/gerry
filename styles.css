@@ -38,7 +38,7 @@
 /* ─── Base ─── */
 body {
     background: var(--bg-canvas);
-    color: var(--text-primary);
+    color: var(--text);
     font-family: var(--font-body);
     font-size: 14px;
     line-height: 1.5;
@@ -110,10 +110,10 @@ body {
 }
 
 .intro-title {
-    font-family: var(--font-heading);
+    font-family: var(--font-display);
     font-size: clamp(3.2rem, 8vw, 5.5rem);
     font-weight: 400;
-    color: var(--text-primary);
+    color: var(--text);
     line-height: 0.92;
     letter-spacing: -0.03em;
     margin-bottom: 1.5rem;
@@ -170,7 +170,7 @@ body {
 }
 
 .intro-card-text strong {
-    color: var(--text-primary);
+    color: var(--text);
     font-size: 0.82rem;
     font-weight: 600;
     line-height: 1.2;
@@ -239,10 +239,10 @@ body {
 }
 
 .toolbar-brand h1 {
-    font-family: var(--font-heading);
+    font-family: var(--font-display);
     font-size: clamp(1.1rem, 2vw, 1.5rem);
     font-weight: 400;
-    color: var(--text-primary);
+    color: var(--text);
     letter-spacing: -0.025em;
     line-height: 1.1;
     white-space: nowrap;
@@ -297,7 +297,7 @@ body {
 }
 
 .tool-btn:hover {
-    color: var(--text-primary);
+    color: var(--text);
     background: var(--bg-hover);
     border-color: var(--border);
 }
@@ -611,7 +611,7 @@ main {
 }
 
 .palette-btn:hover:not(.active) {
-    color: var(--text-primary);
+    color: var(--text);
 }
 
 .palette-btn.active {
@@ -670,7 +670,7 @@ main {
     font-weight: 600;
     text-transform: uppercase;
     letter-spacing: 0.12em;
-    color: var(--text-primary);
+    color: var(--text);
 }
 
 .stats-scroll {
@@ -756,7 +756,7 @@ main {
 }
 
 .seat-num {
-    font-family: var(--font-heading);
+    font-family: var(--font-display);
     font-size: 2rem;
     font-weight: 400;
     line-height: 1;
@@ -802,7 +802,7 @@ main {
 .stat-value {
     font-family: var(--font-mono);
     font-weight: 600;
-    color: var(--text-primary);
+    color: var(--text);
     font-size: 0.78rem;
 }
 
@@ -1049,7 +1049,7 @@ main {
 
 ::selection {
     background: var(--accent-glow);
-    color: var(--text-primary);
+    color: var(--text);
 }
 
 /* ═══════════════════════════════════

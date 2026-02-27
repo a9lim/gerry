@@ -1373,7 +1373,7 @@ function updateMetrics() {
         if (eg !== null) {
             const pct = (eg * 100).toFixed(1);
             $.efficiencyGap.textContent = `${Math.abs(pct)}% ${eg > 0 ? '→ Blue' : '→ Red'}`;
-            $.efficiencyGap.style.color = Math.abs(eg) > 0.07 ? 'var(--party-red)' : 'var(--text-primary)';
+            $.efficiencyGap.style.color = Math.abs(eg) > 0.07 ? 'var(--party-red)' : 'var(--text)';
         } else {
             $.efficiencyGap.textContent = '—';
             $.efficiencyGap.style.color = 'var(--text-secondary)';

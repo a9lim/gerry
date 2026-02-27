@@ -616,6 +616,16 @@ function setupUI() {
         });
     }
 
+    // Swipe-to-dismiss for mobile bottom sheet
+    if (typeof initSwipeDismiss === 'function' && $.sidebar) {
+        initSwipeDismiss($.sidebar, {
+            onDismiss() {
+                $.statsToggle?.classList.remove('active');
+                shiftMapForSidebar(false);
+            }
+        });
+    }
+
     renderDistrictPalette();
 
     // Intro screen

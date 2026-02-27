@@ -9,12 +9,15 @@
 }
 
 /* ─── Base ─── */
+html, body {
+    overflow: hidden;
+}
+
 body {
     font-size: 14px;
     line-height: 1.5;
     height: 100vh;
     height: 100dvh;
-    overflow: hidden;
 }
 
 /* ─── Tool Buttons (overrides) ─── */

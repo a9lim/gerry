@@ -67,4 +67,4 @@ Uses the shared design system from [a9lim.github.io](https://github.com/a9lim/a9
 
 ## License
 
-MIT
+[AGPL-3.0](LICENSE)

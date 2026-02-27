@@ -26,7 +26,7 @@ Single source of truth for all colors and fonts, loaded before `styles.css` in `
 - **`_r(hex, alpha)`**: alpha helper — appends 2-digit hex alpha to a color string
 - **`_parseHex`**, **`_rgb2hsl`**, **`_hsl2hex`**: HSL color math helpers (same as biosim's `enzymes.js`)
 - **`_darken(hex)`**: derives a darker variant (`l * 0.7`) — used for district border strokes
-- **`_FONT`**: frozen object with `heading`, `body`, `mono` font stacks
+- **`_FONT`**: frozen object with `display`, `body`, `mono` font stacks
 - **`_PALETTE`**: frozen object with `light` and `dark` sub-objects, each containing:
   - Surface colors: `canvas`, `panelSolid`, `elevated`
   - Text: `text`, `textSecondary`, `textMuted`
@@ -34,9 +34,11 @@ Single source of truth for all colors and fonts, loaded before `styles.css` in `
   - Party colors (plain hex strings): `red`, `blue`, `yellow`, `none`
   - `green` (minority marker, single hex string)
 
-An IIFE injects `<style id="palette-vars">` into `<head>` with all CSS custom properties (`:root`/`[data-theme="light"]` and `[data-theme="dark"]`). Layout-only tokens (`--radius-*`, `--toolbar-h`, `--panel-w`, `--ease-*`, `color-scheme`) remain in `styles.css`.
+An IIFE injects `<style id="palette-vars">` into `<head>` with all CSS custom properties (`:root` for light defaults, `[data-theme="dark"]` for dark overrides). Layout-only tokens (`--radius-*`, `--toolbar-h`, `--panel-w`, `--ease-*`, `color-scheme`) remain in `styles.css`.
 
 In `script.js`, `activeColors` points to `_PALETTE.light` or `_PALETTE.dark` (swapped in `syncTheme()`). Party colors in CSS are accessed via `var(--party-red)` etc.; in JS directly as `activeColors.red` (plain hex strings). Darker variants are computed on the fly via `_darken()`.
+
+CSS var naming convention (shared with physsim/biosim): `--bg-canvas`, `--bg-panel`, `--bg-panel-solid`, `--bg-elevated`, `--bg-hover`, `--text`, `--text-secondary`, `--text-muted`, `--border`, `--border-strong`, `--accent`, `--accent-light`, `--accent-subtle`, `--accent-glow`. Font vars: `--font-display`, `--font-body`, `--font-mono`.
 
 ### State Management (script.js)
 
@@ -123,4 +125,4 @@ All color/font CSS custom properties are injected by `colors.js` (see Color Syst
 
 ## Related Projects
 
-`~/Documents/antigravity/biosim` — sibling project with shared design language (Sora uppercase headers, warm palette). Reference for styling conventions.
+`biosim` and `physsim` — sibling projects (same parent folder) with shared design language (Sora uppercase headers, warm palette, identical CSS var naming). Reference for styling conventions.

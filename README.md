@@ -43,21 +43,37 @@ No build step, no dependencies. Shared design system files (`shared-tokens.js`, 
 
 ## Architecture
 
-| File | Lines | Purpose |
-|------|-------|---------|
-| `index.html` | ~350 | Markup — intro screen, toolbar, map canvas, sidebar, controls |
-| `styles.css` | ~640 | Layout, glass panels, hex tiles, vote bars, responsive breakpoints |
-| `colors.js` | ~80 | Extends shared palette with party colors, themed CSS var injection |
-| `script.js` | ~1700 | All application logic — state, rendering, algorithms, interactions |
+ES6 modules loaded via `<script type="module" src="main.js">`. Non-module `colors.js` loads in `<head>` to freeze `_PALETTE` before modules run.
+
+```
+index.html              — Markup: intro screen, toolbar, map canvas, sidebar, controls
+styles.css              — Layout, glass panels, hex tiles, vote bars, responsive breakpoints
+colors.js               — Extends shared palette with party colors, themed CSS var injection
+main.js                 — Entry point: DOM cache ($), init, setupUI()
+src/
+  config.js             — CONFIG, hex geometry constants (SQRT3, HEX_W, etc.)
+  hex-math.js           — Axial coordinate math, hex-to-pixel conversion
+  noise.js              — Trigonometric noise for organic map boundary
+  hex-generator.js      — Population, vote, and demographic generation
+  state.js              — Single state object, districts, undo/redo
+  metrics.js            — Compactness, contiguity, efficiency gap (pure functions)
+  renderer.js           — SVG rendering, borders, district labels
+  input.js              — Mouse handlers, painting, hover/tooltip
+  touch.js              — Pinch-zoom, pan, touch-paint
+  zoom.js               — Wheel zoom, smooth zoom, zoomToFit
+  sidebar.js            — Metrics UI, proportionality display
+  palette.js            — District palette rendering, mode management
+  theme.js              — Light/dark theme toggle
+```
 
 Uses the shared design system from [a9lim.github.io](https://github.com/a9lim/a9lim.github.io) — glass panels, tool buttons, intro screen, sidebar stats, and responsive breakpoints.
 
 ### Key Design Decisions
 
 - **`colors.js` as single source of truth** — Party colors reference `_PALETTE.extended.*` from the shared token system. JS reads colors directly; CSS uses `var(--party-red)` etc.
-- **Single `state` object** — Hex data, district metrics, undo stacks, and viewport state in one place.
+- **Single `state` object** in `src/state.js` — Hex data, district metrics, undo stacks, and viewport state in one place.
 - **No per-hex event listeners** — SVG-level listeners with event bubbling and coordinate lookup via `getHexFromEvent()`.
-- **Axial hex coordinates** — `(q, r)` system with precomputed geometry constants for fast rendering.
+- **Axial hex coordinates** — `(q, r)` system with precomputed geometry constants in `src/config.js` for fast rendering.
 - **`requestAnimationFrame` throttling** — Border re-rendering batched to once per paint stroke.
 
 ## Sibling Projects

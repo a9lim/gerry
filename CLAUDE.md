@@ -18,7 +18,25 @@ No package.json, no test suite, no linter configured.
 
 ## Architecture
 
-Four project files plus two shared files: `colors.js` (~78 lines), `index.html` (~345 lines), `script.js` (~1675 lines), `styles.css` (~640 lines). Loads `/shared-tokens.js` and `/shared-base.css` from the root site.
+ES6 modules loaded via `<script type="module" src="main.js">`. Non-module `colors.js` loads in `<head>` to freeze `_PALETTE` before modules run. Loads `/shared-tokens.js` and `/shared-base.css` from the root site.
+
+```
+main.js                 — Entry point: imports, DOM cache ($), init, setupUI()
+src/
+  config.js             — CONFIG, hex geometry constants, EASE_OUT
+  hex-math.js           — hexToPixel, hexCorners, hexDistance, getHexFromPoint
+  noise.js              — hashNoise, smoothNoise, fbmNoise
+  hex-generator.js      — generateHexes (population, votes, minority)
+  state.js              — state object, initDistricts, undo/redo, snapshot
+  metrics.js            — compactness, contiguity, efficiency gap (pure functions)
+  renderer.js           — renderMap, renderBorders, renderDistrictLabels, hex visuals
+  input.js              — mouse handlers, painting logic, hover/tooltip
+  touch.js              — pinch-zoom, pan, touch-paint
+  zoom.js               — wheel zoom, smooth zoom, zoomToFit, animateViewBox
+  sidebar.js            — updateMetrics UI, proportionality display
+  palette.js            — district palette rendering, mode management
+  theme.js              — initTheme, syncTheme, toggleTheme
+```
 
 ### Color System (colors.js)
 
@@ -34,9 +52,9 @@ Extends `shared-tokens.js` with project-specific party colors referencing `_PALE
 
 An IIFE injects `<style id="project-vars">` with themed CSS vars: `--party-*` (with `-tint`/`-wash` variants), `--tip-*`, `--hex-stroke`, `--tooltip-bg/fg`, `--bar-track`. Light theme darkens party colors via `_darken()` (from `shared-tokens.js`); dark theme uses base colors directly.
 
-In `script.js`, `activeColors` points to `_PALETTE.light` or `_PALETTE.dark` (swapped in `syncTheme()`). Party colors in CSS via `var(--party-red)` etc.; in JS directly as `_PALETTE.red` (plain hex strings). Darker variants computed on the fly via `_darken()`.
+In `src/theme.js`, `activeColors` points to `_PALETTE.light` or `_PALETTE.dark` (swapped in `syncTheme()`). Party colors in CSS via `var(--party-red)` etc.; in JS directly as `_PALETTE.red` (plain hex strings). Darker variants computed on the fly via `_darken()`.
 
-### State Management (script.js)
+### State Management (src/state.js)
 
 All application state lives in a single `state` object:
 - `hexes` (Map): hex tiles keyed by `"q,r"` axial coordinates, each storing population, party votes, district assignment, and demographic data
@@ -93,19 +111,19 @@ Map-first floating-panel layout:
 
 ## Key Patterns
 
-### Performance (script.js)
+### Performance
 
-- **`$` object**: cached DOM element references — always use `$.elementName` instead of `document.getElementById()` in hot paths
-- **All `getElementById` calls must live in `cacheDOMElements()`** — including buttons like `$.resetBtn`, `$.randomizeBtn`, `$.zoomInBtn`, `$.zoomOutBtn`, `$.zoomFitBtn`. Never use `getElementById` in `setupUI()` or event handlers.
+- **`$` object**: cached DOM element references in `main.js` — always use `$.elementName` instead of `document.getElementById()` in hot paths
+- **All `getElementById` calls must live in the DOM cache block in `main.js`** — including buttons like `$.resetBtn`, `$.randomizeBtn`, `$.zoomInBtn`, `$.zoomOutBtn`, `$.zoomFitBtn`. Never use `getElementById` in `setupUI()` or event handlers.
 - **`hexElements` Map**: maps `"q,r"` keys to SVG `<g>` elements — use instead of `querySelector('.hex[data-qr="..."]')`
-- **Precomputed constants**: `SQRT3`, `HEX_W`, `HEX_H`, `HEX_CORNER_OFFSETS`, `HEX_DIRS` — avoid recalculating geometry
+- **Precomputed constants** in `src/config.js`: `SQRT3`, `HEX_W`, `HEX_H`, `HEX_CORNER_OFFSETS`, `HEX_DIRS` — avoid recalculating geometry
 - **No per-hex event listeners**: SVG-level listeners handle all hex interaction via event bubbling and `getHexFromEvent()`
-- **`scheduleBorderUpdate()`**: throttles border re-rendering to one `requestAnimationFrame` per paint stroke
+- **`scheduleBorderUpdate()`** in `src/renderer.js`: throttles border re-rendering to one `requestAnimationFrame` per paint stroke
 
-### Helpers (script.js)
+### Helpers
 
-- **`votePcts(votes)`**: returns `{ red, blue, yellow }` as raw percentages. Callers round as needed.
-- **`shiftMapForSidebar()`**: reads `--panel-w` from computed styles — no hardcoded pixel values.
+- **`votePcts(votes)`** in `src/metrics.js`: returns `{ red, blue, yellow }` as raw percentages. Callers round as needed.
+- **`shiftMapForSidebar()`** in `src/sidebar.js`: reads `--panel-w` from computed styles — no hardcoded pixel values.
 
 ### CSS Patterns
 

@@ -1,17 +1,20 @@
 // ─── Mouse Input Handlers ───
-import { HEX_W, HEX_H } from './config.js';
+import { CONFIG, HEX_W, HEX_H } from './config.js';
 import { state, hexElements } from './state.js';
 import { calculateMetrics, votePcts } from './metrics.js';
 import { updateHexVisuals, renderBorders, renderDistrictLabels } from './renderer.js';
-import { clampViewBox } from './zoom.js';
+import { camera } from './zoom.js';
 
 let _borderUpdatePending = false;
+const _changedDistricts = new Set();
 
 function scheduleBorderUpdate($) {
     if (_borderUpdatePending) return;
     _borderUpdatePending = true;
     requestAnimationFrame(() => {
-        renderBorders($);
+        const changed = _changedDistricts.size > 0 ? new Set(_changedDistricts) : null;
+        _changedDistricts.clear();
+        renderBorders($, changed);
         renderDistrictLabels($);
         _borderUpdatePending = false;
     });
@@ -54,18 +57,20 @@ export function getHexFromPoint(clientX, clientY, $) {
 }
 
 function paintHexByKey(qr) {
-    if (state.isPainting === false) return;
+    if (state.paintState.mode === 'none') return;
     const hex = state.hexes.get(qr);
     if (!hex) return;
-    const targetDistrict = state.isPainting === 'erase' ? 0 : state.isPainting;
+    const targetDistrict = state.paintState.mode === 'erase' ? 0 : state.paintState.districtId;
 
     if (targetDistrict > 0 && hex.district !== targetDistrict && state.targetPop > 0) {
         const d = state.districts[targetDistrict];
-        if (d && d.population + hex.population > state.targetPop * 1.1) return;
+        if (d && d.population + hex.population > state.targetPop * CONFIG.popCapRatio) return;
     }
 
     if (hex.district !== targetDistrict) {
+        if (hex.district > 0) _changedDistricts.add(hex.district);
         hex.district = targetDistrict;
+        if (targetDistrict > 0) _changedDistricts.add(targetDistrict);
         updateHexVisuals(qr);
         const g = hexElements.get(qr);
         if (g) {
@@ -87,13 +92,16 @@ export function startPaintingAt(qr, isErase, deleteDistrict, updateSidebarDetail
     }
 
     if (isErase) {
-        state.isPainting = 'erase';
+        state.paintState.mode = 'erase';
+        state.paintState.districtId = null;
     } else if (hex.district > 0) {
-        state.isPainting = hex.district;
+        state.paintState.mode = 'paint';
+        state.paintState.districtId = hex.district;
     } else {
-        state.isPainting = state.currentDistrict;
+        state.paintState.mode = 'paint';
+        state.paintState.districtId = state.currentDistrict;
     }
-    state.currentDistrict = typeof state.isPainting === 'number' ? state.isPainting : state.currentDistrict;
+    state.currentDistrict = state.paintState.mode === 'paint' ? state.paintState.districtId : state.currentDistrict;
     paintHexByKey(qr);
     updateSidebarDetails(state.currentDistrict);
     updateDistrictPalette();
@@ -101,8 +109,9 @@ export function startPaintingAt(qr, isErase, deleteDistrict, updateSidebarDetail
 }
 
 export function stopPainting(updateMetrics, pushUndoSnapshot) {
-    if (state.isPainting !== false) {
-        state.isPainting = false;
+    if (state.paintState.mode !== 'none') {
+        state.paintState.mode = 'none';
+        state.paintState.districtId = null;
         updateMetrics();
         pushUndoSnapshot();
     }
@@ -120,7 +129,7 @@ function updateHoverTarget(qr) {
 }
 
 function paintIfActive(qr, $, updateSidebarDetails) {
-    if (!state.isPainting) return;
+    if (state.paintState.mode === 'none') return;
     paintHexByKey(qr);
     calculateMetrics();
     updateSidebarDetails(state.currentDistrict);
@@ -205,14 +214,8 @@ export function setupMouseHandlers($, { onStartPainting, onStopPainting, onClear
 
     $.svg.addEventListener('mousemove', (e) => {
         if (state.isPanning) {
-            const rect = $.svg.getBoundingClientRect();
-            const dx = (e.clientX - state.panStart.x) / rect.width * state.viewBox.w;
-            const dy = (e.clientY - state.panStart.y) / rect.height * state.viewBox.h;
-            state.viewBox.x -= dx;
-            state.viewBox.y -= dy;
-            clampViewBox(state.viewBox);
+            camera.panBy(e.clientX - state.panStart.x, e.clientY - state.panStart.y);
             state.panStart = { x: e.clientX, y: e.clientY };
-            $.svg.setAttribute('viewBox', `${state.viewBox.x} ${state.viewBox.y} ${state.viewBox.w} ${state.viewBox.h}`);
             return;
         }
         const qr = getHexFromEvent(e);

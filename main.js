@@ -4,7 +4,7 @@ import { state, hexElements, initDistricts, setUndoRedoUICallback, pushUndoSnaps
 import { generateHexes } from './src/hex-generator.js';
 import { refreshMinOpacity, updateHexVisuals, renderMap, renderBorders, renderDistrictLabels } from './src/renderer.js';
 import { setupMouseHandlers, clearHover, handleHover, startPaintingAt, stopPainting } from './src/input.js';
-import { onWheel, smoothZoom, zoomToFit, clampViewBox, animateViewBox } from './src/zoom.js';
+import { initCamera, resetCamera, shiftForSidebar } from './src/zoom.js';
 import { initTouchHandlers } from './src/touch.js';
 import { updateMetrics, updateSidebarDetails } from './src/sidebar.js';
 import { renderDistrictPalette, updateDistrictPalette } from './src/palette.js';
@@ -90,8 +90,8 @@ function cacheDOMElements() {
 // ─── Bound helpers (close over $) ───
 const doUpdateMetrics = () => updateMetrics($, updateDistrictPalette);
 const doUpdateSidebarDetails = (dId) => updateSidebarDetails(dId, $);
-const doUndo = () => undo(updateHexVisuals, doUpdateMetrics);
-const doRedo = () => redo(updateHexVisuals, doUpdateMetrics);
+const doUndo = () => { if (state.undoStack.length <= 1) return; undo(updateHexVisuals, doUpdateMetrics); showToast('Undo'); };
+const doRedo = () => { if (state.redoStack.length === 0) return; redo(updateHexVisuals, doUpdateMetrics); showToast('Redo'); };
 const doDeleteDistrict = (dId) => {
     if (dId === 0) return;
     let changed = false;
@@ -121,9 +121,11 @@ function randomizeMap() {
         Array.from(state.hexes.values()).reduce((sum, h) => sum + h.population, 0) / CONFIG.numDistricts
     );
     renderMap($);
+    resetCamera();
     doUpdateMetrics();
     renderDistrictPalette($, doUpdateSidebarDetails);
     pushUndoSnapshot();
+    showToast('Map randomized');
 }
 
 function resetMap() {
@@ -132,6 +134,7 @@ function resetMap() {
     state.hexes.forEach((_, qr) => updateHexVisuals(qr));
     doUpdateMetrics();
     pushUndoSnapshot();
+    showToast('Districts cleared');
 }
 
 // ─── UI Setup ───
@@ -144,9 +147,6 @@ function setupUI() {
         onHandleHover: (e, qr) => handleHover(e, qr, $, doUpdateSidebarDetails),
     });
 
-    // Wheel zoom
-    $.svg.addEventListener('wheel', (e) => onWheel(e, $), { passive: false });
-
     // Toolbar buttons
     $.resetBtn?.addEventListener('click', resetMap);
     $.randomizeBtn?.addEventListener('click', randomizeMap);
@@ -158,9 +158,7 @@ function setupUI() {
     if ($.redoBtn) $.redoBtn.addEventListener('click', doRedo);
     if ($.themeBtn) $.themeBtn.addEventListener('click', () => toggleTheme($));
 
-    $.zoomInBtn?.addEventListener('click', () => smoothZoom(1, $));
-    $.zoomOutBtn?.addEventListener('click', () => smoothZoom(-1, $));
-    $.zoomFitBtn?.addEventListener('click', () => zoomToFit($));
+    // Zoom buttons bound via camera.bindZoomButtons() in initCamera()
 
     document.addEventListener('keydown', (e) => {
         if (e.ctrlKey && e.key === 'z') { e.preventDefault(); doUndo(); }
@@ -168,23 +166,12 @@ function setupUI() {
     });
 
     // Stats panel toggle
-    function shiftMapForSidebar(opening) {
-        if (window.innerWidth <= 900) return;
-        const panelW = parseInt(getComputedStyle(document.documentElement).getPropertyValue('--panel-w'));
-        const scale = Math.min(window.innerWidth / state.viewBox.w, window.innerHeight / state.viewBox.h);
-        const dx = panelW / (2 * scale);
-        const endVb = { ...state.viewBox };
-        endVb.x += opening ? dx : -dx;
-        clampViewBox(endVb);
-        animateViewBox({ ...state.viewBox }, endVb, 450, $);
-    }
-
     if ($.statsToggle && $.sidebar) {
         $.statsToggle.addEventListener('click', () => {
             const opening = !$.sidebar.classList.contains('open');
             $.sidebar.classList.toggle('open');
             $.statsToggle.classList.toggle('active');
-            shiftMapForSidebar(opening);
+            shiftForSidebar(opening);
         });
         if (window.innerWidth > 900) {
             $.sidebar.classList.add('open');
@@ -195,7 +182,7 @@ function setupUI() {
         $.closeStats.addEventListener('click', () => {
             $.sidebar.classList.remove('open');
             $.statsToggle?.classList.remove('active');
-            shiftMapForSidebar(false);
+            shiftForSidebar(false);
         });
     }
 
@@ -204,7 +191,7 @@ function setupUI() {
         initSwipeDismiss($.sidebar, {
             onDismiss() {
                 $.statsToggle?.classList.remove('active');
-                shiftMapForSidebar(false);
+                shiftForSidebar(false);
             }
         });
     }
@@ -232,6 +219,7 @@ function init() {
         Array.from(state.hexes.values()).reduce((sum, h) => sum + h.population, 0) / CONFIG.numDistricts
     );
     renderMap($);
+    initCamera($);
     doUpdateMetrics();
     pushUndoSnapshot();
 }

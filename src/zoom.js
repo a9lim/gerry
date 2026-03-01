@@ -1,95 +1,91 @@
-// ─── Zoom & Pan ───
-import { EASE_OUT } from './config.js';
+// ─── Zoom & Pan (shared-camera integration) ───
+import { CONFIG, EASE_OUT } from './config.js';
 import { state } from './state.js';
 
-export function clampViewBox(vb) {
-    const o = state.origViewBox;
-    const padX = vb.w * 0.5;
-    const padY = vb.h * 0.5;
-    vb.x = Math.max(o.x - padX, Math.min(o.x + o.w - vb.w + padX, vb.x));
-    vb.y = Math.max(o.y - padY, Math.min(o.y + o.h - vb.h + padY, vb.y));
-}
+export let camera = null;
+let _$ = null;
+let _baseZoom = 1;
 
-export function updateZoomDisplay($) {
-    if ($.zoomLevel) $.zoomLevel.textContent = `${Math.round(state.zoomLevel * 100)}%`;
-}
-
-export function animateViewBox(startVb, endVb, duration, $, easeFn = EASE_OUT) {
-    const vb = state.viewBox;
-    let start = null;
-
-    function step(ts) {
-        if (!start) start = ts;
-        const t = Math.min((ts - start) / duration, 1);
-        const ease = easeFn(t);
-
-        vb.x = startVb.x + (endVb.x - startVb.x) * ease;
-        vb.y = startVb.y + (endVb.y - startVb.y) * ease;
-        vb.w = startVb.w + (endVb.w - startVb.w) * ease;
-        vb.h = startVb.h + (endVb.h - startVb.h) * ease;
-        clampViewBox(vb);
-        state.zoomLevel = state.origViewBox.w / vb.w;
-
-        $.svg.setAttribute('viewBox', `${vb.x} ${vb.y} ${vb.w} ${vb.h}`);
-        updateZoomDisplay($);
-
-        if (t < 1) requestAnimationFrame(step);
-    }
-
-    requestAnimationFrame(step);
-}
-
-export function onWheel(e, $) {
-    e.preventDefault();
-    const vb = state.viewBox;
+export function initCamera($) {
+    _$ = $;
     const rect = $.svg.getBoundingClientRect();
-    const mx = (e.clientX - rect.left) / rect.width;
-    const my = (e.clientY - rect.top) / rect.height;
-    const svgX = vb.x + mx * vb.w;
-    const svgY = vb.y + my * vb.h;
+    _baseZoom = rect.width / state.origViewBox.w;
 
-    const zoomFactor = e.deltaY > 0 ? 1.12 : 1 / 1.12;
-    const minW = state.origViewBox.w / 3;
-    const maxW = state.origViewBox.w;
-    const ratio = vb.h / vb.w;
-    const newW = Math.max(minW, Math.min(maxW, vb.w * zoomFactor));
-    if (newW === vb.w) return;
-    const newH = newW * ratio;
+    camera = createCamera({
+        width: rect.width,
+        height: rect.height,
+        zoom: _baseZoom,
+        minZoom: _baseZoom,
+        maxZoom: _baseZoom * CONFIG.zoomMaxRatio,
+        wheelFactor: CONFIG.zoomWheelFactor,
+        x: state.viewBox.x + state.viewBox.w / 2,
+        y: state.viewBox.y + state.viewBox.h / 2,
+        clamp(cam) {
+            const o = state.origViewBox;
+            cam.x = clamp(cam.x, o.x, o.x + o.w);
+            cam.y = clamp(cam.y, o.y, o.y + o.h);
+        },
+        onUpdate(cam) {
+            const vb = cam.getViewBox();
+            state.viewBox.x = vb.x;
+            state.viewBox.y = vb.y;
+            state.viewBox.w = vb.w;
+            state.viewBox.h = vb.h;
+            state.zoomLevel = cam.zoom / _baseZoom;
+            $.svg.setAttribute('viewBox', cam.getViewBoxString());
+        }
+    });
 
-    vb.x = svgX - mx * newW;
-    vb.y = svgY - my * newH;
-    vb.w = newW;
-    vb.h = newH;
-    clampViewBox(vb);
-    state.zoomLevel = state.origViewBox.w / vb.w;
+    camera.bindWheel($.svg);
 
-    $.svg.setAttribute('viewBox', `${vb.x} ${vb.y} ${vb.w} ${vb.h}`);
-    updateZoomDisplay($);
+    camera.bindZoomButtons({
+        zoomIn: $.zoomInBtn,
+        zoomOut: $.zoomOutBtn,
+        reset: $.zoomFitBtn,
+        display: $.zoomLevel,
+        duration: CONFIG.zoomAnimDuration,
+        formatZoom: (z) => Math.round((z / _baseZoom) * 100) + '%',
+        onReset: () => {
+            let tx = state.origViewBox.x + state.origViewBox.w / 2;
+            if (_$?.sidebar?.classList.contains('open') && window.innerWidth > 900) {
+                const pw = parseInt(getComputedStyle(document.documentElement).getPropertyValue('--panel-w')) || 350;
+                tx += pw / (2 * _baseZoom);
+            }
+            camera._animateTo(tx, state.origViewBox.y + state.origViewBox.h / 2, _baseZoom, CONFIG.zoomFitDuration, EASE_OUT);
+        },
+    });
 }
 
-export function smoothZoom(direction, $) {
-    const vb = state.viewBox;
-    const cx = vb.x + vb.w / 2;
-    const cy = vb.y + vb.h / 2;
-
-    const factor = direction > 0 ? 1 / 1.25 : 1.25;
-    const minW = state.origViewBox.w / 3;
-    const maxW = state.origViewBox.w;
-    const ratio = vb.h / vb.w;
-    const targetW = Math.max(minW, Math.min(maxW, vb.w * factor));
-    if (targetW === vb.w) return;
-    const targetH = targetW * ratio;
-
-    const startVb = { ...vb };
-    const endVb = { x: cx - targetW / 2, y: cy - targetH / 2, w: targetW, h: targetH };
-    animateViewBox(startVb, endVb, 200, $);
+export function resetCamera() {
+    if (!camera || !_$) return;
+    const rect = _$.svg.getBoundingClientRect();
+    _baseZoom = rect.width / state.origViewBox.w;
+    camera.viewportW = rect.width;
+    camera.viewportH = rect.height;
+    camera.minZoom = _baseZoom;
+    camera.maxZoom = _baseZoom * CONFIG.zoomMaxRatio;
+    camera.setFromViewBox(state.viewBox);
 }
 
-export function zoomToFit($) {
-    const endVb = { ...state.origViewBox };
-    if ($.sidebar?.classList.contains('open') && window.innerWidth > 900) {
-        const scale = Math.min(window.innerWidth / endVb.w, window.innerHeight / endVb.h);
-        endVb.x += 350 / (2 * scale);
+export function zoomToFit() {
+    if (!camera) return;
+    const o = state.origViewBox;
+    let targetX = o.x + o.w / 2;
+    let targetY = o.y + o.h / 2;
+    if (_$?.sidebar?.classList.contains('open') && window.innerWidth > 900) {
+        const panelW = parseInt(getComputedStyle(document.documentElement).getPropertyValue('--panel-w')) || 350;
+        targetX += panelW / (2 * _baseZoom);
     }
-    animateViewBox({ ...state.viewBox }, endVb, 300, $);
+    camera._animateTo(targetX, targetY, _baseZoom, CONFIG.zoomFitDuration, EASE_OUT);
+}
+
+export function shiftForSidebar(opening) {
+    if (!camera || window.innerWidth <= 900) return;
+    const panelW = parseInt(getComputedStyle(document.documentElement).getPropertyValue('--panel-w')) || 350;
+    const dx = panelW / (2 * _baseZoom);
+    const o = state.origViewBox;
+    camera._animateTo(
+        clamp(camera.x + (opening ? dx : -dx), o.x, o.x + o.w),
+        camera.y, camera.zoom, 450, EASE_OUT
+    );
 }

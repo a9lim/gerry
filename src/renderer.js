@@ -1,7 +1,7 @@
 // ─── SVG Rendering ───
 import { CONFIG, HEX_DIRS, HEX_RENDER_SIZE } from './config.js';
 import { hexToPixel, hexCorners, cornersToString } from './hex-math.js';
-import { state, hexElements, activeColors } from './state.js';
+import { state, hexElements } from './state.js';
 
 let _cachedMinOpacity = 0.22;
 
@@ -11,14 +11,14 @@ export function refreshMinOpacity() {
 }
 
 function hexOpacity(population) {
-    return Math.max(_cachedMinOpacity, Math.min(1.0, _cachedMinOpacity + (1 - _cachedMinOpacity) * (population / state.maxPop)));
+    return clamp(_cachedMinOpacity + (1 - _cachedMinOpacity) * (population / state.maxPop), _cachedMinOpacity, 1.0);
 }
 
 export function updateHexVisuals(qr) {
     const hex = state.hexes.get(qr);
     const g = hexElements.get(qr);
     if (g) {
-        g.firstChild.style.fill = activeColors[hex.partyWinner];
+        g.firstChild.style.fill = _PALETTE[hex.partyWinner];
         g.style.opacity = hexOpacity(hex.population);
     }
 }
@@ -49,7 +49,7 @@ export function renderMap($) {
 
         const poly = document.createElementNS("http://www.w3.org/2000/svg", "polygon");
         poly.setAttribute("points", cornersToString(hexCorners(center, HEX_RENDER_SIZE)));
-        poly.style.fill = activeColors[hex.partyWinner];
+        poly.style.fill = _PALETTE[hex.partyWinner];
 
         const dist = Math.sqrt((hex.q + hex.r / 2 - mapCenterX) ** 2 + (hex.r - mapCenterY) ** 2);
         poly.style.animationDelay = `${dist * 0.04 + Math.random() * 0.03}s`;
@@ -93,155 +93,177 @@ export function renderMap($) {
     renderBorders($);
 }
 
-export function renderBorders($) {
-    $.borderGroup.innerHTML = '';
-    $.defs.innerHTML = '';
+// ─── Border cache for incremental updates ───
+const _borderCache = {};
 
-    const districtGroups = {};
-    const districtSegments = {};
-    for (let i = 1; i <= CONFIG.numDistricts; i++) {
-        districtGroups[i] = document.createElementNS("http://www.w3.org/2000/svg", "g");
-        districtGroups[i].dataset.districtId = i;
-        districtSegments[i] = [];
-    }
+const _fmt = n => n.toFixed(2);
+const _ptKey = p => `${(p.x * 100 + 0.5) | 0},${(p.y * 100 + 0.5) | 0}`;
 
-    state.hexes.forEach(hex => {
-        if (hex.district === 0) return;
+function buildDistrictBorder(districtId) {
+    const d = state.districts[districtId];
+    if (!d || d.hexes.length === 0) return { group: null, clip: null };
+
+    // Find boundary segments (only iterate this district's hexes)
+    const segments = [];
+    for (const hex of d.hexes) {
         const center = hexToPixel(hex.q, hex.r);
         const corners = hexCorners(center, CONFIG.hexSize);
         for (let i = 0; i < 6; i++) {
             const dir = HEX_DIRS[i];
             const neighbor = state.hexes.get(`${hex.q + dir.dq},${hex.r + dir.dr}`);
             if (!neighbor || neighbor.district !== hex.district) {
-                districtSegments[hex.district].push({
-                    c1: corners[i],
-                    c2: corners[(i + 1) % 6]
-                });
+                segments.push({ c1: corners[i], c2: corners[(i + 1) % 6] });
             }
-        }
-    });
-
-    const fmt = n => n.toFixed(2);
-    const ptKey = p => `${(p.x * 100 + 0.5) | 0},${(p.y * 100 + 0.5) | 0}`;
-
-    for (let i = 1; i <= CONFIG.numDistricts; i++) {
-        const segments = districtSegments[i];
-        if (segments.length === 0) continue;
-
-        const adj = new Map();
-        const addEdge = (key, seg, pt) => {
-            let list = adj.get(key);
-            if (!list) { list = []; adj.set(key, list); }
-            list.push({ seg, pt });
-        };
-        for (const seg of segments) {
-            seg._used = false;
-            addEdge(ptKey(seg.c1), seg, seg.c2);
-            addEdge(ptKey(seg.c2), seg, seg.c1);
-        }
-
-        let dAttr = '';
-        for (const seg of segments) {
-            if (seg._used) continue;
-            seg._used = true;
-            const chain = [seg.c1, seg.c2];
-
-            let tailKey = ptKey(chain[chain.length - 1]);
-            let found = true;
-            while (found) {
-                found = false;
-                const list = adj.get(tailKey);
-                if (list) {
-                    for (let j = 0; j < list.length; j++) {
-                        if (!list[j].seg._used) {
-                            list[j].seg._used = true;
-                            chain.push(list[j].pt);
-                            tailKey = ptKey(list[j].pt);
-                            found = true;
-                            break;
-                        }
-                    }
-                }
-            }
-
-            let headKey = ptKey(chain[0]);
-            found = true;
-            while (found) {
-                found = false;
-                const list = adj.get(headKey);
-                if (list) {
-                    for (let j = 0; j < list.length; j++) {
-                        if (!list[j].seg._used) {
-                            list[j].seg._used = true;
-                            chain.unshift(list[j].pt);
-                            headKey = ptKey(list[j].pt);
-                            found = true;
-                            break;
-                        }
-                    }
-                }
-            }
-
-            const isClosed = chain.length > 2
-                && Math.abs(chain[0].x - chain[chain.length - 1].x) < 0.1
-                && Math.abs(chain[0].y - chain[chain.length - 1].y) < 0.1;
-            if (isClosed) chain.pop();
-
-            dAttr += `M ${fmt(chain[0].x)},${fmt(chain[0].y)} `;
-            for (let k = 1; k < chain.length; k++) {
-                dAttr += `L ${fmt(chain[k].x)},${fmt(chain[k].y)} `;
-            }
-            if (isClosed) dAttr += 'Z ';
-        }
-
-        const dAttrTrimmed = dAttr.trim();
-
-        const clip = document.createElementNS("http://www.w3.org/2000/svg", "clipPath");
-        clip.id = `clip-d-${i}`;
-
-        let clipD = '';
-        state.districts[i].hexes.forEach(hex => {
-            const center = hexToPixel(hex.q, hex.r);
-            const corners = hexCorners(center, CONFIG.hexSize);
-            clipD += `M ${fmt(corners[0].x)},${fmt(corners[0].y)} `;
-            for (let c = 1; c < 6; c++) clipD += `L ${fmt(corners[c].x)},${fmt(corners[c].y)} `;
-            clipD += 'Z ';
-        });
-
-        if (clipD) {
-            const clipPath = document.createElementNS("http://www.w3.org/2000/svg", "path");
-            clipPath.setAttribute("d", clipD.trim());
-            clip.appendChild(clipPath);
-        }
-        $.defs.appendChild(clip);
-
-        const d = state.districts[i];
-        const winner = d?.winner !== 'none' ? d.winner : 'none';
-
-        const path = document.createElementNS("http://www.w3.org/2000/svg", "path");
-        path.setAttribute("d", dAttrTrimmed);
-        path.setAttribute("clip-path", `url(#clip-d-${i})`);
-        path.style.stroke = _darken(activeColors[winner] || activeColors.none);
-        path.classList.add('district-path', 'outline');
-        districtGroups[i].appendChild(path);
-
-        if (d?.isMinorityMajority) {
-            const mmPath = document.createElementNS("http://www.w3.org/2000/svg", "path");
-            mmPath.setAttribute("d", dAttrTrimmed);
-            mmPath.setAttribute("clip-path", `url(#clip-d-${i})`);
-            mmPath.classList.add('district-path', 'mmd-overlay');
-            districtGroups[i].appendChild(mmPath);
         }
     }
 
-    for (let i = 1; i <= CONFIG.numDistricts; i++) {
-        if (i !== state.currentDistrict) {
-            $.borderGroup.appendChild(districtGroups[i]);
-        }
+    if (segments.length === 0) return { group: null, clip: null };
+
+    // Chain segments into continuous paths
+    const adj = new Map();
+    const addEdge = (key, seg, pt) => {
+        let list = adj.get(key);
+        if (!list) { list = []; adj.set(key, list); }
+        list.push({ seg, pt });
+    };
+    for (const seg of segments) {
+        seg._used = false;
+        addEdge(_ptKey(seg.c1), seg, seg.c2);
+        addEdge(_ptKey(seg.c2), seg, seg.c1);
     }
-    if (districtGroups[state.currentDistrict]) {
-        districtGroups[state.currentDistrict].classList.add('active-district-group');
-        $.borderGroup.appendChild(districtGroups[state.currentDistrict]);
+
+    let dAttr = '';
+    for (const seg of segments) {
+        if (seg._used) continue;
+        seg._used = true;
+        const chain = [seg.c1, seg.c2];
+
+        let tailKey = _ptKey(chain[chain.length - 1]);
+        let found = true;
+        while (found) {
+            found = false;
+            const list = adj.get(tailKey);
+            if (list) {
+                for (let j = 0; j < list.length; j++) {
+                    if (!list[j].seg._used) {
+                        list[j].seg._used = true;
+                        chain.push(list[j].pt);
+                        tailKey = _ptKey(list[j].pt);
+                        found = true;
+                        break;
+                    }
+                }
+            }
+        }
+
+        let headKey = _ptKey(chain[0]);
+        found = true;
+        while (found) {
+            found = false;
+            const list = adj.get(headKey);
+            if (list) {
+                for (let j = 0; j < list.length; j++) {
+                    if (!list[j].seg._used) {
+                        list[j].seg._used = true;
+                        chain.unshift(list[j].pt);
+                        headKey = _ptKey(list[j].pt);
+                        found = true;
+                        break;
+                    }
+                }
+            }
+        }
+
+        const isClosed = chain.length > 2
+            && Math.abs(chain[0].x - chain[chain.length - 1].x) < 0.1
+            && Math.abs(chain[0].y - chain[chain.length - 1].y) < 0.1;
+        if (isClosed) chain.pop();
+
+        dAttr += `M ${_fmt(chain[0].x)},${_fmt(chain[0].y)} `;
+        for (let k = 1; k < chain.length; k++) {
+            dAttr += `L ${_fmt(chain[k].x)},${_fmt(chain[k].y)} `;
+        }
+        if (isClosed) dAttr += 'Z ';
+    }
+
+    const dAttrTrimmed = dAttr.trim();
+
+    // Build clip path
+    const clip = document.createElementNS("http://www.w3.org/2000/svg", "clipPath");
+    clip.id = `clip-d-${districtId}`;
+    let clipD = '';
+    for (const hex of d.hexes) {
+        const center = hexToPixel(hex.q, hex.r);
+        const corners = hexCorners(center, CONFIG.hexSize);
+        clipD += `M ${_fmt(corners[0].x)},${_fmt(corners[0].y)} `;
+        for (let c = 1; c < 6; c++) clipD += `L ${_fmt(corners[c].x)},${_fmt(corners[c].y)} `;
+        clipD += 'Z ';
+    }
+    if (clipD) {
+        const clipPath = document.createElementNS("http://www.w3.org/2000/svg", "path");
+        clipPath.setAttribute("d", clipD.trim());
+        clip.appendChild(clipPath);
+    }
+
+    // Build SVG group
+    const group = document.createElementNS("http://www.w3.org/2000/svg", "g");
+    group.dataset.districtId = districtId;
+
+    const winner = d?.winner !== 'none' ? d.winner : 'none';
+    const path = document.createElementNS("http://www.w3.org/2000/svg", "path");
+    path.setAttribute("d", dAttrTrimmed);
+    path.setAttribute("clip-path", `url(#clip-d-${districtId})`);
+    path.style.stroke = _darken(_PALETTE[winner] || _PALETTE.none);
+    path.classList.add('district-path', 'outline');
+    group.appendChild(path);
+
+    if (d?.isMinorityMajority) {
+        const mmPath = document.createElementNS("http://www.w3.org/2000/svg", "path");
+        mmPath.setAttribute("d", dAttrTrimmed);
+        mmPath.setAttribute("clip-path", `url(#clip-d-${districtId})`);
+        mmPath.classList.add('district-path', 'mmd-overlay');
+        group.appendChild(mmPath);
+    }
+
+    return { group, clip };
+}
+
+/**
+ * Render district borders.
+ * @param {Object} $ DOM cache
+ * @param {Set<number>} [changedDistricts] If provided, only rebuild these districts (incremental).
+ *   If omitted, full re-render of all districts.
+ */
+export function renderBorders($, changedDistricts) {
+    const ids = changedDistricts
+        ? [...changedDistricts]
+        : Array.from({ length: CONFIG.numDistricts }, (_, i) => i + 1);
+
+    if (!changedDistricts) {
+        // Full re-render: clear everything and cache
+        $.borderGroup.innerHTML = '';
+        $.defs.innerHTML = '';
+        for (let i = 1; i <= CONFIG.numDistricts; i++) _borderCache[i] = null;
+    }
+
+    for (const i of ids) {
+        // Remove old elements for this district
+        const old = _borderCache[i];
+        if (old?.group?.parentNode) old.group.remove();
+        if (old?.clip?.parentNode) old.clip.remove();
+
+        // Build new
+        _borderCache[i] = buildDistrictBorder(i);
+        if (_borderCache[i].clip) $.defs.appendChild(_borderCache[i].clip);
+    }
+
+    // Re-append all groups in order (current district last for visual priority)
+    for (let i = 1; i <= CONFIG.numDistricts; i++) {
+        const g = _borderCache[i]?.group;
+        if (!g) continue;
+        g.classList.toggle('active-district-group', i === state.currentDistrict);
+        if (g.parentNode) g.remove();
+        $.borderGroup.appendChild(g);
     }
 }
 

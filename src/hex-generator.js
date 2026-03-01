@@ -85,7 +85,7 @@ export function generateHexes() {
         const dx = x2 - x1, dy = y2 - y1;
         const lenSq = dx * dx + dy * dy;
         if (lenSq === 0) return Math.hypot(px - x1, py - y1);
-        const t = Math.max(0, Math.min(1, ((px - x1) * dx + (py - y1) * dy) / lenSq));
+        const t = clamp(((px - x1) * dx + (py - y1) * dy) / lenSq, 0, 1);
         return Math.hypot(px - (x1 + t * dx), py - (y1 + t * dy));
     }
 
@@ -124,8 +124,8 @@ export function generateHexes() {
         if (pop > state.maxPop) state.maxPop = pop;
 
         const regionalLean = fbmNoise(q * leanScale, r * leanScale, partySeed, 3);
-        const isUrban = pop > 150;
-        const isSuburban = pop > 80 && pop <= 150;
+        const isUrban = pop > CONFIG.urbanThreshold;
+        const isSuburban = pop > CONFIG.suburbanThreshold && pop <= CONFIG.urbanThreshold;
 
         let party;
         const roll = Math.random();

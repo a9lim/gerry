@@ -1,6 +1,6 @@
 // ─── Sidebar UI ───
 import { CONFIG } from './config.js';
-import { state, activeColors } from './state.js';
+import { state } from './state.js';
 import { calculateMetrics, calculateEfficiencyGap, votePcts } from './metrics.js';
 import { renderBorders, renderDistrictLabels } from './renderer.js';
 
@@ -82,7 +82,7 @@ export function updateSidebarDetails(dId, $) {
 
     if ($.detailWinner) {
         $.detailWinner.textContent = d.winner.charAt(0).toUpperCase() + d.winner.slice(1);
-        $.detailWinner.style.color = d.winner !== 'none' ? activeColors[d.winner] : 'var(--text-secondary)';
+        $.detailWinner.style.color = d.winner !== 'none' ? _PALETTE[d.winner] : 'var(--text-secondary)';
     }
 
     const totalVotes = d.votes.red + d.votes.blue + d.votes.yellow;

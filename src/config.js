@@ -5,6 +5,21 @@ export const CONFIG = {
     rows: 18,
     cols: 25,
     hexSize: 18,
+
+    // Zoom
+    zoomMaxRatio: 3,            // max zoom = origW / 3
+    zoomWheelFactor: 1.12,
+    zoomButtonFactor: 1.25,
+    zoomAnimDuration: 200,      // ms
+    zoomFitDuration: 300,       // ms
+
+    // Population
+    popCapRatio: 1.1,           // 110% cap when painting
+    urbanThreshold: 150,
+    suburbanThreshold: 80,
+
+    // Undo
+    maxUndoStack: 50,
 };
 
 export const SQRT3 = Math.sqrt(3);
@@ -29,23 +44,5 @@ export const PALETTE_COLOR_MAP = {
     yellow: 'var(--party-yellow)'
 };
 
-// ─── Cubic Bezier Easing ───
-function cubicBezier(x1, y1, x2, y2) {
-    return function(t) {
-        if (t <= 0) return 0;
-        if (t >= 1) return 1;
-        let u = t;
-        for (let i = 0; i < 8; i++) {
-            const a = 1 - u;
-            const xu = 3 * a * a * u * x1 + 3 * a * u * u * x2 + u * u * u - t;
-            const dxu = 3 * a * a * x1 + 6 * a * u * (x2 - x1) + 3 * u * u * (1 - x2);
-            if (Math.abs(dxu) < 1e-6) break;
-            u -= xu / dxu;
-        }
-        u = Math.max(0, Math.min(1, u));
-        const a = 1 - u;
-        return 3 * a * a * u * y1 + 3 * a * u * u * y2 + u * u * u;
-    };
-}
-
+// Uses shared cubicBezier() from shared-utils.js
 export const EASE_OUT = cubicBezier(0.23, 1, 0.32, 1);

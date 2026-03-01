@@ -1,6 +1,6 @@
 // ─── Touch Handlers ───
 import { state } from './state.js';
-import { clampViewBox, updateZoomDisplay } from './zoom.js';
+import { camera } from './zoom.js';
 import { getHexFromPoint, handleHoverAt, clearHover, startPaintingAt, stopPainting } from './input.js';
 
 export function initTouchHandlers($, { deleteDistrict, updateSidebarDetails, updateDistrictPalette, updateMetrics, pushUndoSnapshot }) {
@@ -60,14 +60,8 @@ export function initTouchHandlers($, { deleteDistrict, updateSidebarDetails, upd
             const touch = e.touches[0];
 
             if (isTouchPanning) {
-                const rect = $.svg.getBoundingClientRect();
-                const dx = (touch.clientX - touchPanStart.x) / rect.width * state.viewBox.w;
-                const dy = (touch.clientY - touchPanStart.y) / rect.height * state.viewBox.h;
-                state.viewBox.x -= dx;
-                state.viewBox.y -= dy;
-                clampViewBox(state.viewBox);
+                camera.panBy(touch.clientX - touchPanStart.x, touch.clientY - touchPanStart.y);
                 touchPanStart = { x: touch.clientX, y: touch.clientY };
-                $.svg.setAttribute('viewBox', `${state.viewBox.x} ${state.viewBox.y} ${state.viewBox.w} ${state.viewBox.h}`);
                 return;
             }
 
@@ -85,36 +79,13 @@ export function initTouchHandlers($, { deleteDistrict, updateSidebarDetails, upd
             };
 
             if (lastPinchDist > 0) {
-                const scale = lastPinchDist / dist;
-                const vb = state.viewBox;
                 const rect = $.svg.getBoundingClientRect();
-
-                const mx = (center.x - rect.left) / rect.width;
-                const my = (center.y - rect.top) / rect.height;
-                const svgX = vb.x + mx * vb.w;
-                const svgY = vb.y + my * vb.h;
-
-                const minW = state.origViewBox.w / 3;
-                const maxW = state.origViewBox.w;
-                const ratio = vb.h / vb.w;
-                const newW = Math.max(minW, Math.min(maxW, vb.w * scale));
-                if (newW !== vb.w) {
-                    const newH = newW * ratio;
-                    vb.x = svgX - mx * newW;
-                    vb.y = svgY - my * newH;
-                    vb.w = newW;
-                    vb.h = newH;
-                    state.zoomLevel = state.origViewBox.w / vb.w;
-                }
-
+                const cx = center.x - rect.left;
+                const cy = center.y - rect.top;
+                camera.zoomBy(dist / lastPinchDist, cx, cy);
                 if (lastPinchCenter) {
-                    vb.x += (lastPinchCenter.x - center.x) / rect.width * vb.w;
-                    vb.y += (lastPinchCenter.y - center.y) / rect.height * vb.h;
+                    camera.panBy(center.x - lastPinchCenter.x, center.y - lastPinchCenter.y);
                 }
-
-                clampViewBox(vb);
-                $.svg.setAttribute('viewBox', `${vb.x} ${vb.y} ${vb.w} ${vb.h}`);
-                updateZoomDisplay($);
             }
 
             lastPinchDist = dist;

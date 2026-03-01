@@ -18,7 +18,7 @@ No package.json, no test suite, no linter configured.
 
 ## Architecture
 
-ES6 modules loaded via `<script type="module" src="main.js">`. Non-module `colors.js` loads in `<head>` to freeze `_PALETTE` before modules run. Loads `/shared-tokens.js` and `/shared-base.css` from the root site.
+ES6 modules loaded via `<script type="module" src="main.js">`. Non-module `colors.js` loads in `<head>` to freeze `_PALETTE` before modules run. Loads `/shared-tokens.js`, `/shared-utils.js`, `/shared-camera.js`, and `/shared-base.css` from the root site.
 
 ```
 main.js                 — Entry point: imports, DOM cache ($), init, setupUI()
@@ -32,7 +32,7 @@ src/
   renderer.js           — renderMap, renderBorders, renderDistrictLabels, hex visuals
   input.js              — mouse handlers, painting logic, hover/tooltip
   touch.js              — pinch-zoom, pan, touch-paint
-  zoom.js               — wheel zoom, smooth zoom, zoomToFit, animateViewBox
+  zoom.js               — camera init (bindZoomButtons), zoomToFit, shiftForSidebar
   sidebar.js            — updateMetrics UI, proportionality display
   palette.js            — district palette rendering, mode management
   theme.js              — initTheme, syncTheme, toggleTheme

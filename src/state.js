@@ -4,9 +4,8 @@ import { CONFIG } from './config.js';
 export const state = {
     hexes: new Map(),
     districts: {},
-    districtColors: [],
     currentDistrict: 1,
-    isPainting: false,
+    paintState: { mode: 'none', districtId: null },
     hoveredHex: null,
     targetPop: 0,
     viewBox: { x: 0, y: 0, w: 0, h: 0 },
@@ -24,9 +23,6 @@ export const state = {
 
 // Hex element index (avoids querySelector on every hover/paint)
 export const hexElements = new Map();
-
-// Party/accent colors — shared across themes
-export const activeColors = _PALETTE;
 
 export function initDistricts() {
     for (let i = 1; i <= CONFIG.numDistricts; i++) {
@@ -63,7 +59,7 @@ export function restoreSnapshot(snap, updateHexVisuals, updateMetrics) {
 export function pushUndoSnapshot() {
     state.undoStack.push(getSnapshot());
     state.redoStack = [];
-    if (state.undoStack.length > 50) state.undoStack.shift();
+    if (state.undoStack.length > CONFIG.maxUndoStack) state.undoStack.shift();
     _updateUndoRedoUI?.();
 }
 

@@ -3,12 +3,13 @@ import { CONFIG } from './src/config.js';
 import { state, hexElements, initDistricts, setUndoRedoUICallback, pushUndoSnapshot, undo, redo, setMode, clearModes } from './src/state.js';
 import { generateHexes } from './src/hex-generator.js';
 import { refreshMinOpacity, updateHexVisuals, renderMap, renderBorders, renderDistrictLabels } from './src/renderer.js';
-import { setupMouseHandlers, clearHover, handleHover, startPaintingAt, stopPainting } from './src/input.js';
+import { setupMouseHandlers, clearHover, handleHover, startPaintingAt, stopPainting, autoFillDistrict } from './src/input.js';
 import { initCamera, resetCamera, shiftForSidebar } from './src/zoom.js';
 import { initTouchHandlers } from './src/touch.js';
 import { updateMetrics, updateSidebarDetails } from './src/sidebar.js';
 import { renderDistrictPalette, updateDistrictPalette } from './src/palette.js';
 import { initTheme, toggleTheme } from './src/theme.js';
+import { listPlans, savePlan, loadPlan, deletePlan, exportPlan, exportCurrentPlan, importPlan } from './src/plans.js';
 
 // ─── DOM Cache ───
 const $ = {};
@@ -48,6 +49,22 @@ function cacheDOMElements() {
     $.districtCount = document.getElementById('district-count');
     $.efficiencyGap = document.getElementById('efficiency-gap');
     $.egNote = document.getElementById('eg-note');
+    $.partisanSymmetry = document.getElementById('partisan-symmetry');
+    $.competitiveDistricts = document.getElementById('competitive-districts');
+
+    // Brush & auto-fill
+    $.brushToggles = document.getElementById('brush-toggles');
+    $.autofillBtn = document.getElementById('autofill-btn');
+
+    // Plans dialog
+    $.plansBtn = document.getElementById('plans-btn');
+    $.plansDialog = document.getElementById('plans-dialog');
+    $.plansClose = document.getElementById('plans-close');
+    $.planNameInput = document.getElementById('plan-name-input');
+    $.planSaveBtn = document.getElementById('plan-save-btn');
+    $.plansList = document.getElementById('plans-list');
+    $.planExportBtn = document.getElementById('plan-export-btn');
+    $.planImportInput = document.getElementById('plan-import-input');
 
     // District detail elements
     $.selectedInfo = document.getElementById('selected-district-info');
@@ -158,6 +175,29 @@ function setupUI() {
     if ($.redoBtn) $.redoBtn.addEventListener('click', doRedo);
     if ($.themeBtn) $.themeBtn.addEventListener('click', () => toggleTheme($));
 
+    // Brush size toggles
+    if ($.brushToggles) {
+        $.brushToggles.addEventListener('click', (e) => {
+            const btn = e.target.closest('[data-brush]');
+            if (!btn) return;
+            $.brushToggles.querySelectorAll('.mode-btn').forEach(b => b.classList.remove('active'));
+            btn.classList.add('active');
+            state.brushSize = parseInt(btn.dataset.brush, 10);
+        });
+    }
+
+    // Auto-fill
+    if ($.autofillBtn) {
+        $.autofillBtn.addEventListener('click', () => {
+            const count = autoFillDistrict(state.currentDistrict, updateHexVisuals, doUpdateMetrics, pushUndoSnapshot);
+            if (count > 0) {
+                showToast(`Auto-filled ${count} hexes`);
+            } else {
+                showToast('Nothing to fill');
+            }
+        });
+    }
+
     // Zoom buttons bound via camera.bindZoomButtons() in initCamera()
 
     document.addEventListener('keydown', (e) => {
@@ -197,6 +237,146 @@ function setupUI() {
     }
 
     renderDistrictPalette($, doUpdateSidebarDetails);
+
+    // Plans dialog
+    function renderPlansList() {
+        if (!$.plansList) return;
+        const plans = listPlans();
+        if (plans.length === 0) {
+            $.plansList.innerHTML = '<p class="plans-empty">No saved plans yet.</p>';
+            return;
+        }
+        $.plansList.innerHTML = '';
+        for (const p of plans) {
+            const item = document.createElement('div');
+            item.className = 'plan-item';
+            const date = new Date(p.timestamp);
+            const dateStr = `${date.getMonth() + 1}/${date.getDate()}/${date.getFullYear()}`;
+            item.innerHTML = `
+                <span class="plan-item-name">${escapeHtml(p.name)}</span>
+                <span class="plan-item-date">${dateStr}</span>
+                <div class="plan-item-actions">
+                    <button class="plan-item-btn load" title="Load">Load</button>
+                    <button class="plan-item-btn export" title="Export">Export</button>
+                    <button class="plan-item-btn delete" title="Delete">&times;</button>
+                </div>`;
+            item.querySelector('.load').addEventListener('click', (e) => {
+                e.stopPropagation();
+                loadPlan(p.name, updateHexVisuals, doUpdateMetrics);
+                pushUndoSnapshot();
+                $.plansDialog?.classList.add('hidden');
+                showToast(`Loaded "${p.name}"`);
+            });
+            item.querySelector('.export').addEventListener('click', (e) => {
+                e.stopPropagation();
+                exportPlan(p.name);
+            });
+            item.querySelector('.delete').addEventListener('click', (e) => {
+                e.stopPropagation();
+                deletePlan(p.name);
+                renderPlansList();
+                showToast(`Deleted "${p.name}"`);
+            });
+            $.plansList.appendChild(item);
+        }
+    }
+
+    if ($.plansBtn && $.plansDialog) {
+        $.plansBtn.addEventListener('click', () => {
+            $.plansDialog.classList.remove('hidden');
+            renderPlansList();
+        });
+    }
+    if ($.plansClose) {
+        $.plansClose.addEventListener('click', () => $.plansDialog?.classList.add('hidden'));
+    }
+    if ($.plansDialog) {
+        $.plansDialog.addEventListener('click', (e) => {
+            if (e.target === $.plansDialog) $.plansDialog.classList.add('hidden');
+        });
+    }
+    if ($.planSaveBtn && $.planNameInput) {
+        $.planSaveBtn.addEventListener('click', () => {
+            const name = $.planNameInput.value.trim();
+            if (!name) { showToast('Enter a plan name'); return; }
+            savePlan(name);
+            $.planNameInput.value = '';
+            renderPlansList();
+            showToast(`Saved "${name}"`);
+        });
+    }
+    if ($.planExportBtn) {
+        $.planExportBtn.addEventListener('click', () => {
+            const name = $.planNameInput?.value.trim() || 'plan';
+            exportCurrentPlan(name);
+        });
+    }
+    if ($.planImportInput) {
+        $.planImportInput.addEventListener('change', async (e) => {
+            const file = e.target.files?.[0];
+            if (!file) return;
+            try {
+                const name = await importPlan(file);
+                renderPlansList();
+                showToast(`Imported "${name}"`);
+            } catch (err) {
+                showToast(err.message);
+            }
+            e.target.value = '';
+        });
+    }
+
+    // Info tips
+    const infoData = {
+        eg: { title: 'Efficiency Gap', body: 'Measures wasted votes across all three parties. In a fair election, all parties waste similar numbers of votes. Values above 7% suggest gerrymandering (Gill v. Whitford, 2018).' },
+        symmetry: { title: 'Partisan Symmetry', body: 'If the parties\u2019 vote shares were swapped, would the seat outcome be symmetric? 100% = perfectly fair. Measures structural bias in the district map.' },
+        competitive: { title: 'Competitive Districts', body: 'Districts where the winning margin is under 10%. More competitive districts generally indicate a healthier democracy with more meaningful elections.' },
+        compactness: { title: 'Compactness', body: 'Polsby-Popper score: how close the district shape is to a circle. 100% = perfect circle. Low scores indicate irregular, potentially gerrymandered shapes.' },
+        contiguity: { title: 'Contiguity', body: 'All parts of a district must be connected. Non-contiguous districts (split into separate pieces) are illegal in most states.' },
+        mmd: { title: 'Majority-Minority Districts', body: 'Districts where over 50% of the population is a minority group. The Voting Rights Act may require a minimum number to ensure minority representation.' },
+        popbalance: { title: 'Population Balance', body: 'Districts should have roughly equal populations (within 10%). Large deviations violate the Equal Protection Clause (Reynolds v. Sims, 1964).' },
+    };
+
+    if (typeof createInfoTip === 'function') {
+        document.querySelectorAll('.info-trigger[data-info]').forEach(trigger => {
+            const key = trigger.dataset.info;
+            if (infoData[key]) createInfoTip(trigger, infoData[key]);
+        });
+    }
+
+    // Keyboard shortcuts
+    const shortcuts = [
+        { key: 'E', label: 'Toggle erase mode', group: 'Tools', action: () => setMode('erase', $) },
+        { key: 'D', label: 'Toggle delete mode', group: 'Tools', action: () => setMode('delete', $) },
+        { key: 'A', label: 'Auto-fill district', group: 'Tools', action: () => {
+            const count = autoFillDistrict(state.currentDistrict, updateHexVisuals, doUpdateMetrics, pushUndoSnapshot);
+            showToast(count > 0 ? `Auto-filled ${count} hexes` : 'Nothing to fill');
+        }},
+        { key: 'N', label: 'Randomize map', group: 'Map', action: randomizeMap },
+        { key: '1', label: 'Select district 1', group: 'Districts', action: () => { state.currentDistrict = 1; renderDistrictPalette($, doUpdateSidebarDetails); } },
+        { key: '2', label: 'Select district 2', group: 'Districts', action: () => { state.currentDistrict = 2; renderDistrictPalette($, doUpdateSidebarDetails); } },
+        { key: '3', label: 'Select district 3', group: 'Districts', action: () => { state.currentDistrict = 3; renderDistrictPalette($, doUpdateSidebarDetails); } },
+        { key: '4', label: 'Select district 4', group: 'Districts', action: () => { state.currentDistrict = 4; renderDistrictPalette($, doUpdateSidebarDetails); } },
+        { key: '5', label: 'Select district 5', group: 'Districts', action: () => { state.currentDistrict = 5; renderDistrictPalette($, doUpdateSidebarDetails); } },
+        { key: '6', label: 'Select district 6', group: 'Districts', action: () => { state.currentDistrict = 6; renderDistrictPalette($, doUpdateSidebarDetails); } },
+        { key: '7', label: 'Select district 7', group: 'Districts', action: () => { state.currentDistrict = 7; renderDistrictPalette($, doUpdateSidebarDetails); } },
+        { key: '8', label: 'Select district 8', group: 'Districts', action: () => { state.currentDistrict = 8; renderDistrictPalette($, doUpdateSidebarDetails); } },
+        { key: '9', label: 'Select district 9', group: 'Districts', action: () => { state.currentDistrict = 9; renderDistrictPalette($, doUpdateSidebarDetails); } },
+        { key: '0', label: 'Select district 10', group: 'Districts', action: () => { state.currentDistrict = 10; renderDistrictPalette($, doUpdateSidebarDetails); } },
+        { key: 'T', label: 'Toggle theme', group: 'View', action: () => toggleTheme($) },
+        { key: 'S', label: 'Toggle sidebar', group: 'View', action: () => {
+            if ($.sidebar) {
+                const opening = !$.sidebar.classList.contains('open');
+                $.sidebar.classList.toggle('open');
+                $.statsToggle?.classList.toggle('active');
+                shiftForSidebar(opening);
+            }
+        }},
+    ];
+
+    if (typeof initShortcuts === 'function') {
+        initShortcuts(shortcuts, { helpTitle: 'Keyboard Shortcuts' });
+    }
 
     // Intro screen
     if ($.introStart && $.introScreen) {

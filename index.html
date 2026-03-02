@@ -12,6 +12,8 @@
     <script src="/shared-camera.js"></script>
     <script src="colors.js"></script>
     <script src="/shared-touch.js"></script>
+    <script src="/shared-info.js"></script>
+    <script src="/shared-shortcuts.js"></script>
     <link rel="stylesheet" href="/shared-base.css">
     <link rel="stylesheet" href="styles.css">
     <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -21,6 +23,7 @@
 </head>
 
 <body>
+    <a href="#hex-map" class="skip-link">Skip to map</a>
 
     <!-- ─── Intro Screen ─── -->
     <div id="intro-screen">
@@ -80,7 +83,7 @@
     </div>
 
     <!-- ─── Floating Toolbar ─── -->
-    <header id="toolbar" class="sim-toolbar glass">
+    <header id="toolbar" class="sim-toolbar glass" role="toolbar" aria-label="Map tools">
         <div class="toolbar-brand">
             <a href="/" class="sim-home" title="a9l.im"><img src="/logo.svg" alt="a9l.im" height="28"></a>
             <h1 class="sim-brand">Redistricting <em>Simulator</em></h1>
@@ -123,7 +126,22 @@
                     <line x1="12" y1="2" x2="12" y2="22"></line>
                 </svg>
             </button>
+            <button id="autofill-btn" class="tool-btn" aria-label="Auto-fill district" title="Auto-fill">
+                <svg width="18" height="18" viewBox="0 0 24 24">
+                    <path d="M12 2a10 10 0 1 0 10 10A10 10 0 0 0 12 2zm0 18a8 8 0 1 1 8-8 8 8 0 0 1-8 8z"></path>
+                    <path d="M12 6v6l4 2"></path>
+                </svg>
+            </button>
             <div class="tool-sep"></div>
+            <button id="plans-btn" class="tool-btn" aria-label="Saved plans">
+                <svg width="18" height="18" viewBox="0 0 24 24">
+                    <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path>
+                    <polyline points="14 2 14 8 20 8"></polyline>
+                    <line x1="16" y1="13" x2="8" y2="13"></line>
+                    <line x1="16" y1="17" x2="8" y2="17"></line>
+                    <polyline points="10 9 9 9 8 9"></polyline>
+                </svg>
+            </button>
             <button id="randomize-btn" class="tool-btn" aria-label="Randomize map">
                 <svg width="18" height="18" viewBox="0 0 24 24">
                     <path d="M16 3h5v5"></path>
@@ -156,7 +174,7 @@
                     <path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"></path>
                 </svg>
             </button>
-            <button id="stats-toggle" class="tool-btn" aria-label="Toggle statistics panel">
+            <button id="stats-toggle" class="tool-btn" aria-label="Toggle statistics panel" aria-expanded="false">
                 <svg width="18" height="18" viewBox="0 0 24 24">
                     <line x1="18" y1="20" x2="18" y2="10"></line>
                     <line x1="12" y1="20" x2="12" y2="4"></line>
@@ -206,7 +224,7 @@
     <div id="district-palette" class="sim-bar glass"></div>
 
     <!-- ─── Stats Panel (floating right) ─── -->
-    <aside id="sidebar" class="sim-panel glass">
+    <aside id="sidebar" class="sim-panel glass" role="complementary" aria-label="Election statistics">
         <div class="sheet-handle"></div>
         <div class="stats-header">
             <h2 class="stats-title">Analysis</h2>
@@ -217,135 +235,198 @@
                 </svg>
             </button>
         </div>
-        <div class="stats-scroll scrollbar-thin">
-            <!-- Statewide Results -->
-            <div class="stat-group">
-                <div class="group-label">Statewide Results</div>
-                <div id="state-results">
-                    <div class="seats-grid">
-                        <div class="seat-block red">
-                            <span class="seat-num" id="red-seats">0</span>
-                            <span class="seat-label">Red</span>
-                        </div>
-                        <div class="seat-block blue">
-                            <span class="seat-num" id="blue-seats">0</span>
-                            <span class="seat-label">Blue</span>
-                        </div>
-                        <div class="seat-block yellow">
-                            <span class="seat-num" id="yellow-seats">0</span>
-                            <span class="seat-label">Yellow</span>
-                        </div>
-                    </div>
-                    <div class="stat-row">
-                        <span class="stat-label">Districts Created</span>
-                        <span class="stat-value" id="district-count">0 / 10</span>
-                    </div>
-                    <div class="stat-row">
-                        <span class="stat-label">Maj-Minority Districts</span>
-                        <span class="stat-value" id="mmd-count">0 / 2 min</span>
-                    </div>
-                    <div class="stat-row">
-                        <span class="stat-label">Efficiency Gap <span class="info-tip"
-                                data-tip="Measures wasted votes between Red and Blue. Values above 7% may indicate partisan gerrymandering. Based on the standard used in Gill v. Whitford.">?</span></span>
-                        <span class="stat-value" id="efficiency-gap">—</span>
-                    </div>
-                    <p class="stat-note" id="eg-note">EG > 7% may indicate gerrymandering</p>
-                </div>
-            </div>
-
-            <!-- Popular Vote vs Seats -->
-            <div class="stat-group" id="popular-vote-panel">
-                <div class="group-label">Popular Vote vs Seats</div>
-                <p class="panel-hint">When seat share diverges from vote share, gerrymandering may be at work.</p>
-                <div class="proportionality-row">
-                    <span class="prop-label red-text">Red</span>
-                    <div class="prop-bars">
-                        <div class="prop-bar-track">
-                            <div class="prop-bar-fill vote-fill red" id="prop-red-votes"></div>
-                        </div>
-                        <div class="prop-bar-track">
-                            <div class="prop-bar-fill seat-fill red" id="prop-red-seats"></div>
-                        </div>
-                    </div>
-                    <div class="prop-values">
-                        <span class="prop-pct" id="prop-red-vote-pct">0%</span>
-                        <span class="prop-pct" id="prop-red-seat-pct">0%</span>
-                    </div>
-                </div>
-                <div class="proportionality-row">
-                    <span class="prop-label blue-text">Blue</span>
-                    <div class="prop-bars">
-                        <div class="prop-bar-track">
-                            <div class="prop-bar-fill vote-fill blue" id="prop-blue-votes"></div>
-                        </div>
-                        <div class="prop-bar-track">
-                            <div class="prop-bar-fill seat-fill blue" id="prop-blue-seats"></div>
+        <div class="tabs-wrap">
+            <nav class="tab-bar" role="tablist">
+                <button class="tab-btn active" data-tab="statewide" role="tab" aria-selected="true">Statewide</button>
+                <button class="tab-btn" data-tab="district" role="tab" aria-selected="false">District</button>
+                <button class="tab-btn" data-tab="tools" role="tab" aria-selected="false">Tools</button>
+            </nav>
+            <div class="tab-panels scrollbar-thin">
+                <!-- ── Statewide ── -->
+                <div class="tab-panel active" id="tab-statewide" role="tabpanel">
+                    <div class="stat-group">
+                        <div class="group-label">Statewide Results</div>
+                        <div id="state-results">
+                            <div class="seats-grid">
+                                <div class="seat-block red">
+                                    <span class="seat-num" id="red-seats">0</span>
+                                    <span class="seat-label">Red</span>
+                                </div>
+                                <div class="seat-block blue">
+                                    <span class="seat-num" id="blue-seats">0</span>
+                                    <span class="seat-label">Blue</span>
+                                </div>
+                                <div class="seat-block yellow">
+                                    <span class="seat-num" id="yellow-seats">0</span>
+                                    <span class="seat-label">Yellow</span>
+                                </div>
+                            </div>
+                            <div class="stat-row">
+                                <span class="stat-label">Districts Created</span>
+                                <span class="stat-value" id="district-count">0 / 10</span>
+                            </div>
+                            <div class="stat-row">
+                                <span class="stat-label">Maj-Minority Districts</span>
+                                <span class="stat-value" id="mmd-count">0 / 2 min</span>
+                            </div>
+                            <div class="stat-row">
+                                <span class="stat-label">Efficiency Gap <button class="info-trigger" data-info="eg">?</button></span>
+                                <span class="stat-value" id="efficiency-gap">—</span>
+                            </div>
+                            <p class="stat-note" id="eg-note">EG > 7% may indicate gerrymandering</p>
+                            <div class="stat-row">
+                                <span class="stat-label">Partisan Symmetry <button class="info-trigger" data-info="symmetry">?</button></span>
+                                <span class="stat-value" id="partisan-symmetry">—</span>
+                            </div>
+                            <div class="stat-row">
+                                <span class="stat-label">Competitive Districts <button class="info-trigger" data-info="competitive">?</button></span>
+                                <span class="stat-value" id="competitive-districts">0 / 0</span>
+                            </div>
                         </div>
                     </div>
-                    <div class="prop-values">
-                        <span class="prop-pct" id="prop-blue-vote-pct">0%</span>
-                        <span class="prop-pct" id="prop-blue-seat-pct">0%</span>
-                    </div>
-                </div>
-                <div class="proportionality-row">
-                    <span class="prop-label yellow-text">Yell</span>
-                    <div class="prop-bars">
-                        <div class="prop-bar-track">
-                            <div class="prop-bar-fill vote-fill yellow" id="prop-yellow-votes"></div>
+                    <div class="stat-group" id="popular-vote-panel">
+                        <div class="group-label">Popular Vote vs Seats</div>
+                        <p class="panel-hint">When seat share diverges from vote share, gerrymandering may be at work.</p>
+                        <div class="proportionality-row">
+                            <span class="prop-label red-text">Red</span>
+                            <div class="prop-bars">
+                                <div class="prop-bar-track">
+                                    <div class="prop-bar-fill vote-fill red" id="prop-red-votes"></div>
+                                </div>
+                                <div class="prop-bar-track">
+                                    <div class="prop-bar-fill seat-fill red" id="prop-red-seats"></div>
+                                </div>
+                            </div>
+                            <div class="prop-values">
+                                <span class="prop-pct" id="prop-red-vote-pct">0%</span>
+                                <span class="prop-pct" id="prop-red-seat-pct">0%</span>
+                            </div>
                         </div>
-                        <div class="prop-bar-track">
-                            <div class="prop-bar-fill seat-fill yellow" id="prop-yellow-seats"></div>
+                        <div class="proportionality-row">
+                            <span class="prop-label blue-text">Blue</span>
+                            <div class="prop-bars">
+                                <div class="prop-bar-track">
+                                    <div class="prop-bar-fill vote-fill blue" id="prop-blue-votes"></div>
+                                </div>
+                                <div class="prop-bar-track">
+                                    <div class="prop-bar-fill seat-fill blue" id="prop-blue-seats"></div>
+                                </div>
+                            </div>
+                            <div class="prop-values">
+                                <span class="prop-pct" id="prop-blue-vote-pct">0%</span>
+                                <span class="prop-pct" id="prop-blue-seat-pct">0%</span>
+                            </div>
                         </div>
-                    </div>
-                    <div class="prop-values">
-                        <span class="prop-pct" id="prop-yellow-vote-pct">0%</span>
-                        <span class="prop-pct" id="prop-yellow-seat-pct">0%</span>
-                    </div>
-                </div>
-                <div class="prop-legend">
-                    <span class="prop-legend-item"><span class="legend-swatch vote-swatch"></span> Vote %</span>
-                    <span class="prop-legend-item"><span class="legend-swatch seat-swatch"></span> Seat %</span>
-                </div>
-            </div>
-
-            <!-- District Details -->
-            <div class="stat-group">
-                <div class="group-label">District Details</div>
-                <div id="selected-district-info" class="hidden">
-                    <div class="group-label" id="detail-title">District 1</div>
-                    <div class="stat-row"><span class="stat-label">Winner</span><span class="stat-value"
-                            id="detail-winner">-</span></div>
-                    <div class="stat-row"><span class="stat-label">Margin of Victory</span><span class="stat-value"
-                            id="detail-margin">-</span></div>
-                    <div class="stat-row"><span class="stat-label">Population</span><span class="stat-value"
-                            id="detail-pop">0</span></div>
-                    <div class="metric-note">Target: <span id="target-pop"></span> (<span
-                            id="detail-deviation"></span>)</div>
-                    <div class="stat-row"><span class="stat-label">Compactness <span class="info-tip"
-                                data-tip="Polsby-Popper score. Higher values mean a more compact, regular shape. Gerrymandered districts tend to have low compactness.">?</span></span><span
-                            class="stat-value" id="detail-compactness">0%</span></div>
-                    <div class="stat-row"><span class="stat-label">Contiguous <span class="info-tip"
-                                data-tip="A district is contiguous if every hex can be reached from every other hex without leaving the district. Non-contiguous districts are generally illegal.">?</span></span><span
-                            class="stat-value" id="detail-contiguous">Yes</span></div>
-                    <div class="stat-row"><span class="stat-label">Minority-Majority <span class="info-tip"
-                                data-tip="A district where over 50% of the population is a minority group. The Voting Rights Act may require creating minority-majority districts to ensure fair representation.">?</span></span><span
-                            class="stat-value" id="detail-mm">No</span></div>
-                    <div class="vote-bar-container">
-                        <div class="vote-bar red" id="vote-bar-red"></div>
-                        <div class="vote-bar blue" id="vote-bar-blue"></div>
-                        <div class="vote-bar yellow" id="vote-bar-yellow"></div>
-                    </div>
-                    <div class="vote-labels">
-                        <span id="vote-pct-red" class="red-text">0%</span>
-                        <span id="vote-pct-yellow" class="yellow-text">0%</span>
-                        <span id="vote-pct-blue" class="blue-text">0%</span>
+                        <div class="proportionality-row">
+                            <span class="prop-label yellow-text">Yell</span>
+                            <div class="prop-bars">
+                                <div class="prop-bar-track">
+                                    <div class="prop-bar-fill vote-fill yellow" id="prop-yellow-votes"></div>
+                                </div>
+                                <div class="prop-bar-track">
+                                    <div class="prop-bar-fill seat-fill yellow" id="prop-yellow-seats"></div>
+                                </div>
+                            </div>
+                            <div class="prop-values">
+                                <span class="prop-pct" id="prop-yellow-vote-pct">0%</span>
+                                <span class="prop-pct" id="prop-yellow-seat-pct">0%</span>
+                            </div>
+                        </div>
+                        <div class="prop-legend">
+                            <span class="prop-legend-item"><span class="legend-swatch vote-swatch"></span> Vote %</span>
+                            <span class="prop-legend-item"><span class="legend-swatch seat-swatch"></span> Seat %</span>
+                        </div>
                     </div>
                 </div>
-                <p id="no-selection-msg" class="panel-hint">Select a district to view details.</p>
+                <!-- ── District ── -->
+                <div class="tab-panel" id="tab-district" role="tabpanel">
+                    <div class="stat-group">
+                        <div class="group-label">District Details</div>
+                        <div id="selected-district-info" class="hidden">
+                            <div class="group-label" id="detail-title">District 1</div>
+                            <div class="stat-row"><span class="stat-label">Winner</span><span class="stat-value"
+                                    id="detail-winner">-</span></div>
+                            <div class="stat-row"><span class="stat-label">Margin of Victory</span><span class="stat-value"
+                                    id="detail-margin">-</span></div>
+                            <div class="stat-row"><span class="stat-label">Population</span><span class="stat-value"
+                                    id="detail-pop">0</span></div>
+                            <div class="metric-note">Target: <span id="target-pop"></span> (<span
+                                    id="detail-deviation"></span>)</div>
+                            <div class="stat-row"><span class="stat-label">Compactness <button class="info-trigger" data-info="compactness">?</button></span><span
+                                    class="stat-value" id="detail-compactness">0%</span></div>
+                            <div class="stat-row"><span class="stat-label">Contiguous <button class="info-trigger" data-info="contiguity">?</button></span><span
+                                    class="stat-value" id="detail-contiguous">Yes</span></div>
+                            <div class="stat-row"><span class="stat-label">Minority-Majority <button class="info-trigger" data-info="mmd">?</button></span><span
+                                    class="stat-value" id="detail-mm">No</span></div>
+                            <div class="vote-bar-container">
+                                <div class="vote-bar red" id="vote-bar-red"></div>
+                                <div class="vote-bar blue" id="vote-bar-blue"></div>
+                                <div class="vote-bar yellow" id="vote-bar-yellow"></div>
+                            </div>
+                            <div class="vote-labels">
+                                <span id="vote-pct-red" class="red-text">0%</span>
+                                <span id="vote-pct-yellow" class="yellow-text">0%</span>
+                                <span id="vote-pct-blue" class="blue-text">0%</span>
+                            </div>
+                        </div>
+                        <p id="no-selection-msg" class="panel-hint">Select a district to view details.</p>
+                    </div>
+                </div>
+                <!-- ── Tools ── -->
+                <div class="tab-panel" id="tab-tools" role="tabpanel">
+                    <div class="stat-group">
+                        <div class="group-label">Brush Size</div>
+                        <div class="mode-toggles" id="brush-toggles" aria-label="Brush size">
+                            <button class="mode-btn active" data-brush="0">1</button>
+                            <button class="mode-btn" data-brush="1">3</button>
+                            <button class="mode-btn" data-brush="2">7</button>
+                        </div>
+                    </div>
+                </div>
             </div>
         </div>
     </aside>
 
+    <!-- ─── Plans Dialog ─── -->
+    <div id="plans-dialog" class="plans-overlay hidden">
+        <div class="plans-content glass">
+            <div class="stats-header">
+                <h2 class="stats-title">Saved Plans</h2>
+                <button id="plans-close" class="tool-btn" aria-label="Close plans">
+                    <svg width="16" height="16" viewBox="0 0 24 24"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg>
+                </button>
+            </div>
+            <div class="plans-save-row">
+                <input type="text" id="plan-name-input" class="plans-input" placeholder="Plan name" maxlength="40">
+                <button id="plan-save-btn" class="ghost-btn">Save</button>
+            </div>
+            <div id="plans-list" class="plans-list scrollbar-thin"></div>
+            <div class="plans-actions">
+                <button id="plan-export-btn" class="ghost-btn">Export Current</button>
+                <label class="ghost-btn plans-import-label">
+                    Import
+                    <input type="file" id="plan-import-input" accept=".json" hidden>
+                </label>
+            </div>
+        </div>
+    </div>
+
+    <script>
+    (function () {
+        const btns = document.querySelectorAll('.tab-btn');
+        const panels = document.querySelectorAll('.tab-panel');
+        btns.forEach(btn => {
+            btn.addEventListener('click', () => {
+                btns.forEach(b => { b.classList.remove('active'); b.setAttribute('aria-selected', 'false'); });
+                panels.forEach(p => p.classList.remove('active'));
+                btn.classList.add('active');
+                btn.setAttribute('aria-selected', 'true');
+                const target = document.getElementById('tab-' + btn.dataset.tab);
+                if (target) target.classList.add('active');
+            });
+        });
+    })();
+    </script>
     <script type="module" src="main.js"></script>
 </body>
 

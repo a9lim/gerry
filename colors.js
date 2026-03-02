@@ -64,8 +64,8 @@ ${genParty(true)}
 ${genThemed(L, false)}
 
   --hex-min-opacity:  0.22;
-  --label-fill:       #FFFFFFE6;
-  --label-stroke:     #00000080;
+  --label-fill:       ${_r(D.text, 0.902)};
+  --label-stroke:     ${_r(L.text, 0.502)};
 }
 [data-theme="dark"] {
 ${genParty(false)}

@@ -66,7 +66,8 @@ function calculateCompactness(d) {
 }
 
 export function calculateEfficiencyGap() {
-    let wastedRed = 0, wastedBlue = 0, totalVotes = 0;
+    const wasted = { red: 0, blue: 0, yellow: 0 };
+    let totalVotes = 0;
     let numActiveDistricts = 0;
 
     for (let i = 1; i <= CONFIG.numDistricts; i++) {
@@ -74,24 +75,120 @@ export function calculateEfficiencyGap() {
         if (d.population === 0) continue;
         numActiveDistricts++;
 
-        const { red: redV, blue: blueV } = d.votes;
-        const districtTotal = redV + blueV;
+        const { red, blue, yellow } = d.votes;
+        const districtTotal = red + blue + yellow;
         if (districtTotal === 0) continue;
 
         totalVotes += districtTotal;
-        const threshold = Math.floor(districtTotal / 2) + 1;
+        // Plurality threshold: need more than any other single party
+        const max = Math.max(red, blue, yellow);
+        const winner = max === red ? 'red' : max === blue ? 'blue' : 'yellow';
 
-        if (redV > blueV) {
-            wastedRed += redV - threshold;
-            wastedBlue += blueV;
-        } else {
-            wastedBlue += blueV - threshold;
-            wastedRed += redV;
+        for (const party of ['red', 'blue', 'yellow']) {
+            if (party === winner) {
+                // Winner wastes votes above what was needed to win
+                // In plurality: threshold = second-place votes + 1
+                const others = [red, blue, yellow].filter((_, j) => ['red', 'blue', 'yellow'][j] !== party);
+                const threshold = Math.max(...others) + 1;
+                wasted[party] += d.votes[party] - threshold;
+            } else {
+                // Losers waste all their votes
+                wasted[party] += d.votes[party];
+            }
         }
     }
 
     if (totalVotes === 0 || numActiveDistricts < 2) return null;
-    return (wastedRed - wastedBlue) / totalVotes;
+    return {
+        red: wasted.red / totalVotes,
+        blue: wasted.blue / totalVotes,
+        yellow: wasted.yellow / totalVotes,
+    };
+}
+
+export function calculatePartisanSymmetry() {
+    const activeDistricts = [];
+    for (let i = 1; i <= CONFIG.numDistricts; i++) {
+        const d = state.districts[i];
+        if (d.population > 0) activeDistricts.push(d);
+    }
+    if (activeDistricts.length < 2) return null;
+
+    const parties = ['red', 'blue', 'yellow'];
+    const actualSeats = { red: 0, blue: 0, yellow: 0 };
+    for (const d of activeDistricts) {
+        if (d.winner !== 'none') actualSeats[d.winner]++;
+    }
+
+    let totalDeviation = 0;
+    let pairCount = 0;
+
+    // For each pair of parties, swap their vote shares and recount
+    for (let a = 0; a < parties.length; a++) {
+        for (let b = a + 1; b < parties.length; b++) {
+            const pA = parties[a], pB = parties[b];
+            const swappedSeats = { red: 0, blue: 0, yellow: 0 };
+
+            for (const d of activeDistricts) {
+                const swapped = { ...d.votes };
+                // Swap the two parties' votes
+                const tmp = swapped[pA];
+                swapped[pA] = swapped[pB];
+                swapped[pB] = tmp;
+                // Find winner under swapped scenario
+                const max = Math.max(swapped.red, swapped.blue, swapped.yellow);
+                const winner = max === swapped.red ? 'red' : max === swapped.blue ? 'blue' : 'yellow';
+                swappedSeats[winner]++;
+            }
+
+            // Deviation: how much did the seat gap change?
+            const actualGap = actualSeats[pA] - actualSeats[pB];
+            const swappedGap = swappedSeats[pA] - swappedSeats[pB];
+            // In a symmetric map, swapping votes should swap seats proportionally
+            // Deviation = |actualGap + swappedGap| (they should be equal and opposite)
+            totalDeviation += Math.abs(actualGap + swappedGap);
+            pairCount++;
+        }
+    }
+
+    const avgDeviation = totalDeviation / pairCount;
+    // Normalize: max possible deviation = 2 * numActiveDistricts
+    const maxDev = 2 * activeDistricts.length;
+    return Math.max(0, Math.round((1 - avgDeviation / maxDev) * 100));
+}
+
+export function calculateCompetitiveDistricts() {
+    let competitive = 0;
+    let total = 0;
+
+    for (let i = 1; i <= CONFIG.numDistricts; i++) {
+        const d = state.districts[i];
+        if (d.population === 0) continue;
+        total++;
+
+        const totalVotes = d.votes.red + d.votes.blue + d.votes.yellow;
+        if (totalVotes === 0) continue;
+
+        const sorted = [d.votes.red, d.votes.blue, d.votes.yellow].sort((a, b) => b - a);
+        const margin = (sorted[0] - sorted[1]) / totalVotes;
+        if (margin < 0.1) competitive++;
+    }
+
+    return { competitive, total };
+}
+
+export function calculateRequiredMMD() {
+    let totalPop = 0, totalMinority = 0;
+
+    state.hexes.forEach(hex => {
+        totalPop += hex.population;
+        if (hex.minority) totalMinority += hex.population;
+    });
+
+    if (totalPop === 0) return 0;
+    const minorityShare = totalMinority / totalPop;
+    if (minorityShare < 0.15) return 0;
+    return Math.max(1, Math.floor(minorityShare * CONFIG.numDistricts));
 }
 
 export function votePcts(votes) {

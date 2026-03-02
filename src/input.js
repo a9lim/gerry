@@ -1,5 +1,5 @@
 // ─── Mouse Input Handlers ───
-import { CONFIG, HEX_W, HEX_H } from './config.js';
+import { CONFIG, HEX_W, HEX_H, HEX_DIRS, getHexesInRadius } from './config.js';
 import { state, hexElements } from './state.js';
 import { calculateMetrics, votePcts } from './metrics.js';
 import { updateHexVisuals, renderBorders, renderDistrictLabels } from './renderer.js';
@@ -81,6 +81,18 @@ function paintHexByKey(qr) {
     }
 }
 
+function paintBrush(qr) {
+    if (state.brushSize <= 0) {
+        paintHexByKey(qr);
+        return;
+    }
+    const [q, r] = qr.split(',').map(Number);
+    const keys = getHexesInRadius(q, r, state.brushSize);
+    for (const k of keys) {
+        paintHexByKey(k);
+    }
+}
+
 // Exported for touch.js
 export function startPaintingAt(qr, isErase, deleteDistrict, updateSidebarDetails, updateDistrictPalette) {
     const hex = state.hexes.get(qr);
@@ -102,7 +114,7 @@ export function startPaintingAt(qr, isErase, deleteDistrict, updateSidebarDetail
         state.paintState.districtId = state.currentDistrict;
     }
     state.currentDistrict = state.paintState.mode === 'paint' ? state.paintState.districtId : state.currentDistrict;
-    paintHexByKey(qr);
+    paintBrush(qr);
     updateSidebarDetails(state.currentDistrict);
     updateDistrictPalette();
     return true;
@@ -130,7 +142,7 @@ function updateHoverTarget(qr) {
 
 function paintIfActive(qr, $, updateSidebarDetails) {
     if (state.paintState.mode === 'none') return;
-    paintHexByKey(qr);
+    paintBrush(qr);
     calculateMetrics();
     updateSidebarDetails(state.currentDistrict);
     scheduleBorderUpdate($);
@@ -174,6 +186,72 @@ export function handleHover(e, qr, $, updateSidebarDetails) {
 export function handleHoverAt(qr, $, updateSidebarDetails) {
     updateHoverTarget(qr);
     paintIfActive(qr, $, updateSidebarDetails);
+}
+
+export function autoFillDistrict(districtId, updateHexVisFn, updateMetricsFn, pushUndoFn) {
+    const d = state.districts[districtId];
+    if (!d) return 0;
+
+    // Gather current hexes in district
+    const inDistrict = new Set();
+    state.hexes.forEach((hex, key) => {
+        if (hex.district === districtId) inDistrict.add(key);
+    });
+
+    // Compute centroid
+    let cx = 0, cy = 0;
+    for (const key of inDistrict) {
+        const [q, r] = key.split(',').map(Number);
+        cx += q; cy += r;
+    }
+    if (inDistrict.size > 0) { cx /= inDistrict.size; cy /= inDistrict.size; }
+
+    let added = 0;
+    const popCap = state.targetPop * CONFIG.popCapRatio;
+    let currentPop = d.population;
+
+    // Greedy nearest-neighbor: repeatedly find closest unassigned adjacent hex
+    while (currentPop < popCap) {
+        // Find all unassigned hexes adjacent to district boundary
+        const candidates = [];
+        for (const key of inDistrict) {
+            const [q, r] = key.split(',').map(Number);
+            for (const dir of HEX_DIRS) {
+                const nk = `${q + dir.dq},${r + dir.dr}`;
+                if (inDistrict.has(nk)) continue;
+                const nh = state.hexes.get(nk);
+                if (!nh || nh.district !== 0) continue;
+                // Distance to centroid
+                const dist = Math.abs(q + dir.dq - cx) + Math.abs(r + dir.dr - cy);
+                candidates.push({ key: nk, hex: nh, dist });
+            }
+        }
+        if (candidates.length === 0) break;
+
+        // Deduplicate and sort by distance
+        const seen = new Set();
+        const unique = [];
+        for (const c of candidates) {
+            if (!seen.has(c.key)) { seen.add(c.key); unique.push(c); }
+        }
+        unique.sort((a, b) => a.dist - b.dist);
+
+        // Add best candidate
+        const best = unique[0];
+        if (currentPop + best.hex.population > popCap) break;
+
+        best.hex.district = districtId;
+        inDistrict.add(best.key);
+        currentPop += best.hex.population;
+        added++;
+    }
+
+    if (added > 0) {
+        state.hexes.forEach((_, qr) => updateHexVisFn(qr));
+        updateMetricsFn();
+        pushUndoFn();
+    }
+    return added;
 }
 
 export function setupMouseHandlers($, { onStartPainting, onStopPainting, onClearHover, onHandleHover }) {

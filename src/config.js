@@ -44,5 +44,15 @@ export const PALETTE_COLOR_MAP = {
     yellow: 'var(--party-yellow)'
 };
 
+export function getHexesInRadius(q, r, radius) {
+    const results = [];
+    for (let dq = -radius; dq <= radius; dq++) {
+        for (let dr = Math.max(-radius, -dq - radius); dr <= Math.min(radius, -dq + radius); dr++) {
+            results.push(`${q + dq},${r + dr}`);
+        }
+    }
+    return results;
+}
+
 // Uses shared cubicBezier() from shared-utils.js
 export const EASE_OUT = cubicBezier(0.23, 1, 0.32, 1);

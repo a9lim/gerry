@@ -1,7 +1,7 @@
 // ─── Sidebar UI ───
 import { CONFIG } from './config.js';
 import { state } from './state.js';
-import { calculateMetrics, calculateEfficiencyGap, votePcts } from './metrics.js';
+import { calculateMetrics, calculateEfficiencyGap, calculatePartisanSymmetry, calculateCompetitiveDistricts, calculateRequiredMMD, votePcts } from './metrics.js';
 import { renderBorders, renderDistrictLabels } from './renderer.js';
 
 const animatedCounters = {};
@@ -146,19 +146,46 @@ export function updateMetrics($, updateDistrictPalette) {
     animateValue($.redSeats, seats.red, 600, v => Math.round(v), 'seats-red');
     animateValue($.blueSeats, seats.blue, 600, v => Math.round(v), 'seats-blue');
     animateValue($.yellowSeats, seats.yellow, 600, v => Math.round(v), 'seats-yellow');
-    if ($.mmdCount) $.mmdCount.textContent = `${mmdCount} / 2 min`;
+    // Dynamic MMD requirement
+    const requiredMMD = calculateRequiredMMD();
+    if ($.mmdCount) $.mmdCount.textContent = `${mmdCount} / ${requiredMMD} min`;
     if ($.districtCount) $.districtCount.textContent = `${activeDistrictCount} / ${CONFIG.numDistricts}`;
 
+    // All-party efficiency gap
     const eg = calculateEfficiencyGap();
     if ($.efficiencyGap) {
         if (eg !== null) {
-            const pct = (eg * 100).toFixed(1);
-            $.efficiencyGap.textContent = `${Math.abs(pct)}% ${eg > 0 ? '→ Blue' : '→ Red'}`;
-            $.efficiencyGap.style.color = Math.abs(eg) > 0.07 ? 'var(--party-red)' : 'var(--text)';
+            // Find party with lowest wasted votes (most advantaged)
+            const entries = [['Red', eg.red], ['Blue', eg.blue], ['Yellow', eg.yellow]];
+            entries.sort((a, b) => a[1] - b[1]);
+            const advantaged = entries[0][0];
+            // Dominant gap = second-lowest minus lowest
+            const gap = entries[1][1] - entries[0][1];
+            const pct = (gap * 100).toFixed(1);
+            $.efficiencyGap.textContent = `${pct}% → ${advantaged}`;
+            $.efficiencyGap.style.color = gap > 0.07 ? 'var(--party-red)' : 'var(--text)';
         } else {
             $.efficiencyGap.textContent = '—';
             $.efficiencyGap.style.color = 'var(--text-secondary)';
         }
+    }
+
+    // Partisan symmetry
+    const symmetry = calculatePartisanSymmetry();
+    if ($.partisanSymmetry) {
+        if (symmetry !== null) {
+            $.partisanSymmetry.textContent = `${symmetry}%`;
+            $.partisanSymmetry.style.color = symmetry < 80 ? 'var(--party-red)' : 'var(--text)';
+        } else {
+            $.partisanSymmetry.textContent = '—';
+            $.partisanSymmetry.style.color = 'var(--text-secondary)';
+        }
+    }
+
+    // Competitive districts
+    const comp = calculateCompetitiveDistricts();
+    if ($.competitiveDistricts) {
+        $.competitiveDistricts.textContent = `${comp.competitive} / ${comp.total}`;
     }
 
     updateSidebarDetails(state.currentDistrict, $);

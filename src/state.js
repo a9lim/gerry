@@ -18,7 +18,8 @@ export const state = {
     deleteMode: false,
     eraseMode: false,
     panMode: false,
-    maxPop: 100
+    maxPop: 100,
+    brushSize: 0
 };
 
 // Hex element index (avoids querySelector on every hover/paint)

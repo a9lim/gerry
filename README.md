@@ -7,30 +7,42 @@ An interactive gerrymandering simulation that lets you paint congressional distr
 ## Features
 
 - **Interactive District Painting** — Left-click to assign hexes, right-click to erase, drag to paint continuously
+- **Brush Sizes** — Paint 1, 3, or 7 hexes at once with toolbar brush toggle
+- **Auto-Fill** — Greedy nearest-neighbor fill to ~110% population cap with one click
 - **Erase & Delete Modes** — Single-hex erasure or bulk district deletion
 - **Zoom & Pan** — Scroll wheel zoom (0.3x–1.5x), middle-click drag to pan, pinch-to-zoom on touch
 - **Touch Support** — Single-finger paint, two-finger pinch and pan
 - **Undo/Redo** — Ctrl+Z / Ctrl+Y with 50 levels of history
+- **Plan Save/Load** — Save district plans to localStorage, export/import as JSON
 - **Dark/Light Themes** — Warm cream / near-black canvases with adaptive party colors
-- **Efficiency Gap** — Wasted-vote analysis metric from *Gill v. Whitford*
+- **All-Party Efficiency Gap** — Three-party wasted-vote analysis using plurality thresholds
+- **Partisan Symmetry** — Vote-share swap test measuring structural map bias (0–100%)
+- **Competitive Districts** — Count of districts with winning margin under 10%
 - **Live Metrics** — Population deviation, compactness (Polsby-Popper), contiguity (BFS flood-fill), margin of victory, proportionality
+- **Dynamic MMD Requirement** — Majority-minority district count derived from actual minority population share
 - **Population Cap** — Districts cannot exceed 110% of target population
 - **Organic Map Shape** — Irregular state-like boundary generated with trigonometric noise
 - **Demographic Simulation** — Urban/suburban/rural tiers with realistic partisan lean (~45-45-10 R-B-Y split)
 - **Hex Tooltips** — Hover for population, vote breakdown, and density tier
+- **Keyboard Shortcuts** — E (erase), D (delete), A (auto-fill), N (randomize), 0-9 (select district), T (theme), S (sidebar); press `?` for help overlay
+- **Info Tips** — Hover `?` icons next to each metric for explanations and legal context
 - **Responsive Design** — Adapts from desktop to mobile with bottom-sheet stats panel
 
 ## Controls
 
 | Input | Action |
 |-------|--------|
-| Left-click / drag | Paint hex with active district |
+| Left-click / drag | Paint hex with active district (brush size adjustable) |
 | Right-click | Erase hex assignment |
 | Scroll wheel | Zoom in/out |
 | Middle-click drag | Pan the map |
 | Ctrl+Z / Ctrl+Y | Undo / Redo |
 | Number buttons (bottom) | Select active district |
+| Brush toggle (toolbar) | Switch between 1/3/7-hex brush sizes |
+| Auto-fill (toolbar) | Fill current district to population cap |
+| Plans (toolbar) | Save, load, export, or import district plans |
 | Stats toggle (toolbar) | Show/hide analysis panel |
+| `?` key | Show all keyboard shortcuts |
 
 ## Running Locally
 
@@ -55,14 +67,15 @@ src/
   hex-math.js           — Axial coordinate math, hex-to-pixel conversion
   noise.js              — Trigonometric noise for organic map boundary
   hex-generator.js      — Population, vote, and demographic generation
-  state.js              — Single state object, districts, undo/redo
-  metrics.js            — Compactness, contiguity, efficiency gap (pure functions)
+  state.js              — Single state object, districts, undo/redo, brushSize
+  metrics.js            — Compactness, contiguity, all-party efficiency gap, partisan symmetry, competitive districts, required MMD
   renderer.js           — SVG rendering, borders, district labels
-  input.js              — Mouse handlers, painting, hover/tooltip
+  input.js              — Mouse handlers, painting, hover/tooltip, brush painting, auto-fill
   touch.js              — Pinch-zoom, pan, touch-paint
   zoom.js               — Wheel zoom, smooth zoom, zoomToFit
-  sidebar.js            — Metrics UI, proportionality display
+  sidebar.js            — Metrics UI, proportionality display, new metric rendering
   palette.js            — District palette rendering, mode management
+  plans.js              — Plan save/load/delete/export/import (localStorage + JSON)
   theme.js              — Light/dark theme toggle
 ```
 

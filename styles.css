@@ -49,6 +49,23 @@ body {
 #reset-btn:hover { color: var(--party-red); }
 #randomize-btn:hover { color: var(--party-blue); }
 
+/* Auto-district group */
+.auto-district-group {
+    display: inline-flex;
+    align-items: center;
+    gap: 2px;
+}
+.party-select {
+    font: 11px/1 var(--font-body);
+    padding: 4px 2px;
+    border-radius: var(--radius-sm);
+    border: 1px solid var(--border);
+    background: var(--bg-panel);
+    color: var(--text);
+    cursor: pointer;
+    height: 28px;
+}
+
 /* Theme toggle icon visibility — CSS-driven, no JS needed */
 #theme-btn .icon-sun,
 #theme-btn .icon-moon {
@@ -692,6 +709,14 @@ main {
         font-size: 0.72rem;
     }
 }
+
+/* ─── Election Simulation ─── */
+.election-overlay { position: fixed; inset: 0; display: flex; align-items: center; justify-content: center; background: #00000044; z-index: 100; }
+.election-panel { padding: 20px; border-radius: var(--radius-lg); max-width: 380px; width: 90%; position: relative; }
+.election-close { position: absolute; top: 8px; right: 12px; background: none; border: none; font-size: 1.4rem; cursor: pointer; color: var(--text-muted); }
+.election-controls { display: flex; flex-direction: column; gap: 8px; margin: 12px 0; }
+.election-controls label { display: flex; align-items: center; gap: 8px; font-size: 0.82rem; }
+#election-histogram { width: 100%; border-radius: var(--radius-sm); background: var(--bg-elevated); }
 
 /* Extra small */
 @media (max-width: 440px) {

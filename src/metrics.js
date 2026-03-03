@@ -62,7 +62,10 @@ function calculateCompactness(d) {
         }
     }
     if (perimeter === 0) return 100;
-    return Math.min(100, Math.round((32.648 * d.hexes.length) / (perimeter * perimeter) * 100));
+    const s = CONFIG.hexSize;
+    const area = d.hexes.length * 1.5 * Math.sqrt(3) * s * s;
+    const perim = perimeter * s;
+    return Math.min(100, Math.round(4 * Math.PI * area / (perim * perim) * 100));
 }
 
 export function calculateEfficiencyGap() {

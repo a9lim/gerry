@@ -3,6 +3,7 @@ import { CONFIG } from './config.js';
 import { hexDistance } from './hex-math.js';
 import { hashNoise, fbmNoise } from './noise.js';
 import { state, initDistricts } from './state.js';
+import { createPRNG } from './prng.js';
 import { calculateMetrics } from './metrics.js';
 
 function getHexWinner(hex) {
@@ -13,19 +14,20 @@ function getHexWinner(hex) {
     return 'yellow';
 }
 
-export function generateHexes() {
+export function generateHexes(seed) {
+    const rand = createPRNG(seed);
     let idCounter = 0;
     const centerX = CONFIG.cols / 2;
     const centerY = CONFIG.rows / 2;
     const maxRadius = Math.min(CONFIG.cols, CONFIG.rows) / 2 + 1;
 
-    const phase1 = Math.random() * Math.PI * 2;
-    const phase2 = Math.random() * Math.PI * 2;
-    const freq1 = 2 + Math.random() * 4;
-    const freq2 = 3 + Math.random() * 5;
-    const amp1 = 1 + Math.random() * 2;
-    const amp2 = 0.5 + Math.random() * 2;
-    const baseRadius = maxRadius * (0.75 + Math.random() * 0.15);
+    const phase1 = rand() * Math.PI * 2;
+    const phase2 = rand() * Math.PI * 2;
+    const freq1 = 2 + rand() * 4;
+    const freq2 = 3 + rand() * 5;
+    const amp1 = 1 + rand() * 2;
+    const amp2 = 0.5 + rand() * 2;
+    const baseRadius = maxRadius * (0.75 + rand() * 0.15);
 
     const validCoords = [];
     for (let r = 0; r < CONFIG.rows; r++) {
@@ -41,43 +43,43 @@ export function generateHexes() {
         }
     }
 
-    const noiseSeed = Math.random() * 10000;
-    const partySeed = Math.random() * 10000;
-    const minoritySeed = Math.random() * 10000;
+    const noiseSeed = rand() * 10000;
+    const partySeed = rand() * 10000;
+    const minoritySeed = rand() * 10000;
 
     // Population centers
-    const numLargeCities = Math.floor(Math.random() * 2) + 2;
-    const numSmallTowns = Math.floor(Math.random() * 6) + 5;
-    const numSuburbs = Math.floor(Math.random() * 4) + 3;
+    const numLargeCities = Math.floor(rand() * 2) + 2;
+    const numSmallTowns = Math.floor(rand() * 6) + 5;
+    const numSuburbs = Math.floor(rand() * 4) + 3;
     const centers = [];
 
     for (let i = 0; i < numLargeCities; i++) {
-        const c = validCoords[Math.floor(Math.random() * validCoords.length)];
-        centers.push({ q: c.q, r: c.r, strength: Math.random() * 600 + 350, decay: Math.random() * 1.8 + 1.2, type: 'city' });
+        const c = validCoords[Math.floor(rand() * validCoords.length)];
+        centers.push({ q: c.q, r: c.r, strength: rand() * 600 + 350, decay: rand() * 1.8 + 1.2, type: 'city' });
     }
     for (let i = 0; i < numSuburbs; i++) {
-        const city = centers[Math.floor(Math.random() * Math.min(centers.length, numLargeCities))];
-        const angle = Math.random() * Math.PI * 2;
-        const dist = 1.5 + Math.random() * 4;
+        const city = centers[Math.floor(rand() * Math.min(centers.length, numLargeCities))];
+        const angle = rand() * Math.PI * 2;
+        const dist = 1.5 + rand() * 4;
         centers.push({
             q: city.q + Math.round(Math.cos(angle) * dist),
             r: city.r + Math.round(Math.sin(angle) * dist),
-            strength: Math.random() * 250 + 100, decay: Math.random() * 1.2 + 0.6, type: 'suburb'
+            strength: rand() * 250 + 100, decay: rand() * 1.2 + 0.6, type: 'suburb'
         });
     }
     for (let i = 0; i < numSmallTowns; i++) {
-        const c = validCoords[Math.floor(Math.random() * validCoords.length)];
-        centers.push({ q: c.q, r: c.r, strength: Math.random() * 200 + 50, decay: Math.random() * 1.0 + 0.3, type: 'town' });
+        const c = validCoords[Math.floor(rand() * validCoords.length)];
+        centers.push({ q: c.q, r: c.r, strength: rand() * 200 + 50, decay: rand() * 1.0 + 0.3, type: 'town' });
     }
 
     // Transportation corridors
     const corridors = [];
     if (centers.length >= 2) {
-        const numCorridors = Math.floor(Math.random() * 3) + 1;
+        const numCorridors = Math.floor(rand() * 3) + 1;
         for (let i = 0; i < numCorridors; i++) {
-            const a = centers[Math.floor(Math.random() * numLargeCities)];
-            const b = centers[Math.floor(Math.random() * centers.length)];
-            if (a !== b) corridors.push({ q1: a.q, r1: a.r, q2: b.q, r2: b.r, width: 1.5 + Math.random(), strength: 60 + Math.random() * 80 });
+            const a = centers[Math.floor(rand() * numLargeCities)];
+            const b = centers[Math.floor(rand() * centers.length)];
+            if (a !== b) corridors.push({ q1: a.q, r1: a.r, q2: b.q, r2: b.r, width: 1.5 + rand(), strength: 60 + rand() * 80 });
         }
     }
 
@@ -90,14 +92,14 @@ export function generateHexes() {
     }
 
     state.maxPop = 0;
-    const leanScale = 0.15 + Math.random() * 0.1;
+    const leanScale = 0.15 + rand() * 0.1;
 
     validCoords.forEach(c => {
         const { q, r } = c;
 
         const terrainNoise = fbmNoise(q * 0.3, r * 0.3, noiseSeed, 5);
         const microNoise = fbmNoise(q * 1.2, r * 1.2, noiseSeed + 50, 3);
-        let pop = Math.floor(3 + terrainNoise * 70 + microNoise * 30 + Math.random() * 20);
+        let pop = Math.floor(3 + terrainNoise * 70 + microNoise * 30 + rand() * 20);
 
         for (const center of centers) {
             const d = hexDistance(q, r, center.q, center.r);
@@ -113,9 +115,9 @@ export function generateHexes() {
             }
         }
 
-        if (Math.random() < 0.10) pop += Math.floor(Math.random() * 120 + 30);
+        if (rand() < 0.10) pop += Math.floor(rand() * 120 + 30);
         if (hashNoise(q * 0.8, r * 0.8, noiseSeed + 2000) > 0.82) {
-            pop = Math.floor(pop * (0.1 + Math.random() * 0.2));
+            pop = Math.floor(pop * (0.1 + rand() * 0.2));
         }
 
         pop = Math.floor(pop * (0.4 + hashNoise(q * 1.7, r * 1.7, noiseSeed + 333) * 1.2));
@@ -128,7 +130,7 @@ export function generateHexes() {
         const isSuburban = pop > CONFIG.suburbanThreshold && pop <= CONFIG.urbanThreshold;
 
         let party;
-        const roll = Math.random();
+        const roll = rand();
 
         if (isUrban) {
             const blueChance = 0.70 + (regionalLean - 0.5) * 0.15;
@@ -146,18 +148,18 @@ export function generateHexes() {
 
         const votes = { red: 0, blue: 0, yellow: 0 };
         if (party === 'yellow') {
-            const yellowBoost = 0.28 + Math.random() * 0.08;
+            const yellowBoost = 0.28 + rand() * 0.08;
             votes.yellow = Math.floor(pop * yellowBoost);
             const rest = pop - votes.yellow;
-            const redShare = 0.3 + Math.random() * 0.4;
+            const redShare = 0.3 + rand() * 0.4;
             votes.red = Math.floor(rest * redShare);
             votes.blue = rest - votes.red;
         } else {
-            const yellowPct = 0.04 + Math.random() * 0.08;
+            const yellowPct = 0.04 + rand() * 0.08;
             votes.yellow = Math.floor(pop * yellowPct);
             const majorRemainder = pop - votes.yellow;
             const baseMargin = isUrban ? 0.58 : (isSuburban ? 0.54 : 0.58);
-            const winningPct = baseMargin + Math.random() * 0.25;
+            const winningPct = baseMargin + rand() * 0.25;
             votes[party] = Math.floor(majorRemainder * winningPct);
             const loser = party === 'red' ? 'blue' : 'red';
             votes[loser] = majorRemainder - votes[party];

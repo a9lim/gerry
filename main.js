@@ -2,6 +2,7 @@
 import { CONFIG } from './src/config.js';
 import { state, hexElements, initDistricts, setUndoRedoUICallback, pushUndoSnapshot, undo, redo, setMode, clearModes } from './src/state.js';
 import { generateHexes } from './src/hex-generator.js';
+import { randomSeed } from './src/prng.js';
 import { refreshMinOpacity, updateHexVisuals, renderMap, renderBorders, renderDistrictLabels } from './src/renderer.js';
 import { setupMouseHandlers, clearHover, handleHover, startPaintingAt, stopPainting, autoFillDistrict } from './src/input.js';
 import { initCamera, resetCamera, shiftForSidebar } from './src/zoom.js';
@@ -10,6 +11,8 @@ import { updateMetrics, updateSidebarDetails } from './src/sidebar.js';
 import { renderDistrictPalette, updateDistrictPalette } from './src/palette.js';
 import { initTheme, toggleTheme } from './src/theme.js';
 import { listPlans, savePlan, loadPlan, deletePlan, exportPlan, exportCurrentPlan, importPlan } from './src/plans.js';
+import { simulateElections, renderHistogram } from './src/election-sim.js';
+import { packAndCrack, fairDraw } from './src/auto-district.js';
 
 // ─── DOM Cache ───
 const $ = {};
@@ -55,6 +58,9 @@ function cacheDOMElements() {
     // Brush & auto-fill
     $.brushToggles = document.getElementById('brush-toggles');
     $.autofillBtn = document.getElementById('autofill-btn');
+    $.gerrymanderBtn = document.getElementById('gerrymander-btn');
+    $.gerrymanderParty = document.getElementById('gerrymander-party');
+    $.fairDrawBtn = document.getElementById('fair-draw-btn');
 
     // Plans dialog
     $.plansBtn = document.getElementById('plans-btn');
@@ -98,6 +104,16 @@ function cacheDOMElements() {
         };
     }
 
+    // Election simulation
+    $.simulateBtn = document.getElementById('simulate-btn');
+    $.electionOverlay = document.getElementById('election-overlay');
+    $.electionClose = document.getElementById('election-close');
+    $.swingSigma = document.getElementById('swing-sigma');
+    $.swingValue = document.getElementById('swing-value');
+    $.electionCount = document.getElementById('election-count');
+    $.runElections = document.getElementById('run-elections');
+    $.electionHistogram = document.getElementById('election-histogram');
+
     // SVG defs
     $.defs = document.createElementNS("http://www.w3.org/2000/svg", "defs");
     $.defs.id = 'map-defs';
@@ -126,14 +142,16 @@ const doDeleteDistrict = (dId) => {
 };
 
 // ─── Map Operations ───
-function randomizeMap() {
+function randomizeMap(seed) {
+    if (seed === undefined) seed = randomSeed();
+    state.seed = seed;
     clearModes($);
     state.hexes.clear();
     hexElements.clear();
     initDistricts();
     state.undoStack = [];
     state.redoStack = [];
-    generateHexes();
+    generateHexes(seed);
     state.targetPop = Math.round(
         Array.from(state.hexes.values()).reduce((sum, h) => sum + h.population, 0) / CONFIG.numDistricts
     );
@@ -142,6 +160,7 @@ function randomizeMap() {
     doUpdateMetrics();
     renderDistrictPalette($, doUpdateSidebarDetails);
     pushUndoSnapshot();
+    history.replaceState(null, '', '#seed=' + seed);
     showToast('Map randomized');
 }
 
@@ -197,6 +216,25 @@ function setupUI() {
             }
         });
     }
+
+    // Auto-gerrymander & fair draw
+    $.gerrymanderBtn?.addEventListener('click', () => {
+        const party = $.gerrymanderParty.value;
+        pushUndoSnapshot();
+        packAndCrack(party);
+        state.hexes.forEach((_, qr) => updateHexVisuals(qr));
+        doUpdateMetrics();
+        pushUndoSnapshot();
+        showToast(`Auto-gerrymandered for ${party}`);
+    });
+    $.fairDrawBtn?.addEventListener('click', () => {
+        pushUndoSnapshot();
+        fairDraw();
+        state.hexes.forEach((_, qr) => updateHexVisuals(qr));
+        doUpdateMetrics();
+        pushUndoSnapshot();
+        showToast('Fair districts drawn');
+    });
 
     // Zoom buttons bound via camera.bindZoomButtons() in initCamera()
 
@@ -262,7 +300,7 @@ function setupUI() {
                 </div>`;
             item.querySelector('.load').addEventListener('click', (e) => {
                 e.stopPropagation();
-                loadPlan(p.name, updateHexVisuals, doUpdateMetrics);
+                loadPlan(p.name, updateHexVisuals, doUpdateMetrics, () => renderMap($));
                 pushUndoSnapshot();
                 $.plansDialog?.classList.add('hidden');
                 showToast(`Loaded "${p.name}"`);
@@ -323,6 +361,28 @@ function setupUI() {
                 showToast(err.message);
             }
             e.target.value = '';
+        });
+    }
+
+    // Election simulation
+    $.simulateBtn?.addEventListener('click', () => {
+        $.electionOverlay.hidden = false;
+    });
+    $.electionClose?.addEventListener('click', () => {
+        $.electionOverlay.hidden = true;
+    });
+    $.runElections?.addEventListener('click', () => {
+        const sigma = parseFloat($.swingSigma.value) / 100;
+        const count = parseInt($.electionCount.value);
+        const results = simulateElections(count, sigma);
+        renderHistogram($.electionHistogram, results, CONFIG.numDistricts);
+    });
+    $.swingSigma?.addEventListener('input', e => {
+        $.swingValue.textContent = e.target.value + '%';
+    });
+    if ($.electionOverlay) {
+        $.electionOverlay.addEventListener('click', (e) => {
+            if (e.target === $.electionOverlay) $.electionOverlay.hidden = true;
         });
     }
 
@@ -393,7 +453,10 @@ function setupUI() {
 function init() {
     refreshMinOpacity();
     if ($.mapContainer) $.mapContainer.classList.add('paused');
-    generateHexes();
+    const hashSeed = parseInt(location.hash.replace('#seed=', ''), 10);
+    const initialSeed = Number.isFinite(hashSeed) ? hashSeed : randomSeed();
+    state.seed = initialSeed;
+    generateHexes(initialSeed);
     setupUI();
     state.targetPop = Math.round(
         Array.from(state.hexes.values()).reduce((sum, h) => sum + h.population, 0) / CONFIG.numDistricts
@@ -402,6 +465,7 @@ function init() {
     initCamera($);
     doUpdateMetrics();
     pushUndoSnapshot();
+    history.replaceState(null, '', '#seed=' + initialSeed);
 }
 
 // ─── Undo/Redo UI callback ───

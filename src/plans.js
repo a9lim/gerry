@@ -1,5 +1,6 @@
 // ─── Plan Save/Load ───
-import { state } from './state.js';
+import { state, hexElements, initDistricts } from './state.js';
+import { generateHexes } from './hex-generator.js';
 
 const STORAGE_KEY = 'gerry-plans';
 
@@ -30,6 +31,7 @@ export function savePlan(name) {
     const existing = plans.findIndex(p => p.name === name);
     const plan = {
         name,
+        seed: state.seed,
         hexAssignments: _getAssignments(),
         timestamp: Date.now(),
     };
@@ -41,10 +43,20 @@ export function savePlan(name) {
     _writePlans(plans);
 }
 
-export function loadPlan(name, updateHexVisuals, updateMetrics) {
+export function loadPlan(name, updateHexVisuals, updateMetrics, renderMapFn) {
     const plans = _readPlans();
     const plan = plans.find(p => p.name === name);
     if (!plan) return false;
+
+    // If plan has a seed, regenerate the map from that seed
+    if (plan.seed !== undefined) {
+        state.seed = plan.seed;
+        state.hexes.clear();
+        hexElements.clear();
+        initDistricts();
+        generateHexes(plan.seed);
+        if (renderMapFn) renderMapFn();
+    }
 
     // Clear all assignments
     state.hexes.forEach(hex => { hex.district = 0; });
@@ -58,6 +70,11 @@ export function loadPlan(name, updateHexVisuals, updateMetrics) {
     // Update visuals
     state.hexes.forEach((_, qr) => updateHexVisuals(qr));
     updateMetrics();
+
+    // Update URL hash
+    if (plan.seed !== undefined) {
+        history.replaceState(null, '', '#seed=' + plan.seed);
+    }
     return true;
 }
 
@@ -83,6 +100,7 @@ export function exportPlan(name) {
 export function exportCurrentPlan(name) {
     const plan = {
         name: name || 'Untitled',
+        seed: state.seed,
         hexAssignments: _getAssignments(),
         timestamp: Date.now(),
     };

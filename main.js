@@ -388,13 +388,13 @@ function setupUI() {
 
     // Info tips
     const infoData = {
-        eg: { title: 'Efficiency Gap', body: 'Measures wasted votes across all three parties. In a fair election, all parties waste similar numbers of votes. Values above 7% suggest gerrymandering (Gill v. Whitford, 2018).' },
-        symmetry: { title: 'Partisan Symmetry', body: 'If the parties\u2019 vote shares were swapped, would the seat outcome be symmetric? 100% = perfectly fair. Measures structural bias in the district map.' },
-        competitive: { title: 'Competitive Districts', body: 'Districts where the winning margin is under 10%. More competitive districts generally indicate a healthier democracy with more meaningful elections.' },
-        compactness: { title: 'Compactness', body: 'Polsby-Popper score: how close the district shape is to a circle. 100% = perfect circle. Low scores indicate irregular, potentially gerrymandered shapes.' },
-        contiguity: { title: 'Contiguity', body: 'All parts of a district must be connected. Non-contiguous districts (split into separate pieces) are illegal in most states.' },
-        mmd: { title: 'Majority-Minority Districts', body: 'Districts where over 50% of the population is a minority group. The Voting Rights Act may require a minimum number to ensure minority representation.' },
-        popbalance: { title: 'Population Balance', body: 'Districts should have roughly equal populations (within 10%). Large deviations violate the Equal Protection Clause (Reynolds v. Sims, 1964).' },
+        eg: { title: 'Efficiency Gap', body: 'Counts votes that don\'t help elect anyone — a losing party\'s entire tally, plus a winner\'s surplus above the runner-up. When one party wastes far more votes than the others, the map likely favors someone. Gaps above 7\u2009% turn red as a warning.' },
+        symmetry: { title: 'Partisan Symmetry', body: 'Swaps each pair of parties\' vote shares and re-counts seats. A fair map gives the same advantage to whichever side earns it, so swapping should flip the seat gap. 100\u2009% means perfectly symmetric; lower scores reveal structural bias baked into district lines.' },
+        competitive: { title: 'Competitive Districts', body: 'Counts districts where the winner leads by less than 10\u2009% of the vote. Competitive seats mean small shifts in public opinion can change outcomes, keeping representatives accountable to voters.' },
+        compactness: { title: 'Compactness', body: 'Uses the Polsby-Popper ratio $\\frac{4\\pi A}{P^2}$, which compares each district\'s area to its perimeter. A perfect circle scores 100\u2009%. Sprawling or oddly shaped districts score lower and may signal that boundaries were drawn to include or exclude specific communities.' },
+        contiguity: { title: 'Contiguity', body: 'Checks that every hex in a district can be reached from every other hex without leaving the district. Split districts are almost always illegal because voters in disconnected pieces share no geographic community.' },
+        mmd: { title: 'Majority-Minority Districts', body: 'Districts where a minority group makes up more than half the population. When a state\'s minority population is large enough, the Voting Rights Act may require at least one such district so that minority voters have a meaningful opportunity to elect a representative of their choice.' },
+        popbalance: { title: 'Population Balance', body: 'Measures how close each district is to the ideal population (total population \u00F7 number of districts). Districts deviating by more than 10\u2009% turn red. The principle of "one person, one vote" requires roughly equal district sizes so that every voter\'s ballot carries the same weight.' },
     };
 
     if (typeof createInfoTip === 'function') {

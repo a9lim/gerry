@@ -1,4 +1,4 @@
-// ─── Plan Save/Load ───
+// Plan persistence: save/load/delete/export/import district assignments via localStorage + JSON.
 import { state, hexElements, initDistricts } from './state.js';
 import { generateHexes } from './hex-generator.js';
 
@@ -14,6 +14,7 @@ function _writePlans(plans) {
     localStorage.setItem(STORAGE_KEY, JSON.stringify(plans));
 }
 
+/** Snapshots only non-zero district assignments (sparse representation). */
 function _getAssignments() {
     const assignments = {};
     state.hexes.forEach((hex, key) => {
@@ -26,6 +27,7 @@ export function listPlans() {
     return _readPlans().map(p => ({ name: p.name, timestamp: p.timestamp }));
 }
 
+/** Saves or overwrites a named plan. Stores seed for reproducible map generation. */
 export function savePlan(name) {
     const plans = _readPlans();
     const existing = plans.findIndex(p => p.name === name);
@@ -43,12 +45,15 @@ export function savePlan(name) {
     _writePlans(plans);
 }
 
+/**
+ * Loads a named plan. If the plan stores a seed, regenerates the hex map
+ * first so the coordinate keys align, then restores district assignments.
+ */
 export function loadPlan(name, updateHexVisuals, updateMetrics, renderMapFn) {
     const plans = _readPlans();
     const plan = plans.find(p => p.name === name);
     if (!plan) return false;
 
-    // If plan has a seed, regenerate the map from that seed
     if (plan.seed !== undefined) {
         state.seed = plan.seed;
         state.hexes.clear();
@@ -58,20 +63,16 @@ export function loadPlan(name, updateHexVisuals, updateMetrics, renderMapFn) {
         if (renderMapFn) renderMapFn();
     }
 
-    // Clear all assignments
     state.hexes.forEach(hex => { hex.district = 0; });
 
-    // Restore assignments
     for (const [key, districtId] of Object.entries(plan.hexAssignments)) {
         const hex = state.hexes.get(key);
         if (hex) hex.district = districtId;
     }
 
-    // Update visuals
     state.hexes.forEach((_, qr) => updateHexVisuals(qr));
     updateMetrics();
 
-    // Update URL hash
     if (plan.seed !== undefined) {
         history.replaceState(null, '', '#seed=' + plan.seed);
     }
@@ -83,6 +84,7 @@ export function deletePlan(name) {
     _writePlans(plans.filter(p => p.name !== name));
 }
 
+/** Triggers a JSON file download for a named plan from localStorage. */
 export function exportPlan(name) {
     const plans = _readPlans();
     const plan = plans.find(p => p.name === name);
@@ -97,6 +99,7 @@ export function exportPlan(name) {
     URL.revokeObjectURL(url);
 }
 
+/** Exports the live state (not from localStorage) as a JSON download. */
 export function exportCurrentPlan(name) {
     const plan = {
         name: name || 'Untitled',
@@ -113,6 +116,7 @@ export function exportCurrentPlan(name) {
     URL.revokeObjectURL(url);
 }
 
+/** Reads a JSON file, validates it has hexAssignments, and saves to localStorage. */
 export function importPlan(file) {
     return new Promise((resolve, reject) => {
         const reader = new FileReader();

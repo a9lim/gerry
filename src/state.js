@@ -1,13 +1,13 @@
-// ─── State Management ───
+// Centralized application state, undo/redo, and mutually-exclusive mode management.
 import { CONFIG } from './config.js';
 
 export const state = {
-    hexes: new Map(),
-    districts: {},
+    hexes: new Map(),         // "q,r" -> hex data object
+    districts: {},            // 1..10 -> district aggregate data
     currentDistrict: 1,
     paintState: { mode: 'none', districtId: null },
     hoveredHex: null,
-    targetPop: 0,
+    targetPop: 0,             // totalPop / numDistricts
     viewBox: { x: 0, y: 0, w: 0, h: 0 },
     origViewBox: { x: 0, y: 0, w: 0, h: 0 },
     isPanning: false,
@@ -18,12 +18,12 @@ export const state = {
     deleteMode: false,
     eraseMode: false,
     panMode: false,
-    maxPop: 100,
-    brushSize: 0,
+    maxPop: 100,              // Highest hex population on current map (for opacity scaling).
+    brushSize: 0,             // 0 = single hex, 1 = radius-1 (7 hexes), 2 = radius-2 (19 hexes).
     seed: 0
 };
 
-// Hex element index (avoids querySelector on every hover/paint)
+// "q,r" -> SVG <g> element. Separate Map avoids querySelector per hover/paint.
 export const hexElements = new Map();
 
 export function initDistricts() {
@@ -37,6 +37,7 @@ export function initDistricts() {
 }
 
 // ─── Undo/Redo ───
+// Snapshots store only hex->district mapping (not full hex data) for compactness.
 let _updateUndoRedoUI = null;
 
 export function setUndoRedoUICallback(fn) {
@@ -81,6 +82,7 @@ export function redo(updateHexVisuals, updateMetrics) {
 }
 
 // ─── Mode Management ───
+// Three mutually exclusive modes; toggling the active mode turns it off.
 const MODES = {
     delete: { stateKey: 'deleteMode', btn: 'deleteBtn', cssClass: 'delete-mode' },
     erase:  { stateKey: 'eraseMode', btn: 'eraseBtn',  cssClass: 'erase-mode' },

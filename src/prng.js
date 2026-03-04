@@ -1,5 +1,6 @@
-// ─── Seeded PRNG ───
-// Mulberry32 — fast, high-quality 32-bit seeded PRNG
+// Mulberry32: fast 32-bit seeded PRNG for deterministic map generation.
+
+/** Returns a function that yields [0, 1) on each call, deterministic from `seed`. */
 export function createPRNG(seed) {
     let s = seed | 0;
     return function() {

@@ -1,12 +1,23 @@
-// ─── Auto-Districting Algorithms ───
+// Auto-districting: pack-and-crack gerrymander and fair-draw simulated annealing.
 import { CONFIG, HEX_DIRS } from './config.js';
 import { state } from './state.js';
 
 // ─── Pack & Crack Gerrymander ───
-// Maximizes seats for targetParty by packing opponents into few districts
-// and spreading supporters thinly across the rest.
+
+/**
+ * Maximizes seats for `targetParty` using the classic pack-and-crack strategy:
+ *   1. **Pack** ~25% of districts with the densest opposition concentrations
+ *      (wastes opponent votes by huge margins in few districts).
+ *   2. **Crack** remaining districts seeded from strongest target-party areas
+ *      (spreads supporters into thin but consistent majorities).
+ *   3. Orphan pass assigns any leftover hexes to adjacent districts.
+ *
+ * BFS growth with a priority queue sorted by opposition/party share keeps
+ * districts contiguous and geographically compact.
+ *
+ * @param {'red'|'blue'|'yellow'} targetParty
+ */
 export function packAndCrack(targetParty) {
-    // Clear all assignments
     state.hexes.forEach(hex => { hex.district = 0; });
 
     const hexList = [...state.hexes.values()].filter(h => h.population > 0);
@@ -15,20 +26,19 @@ export function packAndCrack(targetParty) {
     const targetPopPerDistrict = totalPop / CONFIG.numDistricts;
     const popCap = targetPopPerDistrict * CONFIG.popCapRatio;
 
-    // Sort hexes by opposition vote share (highest opposition first)
     const oppShare = (h) => {
         const total = h.votes.red + h.votes.blue + h.votes.yellow;
         return total > 0 ? 1 - h.votes[targetParty] / total : 0.5;
     };
 
-    // Pack phase: fill ~2 districts with highest-opposition hexes
+    // Pack 1-3 districts (floor of 25%) to absorb the most opposition-heavy hexes.
     const packCount = Math.max(1, Math.min(3, Math.floor(CONFIG.numDistricts * 0.25)));
 
     for (let d = 1; d <= packCount; d++) {
         const unassigned = hexList.filter(h => h.district === 0);
         if (unassigned.length === 0) break;
 
-        // Seed from hex with highest opposition
+        // Seed from the hex with highest opposition share.
         unassigned.sort((a, b) => oppShare(b) - oppShare(a));
         const seed = unassigned[0];
 
@@ -37,7 +47,7 @@ export function packAndCrack(targetParty) {
         const queue = [seed];
 
         while (queue.length > 0 && pop < popCap) {
-            // Sort queue to prefer high-opposition hexes
+            // Priority: prefer highest-opposition neighbors to pack efficiently.
             queue.sort((a, b) => oppShare(b) - oppShare(a));
             const hex = queue.shift();
             const key = hex.q + ',' + hex.r;
@@ -49,7 +59,6 @@ export function packAndCrack(targetParty) {
             hex.district = d;
             pop += hex.population;
 
-            // Add unassigned neighbors
             for (const dir of HEX_DIRS) {
                 const nk = (hex.q + dir.dq) + ',' + (hex.r + dir.dr);
                 const nh = state.hexes.get(nk);
@@ -60,13 +69,11 @@ export function packAndCrack(targetParty) {
         }
     }
 
-    // Crack phase: distribute remaining hexes into remaining districts
-    // favoring target party supporters in each
+    // Crack: fill remaining districts seeded from strongest target-party areas.
     for (let d = packCount + 1; d <= CONFIG.numDistricts; d++) {
         const remaining = hexList.filter(h => h.district === 0);
         if (remaining.length === 0) break;
 
-        // Seed from hex with highest target-party share
         const partyShare = (h) => {
             const total = h.votes.red + h.votes.blue + h.votes.yellow;
             return total > 0 ? h.votes[targetParty] / total : 0;
@@ -99,14 +106,32 @@ export function packAndCrack(targetParty) {
         }
     }
 
-    // Assign any remaining unassigned hexes to nearest district
     _assignOrphans(hexList);
 }
 
 // ─── Fair Draw (Simulated Annealing) ───
-// Minimizes |vote_share - seat_share| with compactness and population equality bonuses.
+
+/**
+ * Draws districts that minimize vote-seat disproportionality.
+ *
+ * **Objective function** (lower is better):
+ *   propError - 0.3 * compactness - 0.3 * (1 - maxDeviation)
+ *   where propError = sum |voteShare_p - seatShare_p| over all parties,
+ *   compactness = avg(interior / total) per district,
+ *   maxDeviation = worst single district's |pop - target| / target.
+ *
+ * **Temperature schedule**: geometric cooling T = T0 * (Tf/T0)^(i/N),
+ *   T0 = 1.0, Tf = 0.01, N = 3000 iterations.
+ *
+ * **Neighbor generation**: pick a random border hex, swap it to a random
+ *   adjacent district. Reject if it breaks contiguity (fast BFS check).
+ *
+ * **Convergence**: Metropolis criterion -- accept improving moves always,
+ *   accept worsening moves with probability exp(-delta/T).
+ *
+ * Uses Math.random() intentionally -- non-deterministic by design.
+ */
 export function fairDraw() {
-    // Start with a greedy initial assignment (compact BFS seeds)
     _greedySeed();
 
     const parties = ['red', 'blue', 'yellow'];
@@ -114,7 +139,6 @@ export function fairDraw() {
     const totalPop = hexList.reduce((s, h) => s + h.population, 0);
     const targetPop = totalPop / CONFIG.numDistricts;
 
-    // Precompute total votes
     const totalVotes = { red: 0, blue: 0, yellow: 0 };
     for (const h of hexList) {
         totalVotes.red += h.votes.red;
@@ -123,9 +147,7 @@ export function fairDraw() {
     }
     const totalVotesAll = totalVotes.red + totalVotes.blue + totalVotes.yellow;
 
-    // Objective: lower is better
     function objective() {
-        // Compute seats and population per district
         const distPop = new Float64Array(CONFIG.numDistricts + 1);
         const distVotes = Array.from({ length: CONFIG.numDistricts + 1 }, () => ({ red: 0, blue: 0, yellow: 0 }));
 
@@ -146,18 +168,16 @@ export function fairDraw() {
             if (distPop[i] === 0) continue;
             activeDistricts++;
 
-            // Winner
             const v = distVotes[i];
             const max = Math.max(v.red, v.blue, v.yellow);
             if (max === v.red) seats.red++;
             else if (max === v.blue) seats.blue++;
             else seats.yellow++;
 
-            // Population deviation
             const dev = Math.abs(distPop[i] - targetPop) / targetPop;
             if (dev > maxDeviation) maxDeviation = dev;
 
-            // Simple compactness (count border hexes ratio)
+            // Rough compactness: interior-to-total hex ratio (avoids costly Polsby-Popper).
             let border = 0, interior = 0;
             for (const h of hexList) {
                 if (h.district !== i) continue;
@@ -174,7 +194,7 @@ export function fairDraw() {
         const totalSeats = seats.red + seats.blue + seats.yellow;
         if (totalSeats === 0) return 1e6;
 
-        // Proportionality error
+        // Sum of |voteShare - seatShare| per party.
         let propError = 0;
         for (const p of parties) {
             propError += Math.abs(totalVotes[p] / totalVotesAll - seats[p] / totalSeats);
@@ -184,7 +204,7 @@ export function fairDraw() {
         return propError - 0.3 * compactness - 0.3 * (1 - maxDeviation);
     }
 
-    // Build border hex list (hexes adjacent to different district)
+    /** Returns hexes that border a different district -- the only candidates for swaps. */
     function getBorderHexes() {
         const borders = [];
         for (const h of hexList) {
@@ -200,21 +220,21 @@ export function fairDraw() {
         return borders;
     }
 
-    // Simulated annealing
+    // Simulated annealing loop.
     let currentObj = objective();
     const iterations = 3000;
     const T0 = 1.0, Tf = 0.01;
 
     for (let i = 0; i < iterations; i++) {
+        // Geometric cooling schedule.
         const T = T0 * Math.pow(Tf / T0, i / iterations);
         const borders = getBorderHexes();
         if (borders.length === 0) break;
 
-        // Pick random border hex
         const hex = borders[Math.floor(Math.random() * borders.length)];
         const oldDistrict = hex.district;
 
-        // Find adjacent district to swap to
+        // Collect neighboring districts as swap targets.
         const adjDistricts = new Set();
         for (const dir of HEX_DIRS) {
             const nh = state.hexes.get((hex.q + dir.dq) + ',' + (hex.r + dir.dr));
@@ -225,10 +245,9 @@ export function fairDraw() {
         if (adjDistricts.size === 0) continue;
         const newDistrict = [...adjDistricts][Math.floor(Math.random() * adjDistricts.size)];
 
-        // Try swap
         hex.district = newDistrict;
 
-        // Quick contiguity check: would removing this hex disconnect old district?
+        // Reject if swap disconnects the old district.
         if (!_quickContiguityCheck(hex, oldDistrict)) {
             hex.district = oldDistrict;
             continue;
@@ -237,20 +256,22 @@ export function fairDraw() {
         const newObj = objective();
         const delta = newObj - currentObj;
 
+        // Metropolis acceptance criterion.
         if (delta < 0 || Math.random() < Math.exp(-delta / T)) {
             currentObj = newObj;
         } else {
-            hex.district = oldDistrict; // revert
+            hex.district = oldDistrict;
         }
     }
 }
 
 // ─── Helpers ───
 
-// Quick BFS contiguity check: verify district dId is still connected
-// after removing hex `removed` from it
+/**
+ * Fast BFS check: is district `dId` still contiguous after `removed` left it?
+ * Counts all hexes in dId (excluding removed), BFS from any seed, compare.
+ */
 function _quickContiguityCheck(removed, dId) {
-    // Find a hex still in dId
     let seed = null;
     let count = 0;
     for (const [, h] of state.hexes) {
@@ -259,10 +280,9 @@ function _quickContiguityCheck(removed, dId) {
             count++;
         }
     }
-    if (count === 0) return true; // empty district is fine
+    if (count === 0) return true;
     if (!seed) return true;
 
-    // BFS from seed
     const visited = new Set([seed.q + ',' + seed.r]);
     const queue = [seed];
     let head = 0;
@@ -281,16 +301,14 @@ function _quickContiguityCheck(removed, dId) {
     return visited.size === count;
 }
 
-// Greedy BFS seeding for initial fair assignment
+/** BFS-based initial assignment for fair draw. Seeds spread via farthest-point sampling. */
 function _greedySeed() {
     const hexList = [...state.hexes.values()].filter(h => h.population > 0);
     const totalPop = hexList.reduce((s, h) => s + h.population, 0);
     const popCap = (totalPop / CONFIG.numDistricts) * CONFIG.popCapRatio;
 
-    // Clear all
     state.hexes.forEach(hex => { hex.district = 0; });
 
-    // Place seed hexes spread across the map
     const seeds = _spreadSeeds(hexList, CONFIG.numDistricts);
 
     for (let d = 1; d <= CONFIG.numDistricts; d++) {
@@ -324,7 +342,10 @@ function _greedySeed() {
     _assignOrphans(hexList);
 }
 
-// Pick N seed hexes spread across the map using farthest-point sampling
+/**
+ * Farthest-point sampling: pick N seed hexes maximizing minimum inter-seed
+ * distance (cube/axial Manhattan). Produces well-spread initial centers.
+ */
 function _spreadSeeds(hexList, n) {
     if (hexList.length === 0) return [];
     const seeds = [hexList[0]];
@@ -335,6 +356,7 @@ function _spreadSeeds(hexList, n) {
             if (seeds.includes(h)) continue;
             let minDist = Infinity;
             for (const s of seeds) {
+                // Cube-coordinate Manhattan distance.
                 const d = Math.abs(h.q - s.q) + Math.abs(h.r - s.r) + Math.abs(h.q + h.r - s.q - s.r);
                 if (d < minDist) minDist = d;
             }
@@ -348,14 +370,13 @@ function _spreadSeeds(hexList, n) {
     return seeds;
 }
 
-// Assign orphan (unassigned) hexes to nearest adjacent district
+/** Iteratively assigns orphan hexes (district 0) to any adjacent assigned district. */
 function _assignOrphans(hexList) {
     let changed = true;
     while (changed) {
         changed = false;
         for (const h of hexList) {
             if (h.district !== 0) continue;
-            // Find adjacent assigned district
             for (const dir of HEX_DIRS) {
                 const nh = state.hexes.get((h.q + dir.dq) + ',' + (h.r + dir.dr));
                 if (nh && nh.district > 0) {

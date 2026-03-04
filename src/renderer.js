@@ -1,8 +1,11 @@
-// ─── SVG Rendering ───
+// SVG rendering: hex polygons, minority markers, district borders (with caching),
+// and numbered district labels.
 import { CONFIG, HEX_DIRS, HEX_RENDER_SIZE } from './config.js';
 import { hexToPixel, hexCorners, cornersToString } from './hex-math.js';
 import { state, hexElements } from './state.js';
 
+// ─── Hex Opacity ───
+// Cached from CSS var to avoid getComputedStyle per hex.
 let _cachedMinOpacity = 0.22;
 
 export function refreshMinOpacity() {
@@ -10,10 +13,12 @@ export function refreshMinOpacity() {
     _cachedMinOpacity = parseFloat(val) || 0.22;
 }
 
+/** Maps population to opacity: low-pop hexes are semi-transparent for visual density cues. */
 function hexOpacity(population) {
     return clamp(_cachedMinOpacity + (1 - _cachedMinOpacity) * (population / state.maxPop), _cachedMinOpacity, 1.0);
 }
 
+/** Updates a single hex's fill color and opacity from current state. */
 export function updateHexVisuals(qr) {
     const hex = state.hexes.get(qr);
     const g = hexElements.get(qr);
@@ -23,7 +28,15 @@ export function updateHexVisuals(qr) {
     }
 }
 
+// ─── Full Map Render ───
+
+/**
+ * Rebuilds the entire SVG hex grid. Uses DocumentFragment to batch DOM
+ * insertions. Computes the viewBox from map bounds with padding and
+ * vertical offset to clear toolbar/palette UI.
+ */
 export function renderMap($) {
+    // Safe: clears SVG groups that contain only internally-generated elements.
     $.hexGroup.innerHTML = '';
     $.minorityGroup.innerHTML = '';
     hexElements.clear();
@@ -51,6 +64,7 @@ export function renderMap($) {
         poly.setAttribute("points", cornersToString(hexCorners(center, HEX_RENDER_SIZE)));
         poly.style.fill = _PALETTE[hex.partyWinner];
 
+        // Stagger pop-in animation by distance from map center for a radial reveal.
         const dist = Math.sqrt((hex.q + hex.r / 2 - mapCenterX) ** 2 + (hex.r - mapCenterY) ** 2);
         poly.style.animationDelay = `${dist * 0.04 + Math.random() * 0.03}s`;
 
@@ -72,6 +86,8 @@ export function renderMap($) {
     $.hexGroup.appendChild(hexFrag);
     $.minorityGroup.appendChild(minFrag);
 
+    // ViewBox: pad around map bounds, then scale vertically to account for
+    // toolbar + palette (172px of UI clearance) so the map doesn't hide behind UI.
     const padding = CONFIG.hexSize * 2;
     const cW = maxX - minX + padding * 2;
     const cH = maxY - minY + padding * 2;
@@ -83,6 +99,7 @@ export function renderMap($) {
 
     const vb = { x: minX - padding, y: minY - padding - (h - cH) / 2, w: cW, h };
     state.origViewBox = { ...vb };
+    // If sidebar is open on desktop, offset center to account for panel width.
     if ($.sidebar?.classList.contains('open') && window.innerWidth > 900) {
         const scale = Math.min(window.innerWidth / vb.w, vpH / vb.h);
         vb.x += 350 / (2 * scale);
@@ -93,17 +110,27 @@ export function renderMap($) {
     renderBorders($);
 }
 
-// ─── Border cache for incremental updates ───
+// ─── District Border Cache ───
+// Stores built SVG groups and clip paths per district.
+// Incremental updates only rebuild changed districts.
 const _borderCache = {};
 
 const _fmt = n => n.toFixed(2);
+/** Quantized point key for segment adjacency matching (avoids floating-point mismatches). */
 const _ptKey = p => `${(p.x * 100 + 0.5) | 0},${(p.y * 100 + 0.5) | 0}`;
 
+/**
+ * Builds the SVG group for one district's border:
+ *   1. Finds boundary segments (hex edges between this district and another).
+ *   2. Chains segments into continuous paths via an adjacency map.
+ *   3. Creates a clip-path from the district's hex polygons so the border
+ *      stroke stays inside the district region.
+ *   4. Adds an MMD overlay path for majority-minority districts.
+ */
 function buildDistrictBorder(districtId) {
     const d = state.districts[districtId];
     if (!d || d.hexes.length === 0) return { group: null, clip: null };
 
-    // Find boundary segments (only iterate this district's hexes)
     const segments = [];
     for (const hex of d.hexes) {
         const center = hexToPixel(hex.q, hex.r);
@@ -119,7 +146,7 @@ function buildDistrictBorder(districtId) {
 
     if (segments.length === 0) return { group: null, clip: null };
 
-    // Chain segments into continuous paths
+    // Build adjacency map: point key -> list of {segment, far endpoint}.
     const adj = new Map();
     const addEdge = (key, seg, pt) => {
         let list = adj.get(key);
@@ -132,12 +159,14 @@ function buildDistrictBorder(districtId) {
         addEdge(_ptKey(seg.c2), seg, seg.c1);
     }
 
+    // Chain unused segments into continuous SVG path data.
     let dAttr = '';
     for (const seg of segments) {
         if (seg._used) continue;
         seg._used = true;
         const chain = [seg.c1, seg.c2];
 
+        // Extend chain forward (tail).
         let tailKey = _ptKey(chain[chain.length - 1]);
         let found = true;
         while (found) {
@@ -156,6 +185,7 @@ function buildDistrictBorder(districtId) {
             }
         }
 
+        // Extend chain backward (head).
         let headKey = _ptKey(chain[0]);
         found = true;
         while (found) {
@@ -174,6 +204,7 @@ function buildDistrictBorder(districtId) {
             }
         }
 
+        // Close path if endpoints coincide (within tolerance).
         const isClosed = chain.length > 2
             && Math.abs(chain[0].x - chain[chain.length - 1].x) < 0.1
             && Math.abs(chain[0].y - chain[chain.length - 1].y) < 0.1;
@@ -188,7 +219,7 @@ function buildDistrictBorder(districtId) {
 
     const dAttrTrimmed = dAttr.trim();
 
-    // Build clip path
+    // Clip path: union of all hex polygons in the district.
     const clip = document.createElementNS("http://www.w3.org/2000/svg", "clipPath");
     clip.id = `clip-d-${districtId}`;
     let clipD = '';
@@ -205,7 +236,6 @@ function buildDistrictBorder(districtId) {
         clip.appendChild(clipPath);
     }
 
-    // Build SVG group
     const group = document.createElementNS("http://www.w3.org/2000/svg", "g");
     group.dataset.districtId = districtId;
 
@@ -229,10 +259,12 @@ function buildDistrictBorder(districtId) {
 }
 
 /**
- * Render district borders.
+ * Renders district borders. Supports incremental updates: if `changedDistricts`
+ * is provided, only those districts are rebuilt; otherwise full re-render.
+ * Re-appends all groups in order so the current district renders on top.
+ *
  * @param {Object} $ DOM cache
- * @param {Set<number>} [changedDistricts] If provided, only rebuild these districts (incremental).
- *   If omitted, full re-render of all districts.
+ * @param {Set<number>} [changedDistricts] Districts to rebuild (omit for full re-render)
  */
 export function renderBorders($, changedDistricts) {
     const ids = changedDistricts
@@ -240,24 +272,22 @@ export function renderBorders($, changedDistricts) {
         : Array.from({ length: CONFIG.numDistricts }, (_, i) => i + 1);
 
     if (!changedDistricts) {
-        // Full re-render: clear everything and cache
+        // Safe: only contains internally-generated SVG border elements.
         $.borderGroup.innerHTML = '';
         $.defs.innerHTML = '';
         for (let i = 1; i <= CONFIG.numDistricts; i++) _borderCache[i] = null;
     }
 
     for (const i of ids) {
-        // Remove old elements for this district
         const old = _borderCache[i];
         if (old?.group?.parentNode) old.group.remove();
         if (old?.clip?.parentNode) old.clip.remove();
 
-        // Build new
         _borderCache[i] = buildDistrictBorder(i);
         if (_borderCache[i].clip) $.defs.appendChild(_borderCache[i].clip);
     }
 
-    // Re-append all groups in order (current district last for visual priority)
+    // Append in district order; current district last for visual priority.
     for (let i = 1; i <= CONFIG.numDistricts; i++) {
         const g = _borderCache[i]?.group;
         if (!g) continue;
@@ -267,8 +297,10 @@ export function renderBorders($, changedDistricts) {
     }
 }
 
+/** Places numbered text labels at each non-empty district's centroid. */
 export function renderDistrictLabels($) {
     if (!$.labelGroup) return;
+    // Safe: only contains internally-generated SVG text elements.
     $.labelGroup.innerHTML = '';
 
     for (let i = 1; i <= CONFIG.numDistricts; i++) {

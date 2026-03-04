@@ -1,7 +1,9 @@
-// ─── Metrics (pure computation) ───
+// Fairness metrics: efficiency gap, partisan symmetry, competitive districts,
+// compactness (Polsby-Popper), contiguity (BFS), required majority-minority count.
 import { CONFIG, HEX_DIRS } from './config.js';
 import { state } from './state.js';
 
+/** Recomputes all per-district stats from current hex assignments. */
 export function calculateMetrics() {
     for (let i = 1; i <= CONFIG.numDistricts; i++) {
         state.districts[i] = {
@@ -34,6 +36,10 @@ export function calculateMetrics() {
     }
 }
 
+/**
+ * BFS from the first hex in the district; connected if the BFS reaches
+ * every hex. O(n) where n = hexes in district.
+ */
 function checkContiguity(d) {
     if (d.hexes.length === 0) return true;
     const visited = new Set([d.hexes[0].id]);
@@ -52,6 +58,11 @@ function checkContiguity(d) {
     return queue.length === d.hexes.length;
 }
 
+/**
+ * Polsby-Popper compactness: 4*pi*A / P^2, where A = hex count * hex area,
+ * P = boundary edge count * hexSize. A perfect circle scores 100%.
+ * Clamped at 100 to handle floating-point edge cases.
+ */
 function calculateCompactness(d) {
     if (d.hexes.length === 0) return 0;
     let perimeter = 0;
@@ -63,11 +74,19 @@ function calculateCompactness(d) {
     }
     if (perimeter === 0) return 100;
     const s = CONFIG.hexSize;
+    // Flat-top hex area = 3*sqrt(3)/2 * s^2 = 1.5 * sqrt(3) * s^2.
     const area = d.hexes.length * 1.5 * Math.sqrt(3) * s * s;
     const perim = perimeter * s;
     return Math.min(100, Math.round(4 * Math.PI * area / (perim * perim) * 100));
 }
 
+/**
+ * All-party efficiency gap using plurality wasted votes.
+ *   - Winner's wasted votes = votes above (second-place + 1).
+ *   - Each loser's wasted votes = all their votes.
+ *
+ * Returns per-party wasted-vote ratios, or null if < 2 active districts.
+ */
 export function calculateEfficiencyGap() {
     const wasted = { red: 0, blue: 0, yellow: 0 };
     let totalVotes = 0;
@@ -83,19 +102,16 @@ export function calculateEfficiencyGap() {
         if (districtTotal === 0) continue;
 
         totalVotes += districtTotal;
-        // Plurality threshold: need more than any other single party
         const max = Math.max(red, blue, yellow);
         const winner = max === red ? 'red' : max === blue ? 'blue' : 'yellow';
 
         for (const party of ['red', 'blue', 'yellow']) {
             if (party === winner) {
-                // Winner wastes votes above what was needed to win
-                // In plurality: threshold = second-place votes + 1
+                // Plurality threshold = second-place votes + 1.
                 const others = [red, blue, yellow].filter((_, j) => ['red', 'blue', 'yellow'][j] !== party);
                 const threshold = Math.max(...others) + 1;
                 wasted[party] += d.votes[party] - threshold;
             } else {
-                // Losers waste all their votes
                 wasted[party] += d.votes[party];
             }
         }
@@ -109,6 +125,14 @@ export function calculateEfficiencyGap() {
     };
 }
 
+/**
+ * Partisan symmetry: for each pair of parties, swap their vote shares
+ * district-by-district and recount seats. In a fair map the seat gap
+ * should reverse; deviation from that indicates structural bias.
+ *
+ * Score = 100% (perfectly symmetric) down to 0%.
+ * Normalized by max possible deviation (2 * numActiveDistricts).
+ */
 export function calculatePartisanSymmetry() {
     const activeDistricts = [];
     for (let i = 1; i <= CONFIG.numDistricts; i++) {
@@ -126,7 +150,6 @@ export function calculatePartisanSymmetry() {
     let totalDeviation = 0;
     let pairCount = 0;
 
-    // For each pair of parties, swap their vote shares and recount
     for (let a = 0; a < parties.length; a++) {
         for (let b = a + 1; b < parties.length; b++) {
             const pA = parties[a], pB = parties[b];
@@ -134,32 +157,31 @@ export function calculatePartisanSymmetry() {
 
             for (const d of activeDistricts) {
                 const swapped = { ...d.votes };
-                // Swap the two parties' votes
                 const tmp = swapped[pA];
                 swapped[pA] = swapped[pB];
                 swapped[pB] = tmp;
-                // Find winner under swapped scenario
                 const max = Math.max(swapped.red, swapped.blue, swapped.yellow);
                 const winner = max === swapped.red ? 'red' : max === swapped.blue ? 'blue' : 'yellow';
                 swappedSeats[winner]++;
             }
 
-            // Deviation: how much did the seat gap change?
+            // A symmetric map would have actualGap + swappedGap = 0.
             const actualGap = actualSeats[pA] - actualSeats[pB];
             const swappedGap = swappedSeats[pA] - swappedSeats[pB];
-            // In a symmetric map, swapping votes should swap seats proportionally
-            // Deviation = |actualGap + swappedGap| (they should be equal and opposite)
             totalDeviation += Math.abs(actualGap + swappedGap);
             pairCount++;
         }
     }
 
     const avgDeviation = totalDeviation / pairCount;
-    // Normalize: max possible deviation = 2 * numActiveDistricts
     const maxDev = 2 * activeDistricts.length;
     return Math.max(0, Math.round((1 - avgDeviation / maxDev) * 100));
 }
 
+/**
+ * Counts districts where winner's margin over runner-up is < 10%.
+ * Competitive districts indicate responsive representation.
+ */
 export function calculateCompetitiveDistricts() {
     let competitive = 0;
     let total = 0;
@@ -180,6 +202,10 @@ export function calculateCompetitiveDistricts() {
     return { competitive, total };
 }
 
+/**
+ * VRA-inspired requirement: floor(minorityShare * numDistricts), minimum 1
+ * if minority share > 15%, else 0.
+ */
 export function calculateRequiredMMD() {
     let totalPop = 0, totalMinority = 0;
 
@@ -194,6 +220,7 @@ export function calculateRequiredMMD() {
     return Math.max(1, Math.floor(minorityShare * CONFIG.numDistricts));
 }
 
+/** Returns vote shares as raw percentages (0-100). Callers round as needed. */
 export function votePcts(votes) {
     const total = votes.red + votes.blue + votes.yellow;
     if (total === 0) return { red: 0, blue: 0, yellow: 0 };

@@ -1,4 +1,4 @@
-// ─── Touch Handlers ───
+// Touch input: single-finger paint/pan, two-finger pinch-zoom with pan.
 import { state } from './state.js';
 import { camera } from './zoom.js';
 import { getHexFromPoint, handleHoverAt, clearHover, startPaintingAt, stopPainting } from './input.js';
@@ -11,6 +11,8 @@ export function initTouchHandlers($, { deleteDistrict, updateSidebarDetails, upd
     let isTouchPainting = false;
     let isTouchPanning = false;
     let touchPanStart = null;
+    // Suppresses the first single-touch after a pinch ends, preventing
+    // accidental paint when the second finger lifts slightly before the first.
     let wasMultiTouch = false;
 
     $.mapContainer.addEventListener('touchstart', (e) => {
@@ -36,6 +38,7 @@ export function initTouchHandlers($, { deleteDistrict, updateSidebarDetails, upd
             }
         } else if (e.touches.length === 2) {
             e.preventDefault();
+            // Transition from single-touch to pinch: end any active paint stroke.
             if (isTouchPainting) {
                 isTouchPainting = false;
                 stopPainting(updateMetrics, pushUndoSnapshot);
@@ -79,6 +82,7 @@ export function initTouchHandlers($, { deleteDistrict, updateSidebarDetails, upd
             };
 
             if (lastPinchDist > 0) {
+                // Zoom around the midpoint between the two touches.
                 const rect = $.svg.getBoundingClientRect();
                 const cx = center.x - rect.left;
                 const cy = center.y - rect.top;

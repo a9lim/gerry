@@ -1,11 +1,14 @@
-// ─── Sidebar UI ───
+// Sidebar UI: statewide metrics, per-district details, proportionality bars.
 import { CONFIG } from './config.js';
 import { state } from './state.js';
 import { calculateMetrics, calculateEfficiencyGap, calculatePartisanSymmetry, calculateCompetitiveDistricts, calculateRequiredMMD, votePcts } from './metrics.js';
 import { renderBorders, renderDistrictLabels } from './renderer.js';
 
+// ─── Animated Counters ───
+// Tracks rAF IDs so in-flight animations can be cancelled on new updates.
 const animatedCounters = {};
 
+/** Eases `el.textContent` from its current value to `end` over `duration` ms (quartic ease-out). */
 function animateValue(el, end, duration, formatFn = Math.round, id) {
     if (!el) return;
     const start = el._currentVal || 0;
@@ -33,6 +36,9 @@ function animateValue(el, end, duration, formatFn = Math.round, id) {
     animatedCounters[id] = requestAnimationFrame(step);
 }
 
+// ─── Proportionality Panel ───
+
+/** Updates vote% vs seat% comparison bars for the three parties. */
 function updateProportionality(seats, $) {
     const totalVotes = { red: 0, blue: 0, yellow: 0 };
     const totalSeats = (seats.red || 0) + (seats.blue || 0) + (seats.yellow || 0);
@@ -56,11 +62,14 @@ function updateProportionality(seats, $) {
 
         if (p.votes) p.votes.style.width = `${votePct}%`;
         if (p.seats) p.seats.style.width = `${seatPct}%`;
-        if (p.votePct) p.votePct.textContent = grandTotal > 0 ? `${Math.round(votePct)}% votes` : '—';
-        if (p.seatPct) p.seatPct.textContent = totalSeats > 0 ? `${Math.round(seatPct)}% seats` : '—';
+        if (p.votePct) p.votePct.textContent = grandTotal > 0 ? `${Math.round(votePct)}% votes` : '\u2014';
+        if (p.seatPct) p.seatPct.textContent = totalSeats > 0 ? `${Math.round(seatPct)}% seats` : '\u2014';
     }
 }
 
+// ─── District Detail Panel ───
+
+/** Populates the per-district detail panel (District tab). */
 export function updateSidebarDetails(dId, $) {
     const d = state.districts[dId];
     if (!d || d.population === 0) {
@@ -74,6 +83,7 @@ export function updateSidebarDetails(dId, $) {
 
     if ($.detailTitle) {
         $.detailTitle.textContent = `District ${d.id}`;
+        // Red title when population deviates >10% or district is non-contiguous.
         if (state.targetPop > 0) {
             const dev = Math.abs((d.population - state.targetPop) / state.targetPop);
             $.detailTitle.style.color = (dev > 0.1 || !d.isContiguous) ? 'var(--party-red)' : 'inherit';
@@ -126,6 +136,9 @@ export function updateSidebarDetails(dId, $) {
     }
 }
 
+// ─── Statewide Metrics Update ───
+
+/** Full statewide metrics refresh: recalculates everything and updates all sidebar UI. */
 export function updateMetrics($, updateDistrictPalette) {
     calculateMetrics();
     renderBorders($);
@@ -146,43 +159,39 @@ export function updateMetrics($, updateDistrictPalette) {
     animateValue($.redSeats, seats.red, 600, v => Math.round(v), 'seats-red');
     animateValue($.blueSeats, seats.blue, 600, v => Math.round(v), 'seats-blue');
     animateValue($.yellowSeats, seats.yellow, 600, v => Math.round(v), 'seats-yellow');
-    // Dynamic MMD requirement
+
     const requiredMMD = calculateRequiredMMD();
     if ($.mmdCount) $.mmdCount.textContent = `${mmdCount} / ${requiredMMD} min`;
     if ($.districtCount) $.districtCount.textContent = `${activeDistrictCount} / ${CONFIG.numDistricts}`;
 
-    // All-party efficiency gap
+    // Efficiency gap: display gap between least-wasted and second-least-wasted party.
     const eg = calculateEfficiencyGap();
     if ($.efficiencyGap) {
         if (eg !== null) {
-            // Find party with lowest wasted votes (most advantaged)
             const entries = [['Red', eg.red], ['Blue', eg.blue], ['Yellow', eg.yellow]];
             entries.sort((a, b) => a[1] - b[1]);
             const advantaged = entries[0][0];
-            // Dominant gap = second-lowest minus lowest
             const gap = entries[1][1] - entries[0][1];
             const pct = (gap * 100).toFixed(1);
-            $.efficiencyGap.textContent = `${pct}% → ${advantaged}`;
+            $.efficiencyGap.textContent = `${pct}% \u2192 ${advantaged}`;
             $.efficiencyGap.style.color = gap > 0.07 ? 'var(--party-red)' : 'var(--text)';
         } else {
-            $.efficiencyGap.textContent = '—';
+            $.efficiencyGap.textContent = '\u2014';
             $.efficiencyGap.style.color = 'var(--text-secondary)';
         }
     }
 
-    // Partisan symmetry
     const symmetry = calculatePartisanSymmetry();
     if ($.partisanSymmetry) {
         if (symmetry !== null) {
             $.partisanSymmetry.textContent = `${symmetry}%`;
             $.partisanSymmetry.style.color = symmetry < 80 ? 'var(--party-red)' : 'var(--text)';
         } else {
-            $.partisanSymmetry.textContent = '—';
+            $.partisanSymmetry.textContent = '\u2014';
             $.partisanSymmetry.style.color = 'var(--text-secondary)';
         }
     }
 
-    // Competitive districts
     const comp = calculateCompetitiveDistricts();
     if ($.competitiveDistricts) {
         $.competitiveDistricts.textContent = `${comp.competitive} / ${comp.total}`;

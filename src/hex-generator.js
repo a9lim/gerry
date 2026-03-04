@@ -1,4 +1,5 @@
-// ─── Hex Grid Generation ───
+// Procedural hex map generation: population centers, party leans, minority clusters.
+// Deterministic from a single integer seed via Mulberry32 PRNG.
 import { CONFIG } from './config.js';
 import { hexDistance } from './hex-math.js';
 import { hashNoise, fbmNoise } from './noise.js';
@@ -14,6 +15,22 @@ function getHexWinner(hex) {
     return 'yellow';
 }
 
+/**
+ * Generates the full hex grid from `seed`.
+ *
+ * 1. **Boundary shape**: trigonometric noise (sin/cos at random frequencies)
+ *    sculpts an organic state outline from the rectangular grid.
+ * 2. **Population**: Gaussian decay from randomly-placed city/suburb/town
+ *    centers, plus linear corridor boosts between cities, layered with
+ *    fractal Brownian motion terrain noise and random outlier spikes.
+ * 3. **Party lean**: three density tiers (urban/suburban/rural) set base
+ *    probabilities; low-frequency fbm regional lean shifts them per-hex.
+ * 4. **Vote split**: winning party gets 54-83% of non-Yellow votes;
+ *    Yellow-plurality hexes get 28-36% Yellow. Remaining votes split
+ *    randomly between the other two parties.
+ * 5. **Minority status**: fbm noise against density-dependent thresholds
+ *    (lower threshold in urban areas = more minority hexes near cities).
+ */
 export function generateHexes(seed) {
     const rand = createPRNG(seed);
     let idCounter = 0;
@@ -21,6 +38,7 @@ export function generateHexes(seed) {
     const centerY = CONFIG.rows / 2;
     const maxRadius = Math.min(CONFIG.cols, CONFIG.rows) / 2 + 1;
 
+    // Boundary noise: two trig harmonics give an organic state outline.
     const phase1 = rand() * Math.PI * 2;
     const phase2 = rand() * Math.PI * 2;
     const freq1 = 2 + rand() * 4;
@@ -47,7 +65,7 @@ export function generateHexes(seed) {
     const partySeed = rand() * 10000;
     const minoritySeed = rand() * 10000;
 
-    // Population centers
+    // Place population centers: large cities, suburbs (near cities), small towns.
     const numLargeCities = Math.floor(rand() * 2) + 2;
     const numSmallTowns = Math.floor(rand() * 6) + 5;
     const numSuburbs = Math.floor(rand() * 4) + 3;
@@ -57,6 +75,7 @@ export function generateHexes(seed) {
         const c = validCoords[Math.floor(rand() * validCoords.length)];
         centers.push({ q: c.q, r: c.r, strength: rand() * 600 + 350, decay: rand() * 1.8 + 1.2, type: 'city' });
     }
+    // Suburbs placed at random angles 1.5-5.5 hexes from a city center.
     for (let i = 0; i < numSuburbs; i++) {
         const city = centers[Math.floor(rand() * Math.min(centers.length, numLargeCities))];
         const angle = rand() * Math.PI * 2;
@@ -72,7 +91,7 @@ export function generateHexes(seed) {
         centers.push({ q: c.q, r: c.r, strength: rand() * 200 + 50, decay: rand() * 1.0 + 0.3, type: 'town' });
     }
 
-    // Transportation corridors
+    // Transportation corridors: linear population boost with exponential falloff.
     const corridors = [];
     if (centers.length >= 2) {
         const numCorridors = Math.floor(rand() * 3) + 1;
@@ -83,6 +102,7 @@ export function generateHexes(seed) {
         }
     }
 
+    /** Point-to-segment distance for corridor population falloff. */
     function distToSegment(px, py, x1, y1, x2, y2) {
         const dx = x2 - x1, dy = y2 - y1;
         const lenSq = dx * dx + dy * dy;
@@ -92,15 +112,18 @@ export function generateHexes(seed) {
     }
 
     state.maxPop = 0;
+    // leanScale controls spatial frequency of regional partisan variation.
     const leanScale = 0.15 + rand() * 0.1;
 
     validCoords.forEach(c => {
         const { q, r } = c;
 
+        // Layer terrain fbm and micro-noise for natural population variation.
         const terrainNoise = fbmNoise(q * 0.3, r * 0.3, noiseSeed, 5);
         const microNoise = fbmNoise(q * 1.2, r * 1.2, noiseSeed + 50, 3);
         let pop = Math.floor(3 + terrainNoise * 70 + microNoise * 30 + rand() * 20);
 
+        // Gaussian decay from each population center.
         for (const center of centers) {
             const d = hexDistance(q, r, center.q, center.r);
             const localNoise = 0.5 + hashNoise(q, r, noiseSeed + 777);
@@ -115,20 +138,25 @@ export function generateHexes(seed) {
             }
         }
 
+        // Random outlier spikes (~10%) and dead zones (low-noise regions).
         if (rand() < 0.10) pop += Math.floor(rand() * 120 + 30);
         if (hashNoise(q * 0.8, r * 0.8, noiseSeed + 2000) > 0.82) {
             pop = Math.floor(pop * (0.1 + rand() * 0.2));
         }
 
+        // Final variance layers prevent uniform-looking regions.
         pop = Math.floor(pop * (0.4 + hashNoise(q * 1.7, r * 1.7, noiseSeed + 333) * 1.2));
         pop = Math.max(3, Math.floor(pop * (0.7 + hashNoise(q * 3.1, r * 3.1, noiseSeed + 444) * 0.6)));
 
         if (pop > state.maxPop) state.maxPop = pop;
 
+        // Party lean: low-frequency fbm creates regional political blocs.
         const regionalLean = fbmNoise(q * leanScale, r * leanScale, partySeed, 3);
         const isUrban = pop > CONFIG.urbanThreshold;
         const isSuburban = pop > CONFIG.suburbanThreshold && pop <= CONFIG.urbanThreshold;
 
+        // Three density tiers with different base probabilities.
+        // Urban skews Blue (~70%), rural skews Red (~76%), Yellow is the third party.
         let party;
         const roll = rand();
 
@@ -146,6 +174,7 @@ export function generateHexes(seed) {
             party = roll < redChance ? 'red' : roll < redChance + blueChance ? 'blue' : 'yellow';
         }
 
+        // Vote distribution: winning party gets a majority; remainder split.
         const votes = { red: 0, blue: 0, yellow: 0 };
         if (party === 'yellow') {
             const yellowBoost = 0.28 + rand() * 0.08;
@@ -165,6 +194,8 @@ export function generateHexes(seed) {
             votes[loser] = majorRemainder - votes[party];
         }
 
+        // Minority status: fbm noise against density-dependent threshold.
+        // Lower threshold in urban areas = higher minority concentration near cities.
         const minorityNoise = fbmNoise(q * 0.35, r * 0.35, minoritySeed, 4) * 0.7
             + fbmNoise(q * 0.9, r * 0.9, minoritySeed + 500, 3) * 0.3;
         const minorityThreshold = isUrban ? 0.48 : (isSuburban ? 0.60 : 0.78);

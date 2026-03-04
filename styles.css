@@ -1,9 +1,11 @@
-/* ═══════════════════════════════════════════════
-   Redistricting Simulator — Immersive Cartographic
-   Inspired by ndstudio.gov, trumprx.gov, realfood.gov
-   ═══════════════════════════════════════════════ */
+/* ═══════════════════════════════════════════════════
+   styles.css -- Project-specific layout, hex tiles,
+   sidebar panels, plans dialog, election overlay,
+   and responsive breakpoints for the redistricting sim.
+   Colors/fonts injected by colors.js at runtime.
+   ═══════════════════════════════════════════════════ */
 
-/* ─── Layout Tokens (colors/fonts injected by colors.js) ─── */
+/* ─── Layout Tokens ─── */
 :root {
     --palette-h: 56px;
 }
@@ -20,14 +22,15 @@ body {
     height: 100dvh;
 }
 
-/* ─── Tool Buttons (overrides) ─── */
+/* ─── Tool Button Overrides ─── */
+/* Thicker strokes for small zoom/close icons to maintain legibility. */
 #zoom-in-btn svg,
 #zoom-out-btn svg,
 #close-stats svg {
     stroke-width: 2.5;
 }
 
-/* Active tool states */
+/* Active tool states: tinted background matches each mode's party color. */
 #delete-btn.active {
     color: var(--party-red);
     background: var(--party-red-tint);
@@ -49,7 +52,7 @@ body {
 #reset-btn:hover { color: var(--party-red); }
 #randomize-btn:hover { color: var(--party-blue); }
 
-/* Auto-district group */
+/* Gerrymander button + party dropdown inline pair */
 .auto-district-group {
     display: inline-flex;
     align-items: center;
@@ -66,7 +69,7 @@ body {
     height: 28px;
 }
 
-/* Theme toggle icon visibility — CSS-driven, no JS needed */
+/* Theme toggle: sun/moon visibility driven by data-theme, no JS needed. */
 #theme-btn .icon-sun,
 #theme-btn .icon-moon {
     display: none;
@@ -76,7 +79,7 @@ body {
 [data-theme="dark"] #theme-btn .icon-moon { display: block; }
 
 /* ═══════════════════════════════════
-   Map (Full Viewport)
+   Map (Full Viewport SVG)
    ═══════════════════════════════════ */
 main {
     position: fixed;
@@ -95,6 +98,8 @@ main {
     transition: background-color 0.5s var(--ease-out);
 }
 
+/* Inline SVG cursors: data-URI avoids extra network requests.
+   Hotspot coordinates (12,12 / 4,20) position the tip over the click point. */
 #map-container.delete-mode {
     cursor: url('data:image/svg+xml;utf8,<svg fill="none" stroke="%23c93c3c" stroke-width="3" stroke-linecap="round" stroke-linejoin="round" viewBox="0 0 24 24" height="24" width="24" xmlns="http://www.w3.org/2000/svg"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg>') 12 12, crosshair;
 }
@@ -117,6 +122,8 @@ main {
 }
 
 /* ─── Hex Tiles ─── */
+/* transform-box: fill-box lets scale animations originate from each hex's center
+   rather than the SVG viewport origin. */
 .hex polygon {
     stroke: var(--hex-stroke);
     stroke-width: 1px;
@@ -132,6 +139,7 @@ main {
     100% { transform: scale(1); opacity: 1; }
 }
 
+/* Paused while intro screen is showing; unpaused on dismiss. */
 #map-container.paused .hex polygon,
 #map-container.paused .minority-marker {
     animation-play-state: paused;
@@ -168,6 +176,8 @@ main {
 }
 
 /* ─── District Borders ─── */
+/* Stroke-only paths clipped to each district's hex region.
+   Active district gets heavier borders for selected-state emphasis. */
 .district-path {
     fill: none;
     stroke-linejoin: miter;
@@ -180,6 +190,7 @@ main {
     opacity: 0.8;
 }
 
+/* Green overlay for majority-minority districts. */
 .district-path.mmd-overlay {
     stroke-width: 2px;
     stroke: var(--party-green);
@@ -197,6 +208,8 @@ main {
 }
 
 /* ─── District Labels ─── */
+/* paint-order: stroke draws the halo behind the fill text,
+   giving readable contrast over any hex color. */
 .district-label {
     font-family: var(--font-body);
     font-size: 11px;
@@ -316,7 +329,7 @@ main {
     color: var(--text-muted);
 }
 
-/* ─── Stat Rows (overrides) ─── */
+/* ─── Stat Rows ─── */
 .stat-note {
     color: var(--text-muted);
     font-size: 0.68rem;
@@ -353,6 +366,7 @@ main {
     margin-bottom: 4px;
 }
 
+/* Initial width 0; JS sets inline width via style.width for animated bars. */
 .vote-bar,
 .prop-bar-fill {
     width: 0;
@@ -380,6 +394,7 @@ main {
 .yellow-text { color: var(--party-yellow); }
 
 /* ─── Proportionality Panel ─── */
+/* Side-by-side vote% vs seat% bars; seat bars dimmed to distinguish. */
 .proportionality-row {
     display: flex;
     align-items: center;
@@ -623,15 +638,13 @@ main {
 /* ═══════════════════════════════════
    Responsive
    ═══════════════════════════════════ */
-
-/* Tablet / Small Desktop */
 @media (max-width: 1100px) {
     :root {
         --panel-w: 320px;
     }
 }
 
-/* Mobile */
+/* Mobile: sidebar becomes bottom sheet, palette/controls shrink. */
 @media (max-width: 900px) {
     :root {
         --palette-h: 52px;
@@ -665,7 +678,6 @@ main {
         left: 10px;
     }
 
-    /* Stats panel becomes bottom sheet on mobile */
     #sidebar {
         top: auto;
         right: 0;
@@ -696,7 +708,7 @@ main {
 
 }
 
-/* Small phones */
+/* Small phones: tighter touch targets. */
 @media (max-width: 600px) {
     .tool-btn {
         width: 34px;
@@ -718,7 +730,7 @@ main {
 .election-controls label { display: flex; align-items: center; gap: 8px; font-size: 0.82rem; }
 #election-histogram { width: 100%; border-radius: var(--radius-sm); background: var(--bg-elevated); }
 
-/* Extra small */
+/* Extra small: hide brand, center toolbar icons. */
 @media (max-width: 440px) {
     .toolbar-brand {
         display: none;

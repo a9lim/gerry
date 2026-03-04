@@ -1,18 +1,32 @@
+// Monte Carlo election simulation with Gaussian partisan swing.
 import { CONFIG } from './config.js';
 import { state } from './state.js';
 
-// Box-Muller transform for normal distribution
+/** Box-Muller transform: converts uniform [0,1) pairs to normal distribution. */
 function gaussRandom(mean, stddev) {
     const u1 = Math.random(), u2 = Math.random();
     return mean + stddev * Math.sqrt(-2 * Math.log(u1)) * Math.cos(2 * Math.PI * u2);
 }
 
+/**
+ * Runs `numElections` simulated elections on the current district map.
+ *
+ * Each election applies a correlated national swing per party (N(0, sigma))
+ * plus per-district local noise (N(0, sigma*0.3)). The two-tier model
+ * captures both national mood shifts and local variation. Shares are
+ * clamped to 1% minimum and re-normalized to prevent negative/zero values.
+ *
+ * Uses Math.random() intentionally -- non-deterministic by design.
+ *
+ * @param {number} numElections
+ * @param {number} swingSigma  Standard deviation of national swing (0-1 scale)
+ * @returns {{ red: number[], blue: number[], yellow: number[] }} Seat counts per election
+ */
 export function simulateElections(numElections, swingSigma) {
     const parties = ['red', 'blue', 'yellow'];
     const results = { red: [], blue: [], yellow: [] };
 
     for (let e = 0; e < numElections; e++) {
-        // Correlated national swing per party
         const nationalSwing = {};
         for (const p of parties) nationalSwing[p] = gaussRandom(0, swingSigma);
 
@@ -22,7 +36,6 @@ export function simulateElections(numElections, swingSigma) {
             const dist = state.districts[d];
             if (!dist || dist.hexes.length === 0) continue;
 
-            // Apply swing to vote shares
             const totalVotes = dist.votes.red + dist.votes.blue + dist.votes.yellow;
             if (totalVotes === 0) continue;
 
@@ -34,10 +47,8 @@ export function simulateElections(numElections, swingSigma) {
                 swungShares[p] = Math.max(0.01, baseShare + nationalSwing[p] + localNoise);
                 shareSum += swungShares[p];
             }
-            // Normalize
             for (const p of parties) swungShares[p] /= shareSum;
 
-            // Determine winner
             let winner = 'red', maxShare = 0;
             for (const p of parties) {
                 if (swungShares[p] > maxShare) { maxShare = swungShares[p]; winner = p; }
@@ -51,6 +62,11 @@ export function simulateElections(numElections, swingSigma) {
     return results;
 }
 
+/**
+ * Renders a grouped bar histogram of election simulation results.
+ * X-axis = seat count (0..numDistricts), Y-axis = frequency.
+ * One bar group per seat count, one bar per party within each group.
+ */
 export function renderHistogram(canvas, results, numDistricts) {
     const ctx = canvas.getContext('2d');
     const w = canvas.width, h = canvas.height;
@@ -82,7 +98,7 @@ export function renderHistogram(canvas, results, numDistricts) {
         }
     }
 
-    // X-axis labels
+    // X-axis seat labels.
     ctx.fillStyle = getComputedStyle(document.documentElement).getPropertyValue('--text-muted').trim();
     ctx.font = '9px Noto Sans Mono';
     ctx.textAlign = 'center';
@@ -91,7 +107,7 @@ export function renderHistogram(canvas, results, numDistricts) {
     }
     ctx.fillText('Seats \u2192', w / 2, h - 4);
 
-    // Stats text
+    // Mean seat annotation per party.
     const meanSeats = {};
     for (const p of parties) {
         const sum = results[p].reduce((a, b) => a + b, 0);

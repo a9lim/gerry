@@ -1,12 +1,10 @@
-/* ===================================================================
-   colors.js — gerry project-specific tokens
-   Extends shared-tokens.js with party colors, color math helpers,
-   and project-specific CSS vars.
-   =================================================================== */
+/* ═══════════════════════════════════════════════════
+   colors.js -- Gerry project-specific design tokens.
+   Maps party names to shared extended palette colors
+   and injects themed CSS custom properties via IIFE.
+   ═══════════════════════════════════════════════════ */
 
-// Color math helpers (_parseHex, _rgb2hsl, _hsl2hex, _darken) now in shared-tokens.js
-
-// ---------- Project-specific palette keys ----------
+// ─── Party Color Aliases ───
 _PALETTE.red    = _PALETTE.extended.rose;
 _PALETTE.blue   = _PALETTE.extended.blue;
 _PALETTE.yellow = _PALETTE.extended.orange;
@@ -19,11 +17,12 @@ Object.freeze(_PALETTE.dark);
 Object.freeze(_FONT);
 Object.freeze(_PALETTE);
 
-// ---------- Project-specific CSS vars ----------
+// ─── CSS Variable Injection ───
 (function injectProjectVars() {
   const P = _PALETTE, L = P.light, D = P.dark;
 
-  // Extra themed vars (depend on light/dark text/surface values)
+  // Themed vars: [css-name, palette-key, light-alpha, dark-alpha].
+  // Alpha omitted = use the raw color value.
   const themed = [
     ['party-none',       'textMuted'],
     ['hex-stroke',       'text',          0.06,  0.04],
@@ -38,8 +37,8 @@ Object.freeze(_PALETTE);
     return `  --${name}: ${a != null ? _r(T[key], a) : T[key]};`;
   }).join('\n');
 
-  // Light: party colors darkened, tips = base
-  // Dark:  party colors = base, tips darkened
+  // Light mode: darken party colors for better contrast on light canvas.
+  // Dark mode: use base palette colors; darken the tooltip variants instead.
   const genParty = (darkenParty) => {
     const lines = [];
     for (const c of ['red', 'blue', 'yellow', 'green']) {

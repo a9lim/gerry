@@ -1,11 +1,12 @@
-// ─── Zoom & Pan (shared-camera integration) ───
+// Camera/zoom: wraps shared createCamera() for SVG viewBox management.
 import { CONFIG, EASE_OUT } from './config.js';
 import { state } from './state.js';
 
 export let camera = null;
 let _$ = null;
-let _baseZoom = 1;
+let _baseZoom = 1;   // Zoom level that fits the full map in the viewport.
 
+/** Initializes the camera from the SVG's initial viewBox dimensions. */
 export function initCamera($) {
     _$ = $;
     const rect = $.svg.getBoundingClientRect();
@@ -46,6 +47,7 @@ export function initCamera($) {
         duration: CONFIG.zoomAnimDuration,
         formatZoom: (z) => Math.round((z / _baseZoom) * 100) + '%',
         onReset: () => {
+            // Offset center by half the panel width if sidebar is open.
             let tx = state.origViewBox.x + state.origViewBox.w / 2;
             if (_$?.sidebar?.classList.contains('open') && window.innerWidth > 900) {
                 const pw = parseInt(getComputedStyle(document.documentElement).getPropertyValue('--panel-w')) || 350;
@@ -56,6 +58,7 @@ export function initCamera($) {
     });
 }
 
+/** Recalculates zoom bounds after map regeneration or window resize. */
 export function resetCamera() {
     if (!camera || !_$) return;
     const rect = _$.svg.getBoundingClientRect();
@@ -79,6 +82,10 @@ export function zoomToFit() {
     camera._animateTo(targetX, targetY, _baseZoom, CONFIG.zoomFitDuration, EASE_OUT);
 }
 
+/**
+ * Animates a horizontal pan when the sidebar opens/closes on desktop.
+ * Reads --panel-w from CSS to avoid hardcoded pixel values.
+ */
 export function shiftForSidebar(opening) {
     if (!camera || window.innerWidth <= 900) return;
     const panelW = parseInt(getComputedStyle(document.documentElement).getPropertyValue('--panel-w')) || 350;

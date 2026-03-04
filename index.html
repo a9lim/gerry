@@ -25,7 +25,7 @@
 <body>
     <a href="#hex-map" class="skip-link">Skip to map</a>
 
-    <!-- ─── Intro Screen ─── -->
+    <!-- Intro Screen -->
     <div id="intro-screen">
         <div class="intro-bg"></div>
         <div class="intro-content">
@@ -82,7 +82,7 @@
         </div>
     </div>
 
-    <!-- ─── Floating Toolbar ─── -->
+    <!-- Floating Toolbar -->
     <header id="toolbar" class="sim-toolbar glass" role="toolbar" aria-label="Map tools">
         <div class="toolbar-brand">
             <a href="/" class="sim-home" title="a9l.im"><img src="/logo.svg" alt="a9l.im" height="28"></a>
@@ -204,7 +204,7 @@
         </div>
     </header>
 
-    <!-- ─── Full-viewport Map ─── -->
+    <!-- Full-viewport SVG Map -->
     <main>
         <div id="map-container">
             <svg id="hex-map">
@@ -240,10 +240,10 @@
         </div>
     </main>
 
-    <!-- ─── District Palette (floating bottom bar) ─── -->
+    <!-- District Palette (floating bottom bar) -->
     <div id="district-palette" class="sim-bar glass"></div>
 
-    <!-- ─── Stats Panel (floating right) ─── -->
+    <!-- Stats Panel (right side / bottom sheet on mobile) -->
     <aside id="sidebar" class="sim-panel glass" role="complementary" aria-label="Election statistics">
         <div class="sheet-handle"></div>
         <div class="stats-header">
@@ -262,7 +262,7 @@
                 <button class="tab-btn" data-tab="tools" role="tab" aria-selected="false">Tools</button>
             </nav>
             <div class="tab-panels scrollbar-thin">
-                <!-- ── Statewide ── -->
+                <!-- Statewide Tab -->
                 <div class="tab-panel active" id="tab-statewide" role="tabpanel">
                     <div class="stat-group">
                         <div class="group-label">Statewide Results</div>
@@ -358,7 +358,7 @@
                         </div>
                     </div>
                 </div>
-                <!-- ── District ── -->
+                <!-- District Tab -->
                 <div class="tab-panel" id="tab-district" role="tabpanel">
                     <div class="stat-group">
                         <div class="group-label">District Details</div>
@@ -392,7 +392,7 @@
                         <p id="no-selection-msg" class="panel-hint">Select a district to view details.</p>
                     </div>
                 </div>
-                <!-- ── Tools ── -->
+                <!-- Tools Tab -->
                 <div class="tab-panel" id="tab-tools" role="tabpanel">
                     <div class="stat-group">
                         <div class="group-label">Brush Size</div>
@@ -407,7 +407,7 @@
         </div>
     </aside>
 
-    <!-- ─── Plans Dialog ─── -->
+    <!-- Plans Dialog (save / load / import / export) -->
     <div id="plans-dialog" class="plans-overlay hidden">
         <div class="plans-content glass">
             <div class="stats-header">
@@ -431,7 +431,7 @@
         </div>
     </div>
 
-    <!-- ─── Election Simulation Overlay ─── -->
+    <!-- Election Simulation Overlay (Monte Carlo with Gaussian swing) -->
     <div id="election-overlay" class="election-overlay" hidden>
         <div class="election-panel glass">
             <button class="election-close" id="election-close">&times;</button>

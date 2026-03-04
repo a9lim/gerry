@@ -1,4 +1,4 @@
-// ─── Entry Point ───
+// Entry point: wires DOM, input, toolbar, sidebar, plans, and election UI.
 import { CONFIG } from './src/config.js';
 import { state, hexElements, initDistricts, setUndoRedoUICallback, pushUndoSnapshot, undo, redo, setMode, clearModes } from './src/state.js';
 import { generateHexes } from './src/hex-generator.js';
@@ -15,6 +15,7 @@ import { simulateElections, renderHistogram } from './src/election-sim.js';
 import { packAndCrack, fairDraw } from './src/auto-district.js';
 
 // ─── DOM Cache ───
+// Single object holding all getElementById refs; built once at boot.
 const $ = {};
 
 function cacheDOMElements() {
@@ -44,7 +45,6 @@ function cacheDOMElements() {
     $.zoomOutBtn = document.getElementById('zoom-out-btn');
     $.zoomFitBtn = document.getElementById('zoom-fit-btn');
 
-    // Stats elements
     $.redSeats = document.getElementById('red-seats');
     $.blueSeats = document.getElementById('blue-seats');
     $.yellowSeats = document.getElementById('yellow-seats');
@@ -55,14 +55,12 @@ function cacheDOMElements() {
     $.partisanSymmetry = document.getElementById('partisan-symmetry');
     $.competitiveDistricts = document.getElementById('competitive-districts');
 
-    // Brush & auto-fill
     $.brushToggles = document.getElementById('brush-toggles');
     $.autofillBtn = document.getElementById('autofill-btn');
     $.gerrymanderBtn = document.getElementById('gerrymander-btn');
     $.gerrymanderParty = document.getElementById('gerrymander-party');
     $.fairDrawBtn = document.getElementById('fair-draw-btn');
 
-    // Plans dialog
     $.plansBtn = document.getElementById('plans-btn');
     $.plansDialog = document.getElementById('plans-dialog');
     $.plansClose = document.getElementById('plans-close');
@@ -72,7 +70,6 @@ function cacheDOMElements() {
     $.planExportBtn = document.getElementById('plan-export-btn');
     $.planImportInput = document.getElementById('plan-import-input');
 
-    // District detail elements
     $.selectedInfo = document.getElementById('selected-district-info');
     $.noSelectionMsg = document.getElementById('no-selection-msg');
     $.detailTitle = document.getElementById('detail-title');
@@ -85,7 +82,6 @@ function cacheDOMElements() {
     $.detailContiguous = document.getElementById('detail-contiguous');
     $.detailMm = document.getElementById('detail-mm');
 
-    // Vote bars
     $.voteBarRed = document.getElementById('vote-bar-red');
     $.voteBarBlue = document.getElementById('vote-bar-blue');
     $.voteBarYellow = document.getElementById('vote-bar-yellow');
@@ -93,7 +89,6 @@ function cacheDOMElements() {
     $.votePctBlue = document.getElementById('vote-pct-blue');
     $.votePctYellow = document.getElementById('vote-pct-yellow');
 
-    // Proportionality elements
     $.prop = {};
     for (const party of ['red', 'blue', 'yellow']) {
         $.prop[party] = {
@@ -104,7 +99,6 @@ function cacheDOMElements() {
         };
     }
 
-    // Election simulation
     $.simulateBtn = document.getElementById('simulate-btn');
     $.electionOverlay = document.getElementById('election-overlay');
     $.electionClose = document.getElementById('election-close');
@@ -114,13 +108,14 @@ function cacheDOMElements() {
     $.runElections = document.getElementById('run-elections');
     $.electionHistogram = document.getElementById('election-histogram');
 
-    // SVG defs
+    // Clip-path defs container for district borders; must precede hex-group in SVG.
     $.defs = document.createElementNS("http://www.w3.org/2000/svg", "defs");
     $.defs.id = 'map-defs';
     $.svg.insertBefore($.defs, $.svg.firstChild);
 }
 
-// ─── Bound helpers (close over $) ───
+// ─── Bound Helpers ───
+// Closures over $ so module functions can access the DOM cache.
 const doUpdateMetrics = () => updateMetrics($, updateDistrictPalette);
 const doUpdateSidebarDetails = (dId) => updateSidebarDetails(dId, $);
 const doUndo = () => { if (state.undoStack.length <= 1) return; undo(updateHexVisuals, doUpdateMetrics); showToast('Undo'); };
@@ -142,6 +137,7 @@ const doDeleteDistrict = (dId) => {
 };
 
 // ─── Map Operations ───
+
 function randomizeMap(seed) {
     if (seed === undefined) seed = randomSeed();
     state.seed = seed;
@@ -175,7 +171,6 @@ function resetMap() {
 
 // ─── UI Setup ───
 function setupUI() {
-    // Mouse handlers
     setupMouseHandlers($, {
         onStartPainting: (qr, isErase) => startPaintingAt(qr, isErase, doDeleteDistrict, doUpdateSidebarDetails, updateDistrictPalette),
         onStopPainting: () => stopPainting(doUpdateMetrics, pushUndoSnapshot),
@@ -183,7 +178,6 @@ function setupUI() {
         onHandleHover: (e, qr) => handleHover(e, qr, $, doUpdateSidebarDetails),
     });
 
-    // Toolbar buttons
     $.resetBtn?.addEventListener('click', resetMap);
     $.randomizeBtn?.addEventListener('click', randomizeMap);
     $.deleteBtn?.addEventListener('click', () => setMode('delete', $));
@@ -194,7 +188,6 @@ function setupUI() {
     if ($.redoBtn) $.redoBtn.addEventListener('click', doRedo);
     if ($.themeBtn) $.themeBtn.addEventListener('click', () => toggleTheme($));
 
-    // Brush size toggles
     if ($.brushToggles) {
         $.brushToggles.addEventListener('click', (e) => {
             const btn = e.target.closest('[data-brush]');
@@ -205,7 +198,6 @@ function setupUI() {
         });
     }
 
-    // Auto-fill
     if ($.autofillBtn) {
         $.autofillBtn.addEventListener('click', () => {
             const count = autoFillDistrict(state.currentDistrict, updateHexVisuals, doUpdateMetrics, pushUndoSnapshot);
@@ -217,7 +209,7 @@ function setupUI() {
         });
     }
 
-    // Auto-gerrymander & fair draw
+    // Snapshot before and after so the entire auto-draw is a single undo step.
     $.gerrymanderBtn?.addEventListener('click', () => {
         const party = $.gerrymanderParty.value;
         pushUndoSnapshot();
@@ -236,14 +228,12 @@ function setupUI() {
         showToast('Fair districts drawn');
     });
 
-    // Zoom buttons bound via camera.bindZoomButtons() in initCamera()
-
     document.addEventListener('keydown', (e) => {
         if (e.ctrlKey && e.key === 'z') { e.preventDefault(); doUndo(); }
         if (e.ctrlKey && e.key === 'y') { e.preventDefault(); doRedo(); }
     });
 
-    // Stats panel toggle
+    // On desktop (>900px), open sidebar by default.
     if ($.statsToggle && $.sidebar) {
         $.statsToggle.addEventListener('click', () => {
             const opening = !$.sidebar.classList.contains('open');
@@ -264,7 +254,7 @@ function setupUI() {
         });
     }
 
-    // Swipe-to-dismiss for mobile bottom sheet
+    // shared-touch.js provides swipe-to-dismiss for the mobile bottom sheet.
     if (typeof initSwipeDismiss === 'function' && $.sidebar) {
         initSwipeDismiss($.sidebar, {
             onDismiss() {
@@ -276,7 +266,6 @@ function setupUI() {
 
     renderDistrictPalette($, doUpdateSidebarDetails);
 
-    // Plans dialog
     function renderPlansList() {
         if (!$.plansList) return;
         const plans = listPlans();
@@ -364,7 +353,6 @@ function setupUI() {
         });
     }
 
-    // Election simulation
     $.simulateBtn?.addEventListener('click', () => {
         $.electionOverlay.hidden = false;
     });
@@ -386,7 +374,7 @@ function setupUI() {
         });
     }
 
-    // Info tips
+    // Info tip popover content (tooltip data already rewritten by prior task).
     const infoData = {
         eg: { title: 'Efficiency Gap', body: 'Counts votes that don\'t help elect anyone — a losing party\'s entire tally, plus a winner\'s surplus above the runner-up. When one party wastes far more votes than the others, the map likely favors someone. Gaps above 7\u2009% turn red as a warning.' },
         symmetry: { title: 'Partisan Symmetry', body: 'Swaps each pair of parties\' vote shares and re-counts seats. A fair map gives the same advantage to whichever side earns it, so swapping should flip the seat gap. 100\u2009% means perfectly symmetric; lower scores reveal structural bias baked into district lines.' },
@@ -404,7 +392,6 @@ function setupUI() {
         });
     }
 
-    // Keyboard shortcuts
     const shortcuts = [
         { key: 'E', label: 'Toggle erase mode', group: 'Tools', action: () => setMode('erase', $) },
         { key: 'D', label: 'Toggle delete mode', group: 'Tools', action: () => setMode('delete', $) },
@@ -438,12 +425,12 @@ function setupUI() {
         initShortcuts(shortcuts, { helpTitle: 'Keyboard Shortcuts' });
     }
 
-    // Intro screen
     if ($.introStart && $.introScreen) {
         $.introStart.addEventListener('click', () => {
             $.introScreen.classList.add('hidden');
             document.body.classList.add('app-ready');
             if ($.mapContainer) $.mapContainer.classList.remove('paused');
+            // Remove from DOM after the fade-out transition completes.
             setTimeout(() => { $.introScreen.style.display = 'none'; }, 850);
         });
     }
@@ -452,6 +439,7 @@ function setupUI() {
 // ─── Init ───
 function init() {
     refreshMinOpacity();
+    // Pause hex pop-in animations until intro screen is dismissed.
     if ($.mapContainer) $.mapContainer.classList.add('paused');
     const hashSeed = parseInt(location.hash.replace('#seed=', ''), 10);
     const initialSeed = Number.isFinite(hashSeed) ? hashSeed : randomSeed();
@@ -468,13 +456,13 @@ function init() {
     history.replaceState(null, '', '#seed=' + initialSeed);
 }
 
-// ─── Undo/Redo UI callback ───
+// ─── Undo/Redo UI Callback ───
 setUndoRedoUICallback(() => {
     if ($.undoBtn) $.undoBtn.disabled = state.undoStack.length <= 1;
     if ($.redoBtn) $.redoBtn.disabled = state.redoStack.length === 0;
 });
 
-// ─── Touch handlers ───
+// ─── Touch Handlers ───
 function initTouch() {
     initTouchHandlers($, {
         deleteDistrict: doDeleteDistrict,

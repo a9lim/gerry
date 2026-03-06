@@ -69,14 +69,6 @@ body {
     height: 28px;
 }
 
-/* Theme toggle: sun/moon visibility driven by data-theme, no JS needed. */
-#theme-btn .icon-sun,
-#theme-btn .icon-moon {
-    display: none;
-}
-
-[data-theme="light"] #theme-btn .icon-sun { display: block; }
-[data-theme="dark"] #theme-btn .icon-moon { display: block; }
 
 /* ═══════════════════════════════════
    Map (Full Viewport SVG)
@@ -519,25 +511,8 @@ main {
 .hex-tooltip .tt-m { color: var(--tip-green); }
 
 /* ─── Plans Dialog ─── */
-.plans-overlay {
-    position: fixed;
-    inset: 0;
-    z-index: 500;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    background: #00000066;
-    backdrop-filter: blur(4px);
-    animation: fadeIn 0.2s ease-out;
-}
-.plans-overlay.hidden { display: none; }
-
 .plans-content {
-    width: min(420px, calc(100vw - 32px));
-    max-height: min(520px, calc(100vh - 64px));
-    display: flex;
-    flex-direction: column;
-    border-radius: var(--radius-lg);
+    max-width: 420px;
     padding: 1.25rem;
     gap: 0.75rem;
 }
@@ -723,8 +698,7 @@ main {
 }
 
 /* ─── Election Simulation ─── */
-.election-overlay { position: fixed; inset: 0; display: flex; align-items: center; justify-content: center; background: #00000044; z-index: 100; }
-.election-panel { padding: 20px; border-radius: var(--radius-lg); max-width: 380px; width: 90%; position: relative; }
+.election-panel { padding: 20px; max-width: 380px; position: relative; }
 .election-close { position: absolute; top: 8px; right: 12px; background: none; border: none; font-size: 1.4rem; cursor: pointer; color: var(--text-muted); }
 .election-controls { display: flex; flex-direction: column; gap: 8px; margin: 12px 0; }
 .election-controls label { display: flex; align-items: center; gap: 8px; font-size: 0.82rem; }

@@ -408,8 +408,8 @@
     </aside>
 
     <!-- Plans Dialog (save / load / import / export) -->
-    <div id="plans-dialog" class="plans-overlay hidden">
-        <div class="plans-content glass">
+    <div id="plans-dialog" class="sim-overlay hidden">
+        <div class="sim-overlay-panel glass plans-content">
             <div class="stats-header">
                 <h2 class="stats-title">Saved Plans</h2>
                 <button id="plans-close" class="tool-btn" aria-label="Close plans">
@@ -432,8 +432,8 @@
     </div>
 
     <!-- Election Simulation Overlay (Monte Carlo with Gaussian swing) -->
-    <div id="election-overlay" class="election-overlay" hidden>
-        <div class="election-panel glass">
+    <div id="election-overlay" class="sim-overlay" hidden>
+        <div class="sim-overlay-panel glass election-panel">
             <button class="election-close" id="election-close">&times;</button>
             <h3>Election Simulation</h3>
             <div class="election-controls">
@@ -450,22 +450,7 @@
         </div>
     </div>
 
-    <script>
-    (function () {
-        const btns = document.querySelectorAll('.tab-btn');
-        const panels = document.querySelectorAll('.tab-panel');
-        btns.forEach(btn => {
-            btn.addEventListener('click', () => {
-                btns.forEach(b => { b.classList.remove('active'); b.setAttribute('aria-selected', 'false'); });
-                panels.forEach(p => p.classList.remove('active'));
-                btn.classList.add('active');
-                btn.setAttribute('aria-selected', 'true');
-                const target = document.getElementById('tab-' + btn.dataset.tab);
-                if (target) target.classList.add('active');
-            });
-        });
-    })();
-    </script>
+    <script src="/shared-tabs.js"></script>
     <script type="module" src="main.js"></script>
 </body>
 

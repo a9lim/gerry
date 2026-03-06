@@ -212,7 +212,7 @@ Map-first floating-panel layout:
 
 ### Tab System
 
-Inline `<script>` in index.html handles tab switching (`.tab-btn` click toggles `.active` on buttons and panels). Not in any module file. Tabs: `statewide`, `district`, `tools`.
+`shared-tabs.js` (loaded as plain `<script>` at end of body) handles tab switching (`.tab-btn` click toggles `.active` on buttons and panels). Not in any module file. Tabs: `statewide`, `district`, `tools`.
 
 ### Responsive Breakpoints
 

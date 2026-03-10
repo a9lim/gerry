@@ -118,8 +118,8 @@ function cacheDOMElements() {
 // Closures over $ so module functions can access the DOM cache.
 const doUpdateMetrics = () => updateMetrics($, updateDistrictPalette);
 const doUpdateSidebarDetails = (dId) => updateSidebarDetails(dId, $);
-const doUndo = () => { if (state.undoStack.length <= 1) return; undo(updateHexVisuals, doUpdateMetrics); showToast('Undo'); };
-const doRedo = () => { if (state.redoStack.length === 0) return; redo(updateHexVisuals, doUpdateMetrics); showToast('Redo'); };
+const doUndo = () => { if (state.undoStack.length <= 1) return; undo(updateHexVisuals, doUpdateMetrics); showToast('Undo'); _haptics.trigger('light'); };
+const doRedo = () => { if (state.redoStack.length === 0) return; redo(updateHexVisuals, doUpdateMetrics); showToast('Redo'); _haptics.trigger('light'); };
 const doDeleteDistrict = (dId) => {
     if (dId === 0) return;
     let changed = false;
@@ -158,6 +158,7 @@ function randomizeMap(seed) {
     pushUndoSnapshot();
     history.replaceState(null, '', '#seed=' + seed);
     showToast('Map randomized');
+    _haptics.trigger('medium');
 }
 
 function resetMap() {
@@ -167,6 +168,7 @@ function resetMap() {
     doUpdateMetrics();
     pushUndoSnapshot();
     showToast('Districts cleared');
+    _haptics.trigger('warning');
 }
 
 // ─── UI Setup ───
@@ -180,13 +182,13 @@ function setupUI() {
 
     $.resetBtn?.addEventListener('click', resetMap);
     $.randomizeBtn?.addEventListener('click', randomizeMap);
-    $.deleteBtn?.addEventListener('click', () => setMode('delete', $));
-    $.eraseBtn?.addEventListener('click', () => setMode('erase', $));
-    $.moveBtn?.addEventListener('click', () => setMode('pan', $));
+    $.deleteBtn?.addEventListener('click', () => { setMode('delete', $); _haptics.trigger('light'); });
+    $.eraseBtn?.addEventListener('click', () => { setMode('erase', $); _haptics.trigger('light'); });
+    $.moveBtn?.addEventListener('click', () => { setMode('pan', $); _haptics.trigger('light'); });
 
     if ($.undoBtn) $.undoBtn.addEventListener('click', doUndo);
     if ($.redoBtn) $.redoBtn.addEventListener('click', doRedo);
-    if ($.themeBtn) $.themeBtn.addEventListener('click', () => toggleTheme($));
+    if ($.themeBtn) $.themeBtn.addEventListener('click', () => { toggleTheme($); _haptics.trigger('light'); });
 
     if ($.brushToggles) {
         $.brushToggles.addEventListener('click', (e) => {
@@ -195,6 +197,7 @@ function setupUI() {
             $.brushToggles.querySelectorAll('.mode-btn').forEach(b => b.classList.remove('active'));
             btn.classList.add('active');
             state.brushSize = parseInt(btn.dataset.brush, 10);
+            _haptics.trigger('selection');
         });
     }
 
@@ -203,8 +206,10 @@ function setupUI() {
             const count = autoFillDistrict(state.currentDistrict, updateHexVisuals, doUpdateMetrics, pushUndoSnapshot);
             if (count > 0) {
                 showToast(`Auto-filled ${count} hexes`);
+                _haptics.trigger('success');
             } else {
                 showToast('Nothing to fill');
+                _haptics.trigger('nudge');
             }
         });
     }
@@ -218,6 +223,7 @@ function setupUI() {
         doUpdateMetrics();
         pushUndoSnapshot();
         showToast(`Auto-gerrymandered for ${party}`);
+        _haptics.trigger('medium');
     });
     $.fairDrawBtn?.addEventListener('click', () => {
         pushUndoSnapshot();
@@ -226,6 +232,7 @@ function setupUI() {
         doUpdateMetrics();
         pushUndoSnapshot();
         showToast('Fair districts drawn');
+        _haptics.trigger('medium');
     });
 
     document.addEventListener('keydown', (e) => {
@@ -293,6 +300,7 @@ function setupUI() {
                 pushUndoSnapshot();
                 $.plansDialog?.classList.add('hidden');
                 showToast(`Loaded "${p.name}"`);
+                _haptics.trigger('success');
             });
             item.querySelector('.export').addEventListener('click', (e) => {
                 e.stopPropagation();
@@ -303,6 +311,7 @@ function setupUI() {
                 deletePlan(p.name);
                 renderPlansList();
                 showToast(`Deleted "${p.name}"`);
+                _haptics.trigger('warning');
             });
             $.plansList.appendChild(item);
         }
@@ -330,6 +339,7 @@ function setupUI() {
             $.planNameInput.value = '';
             renderPlansList();
             showToast(`Saved "${name}"`);
+            _haptics.trigger('success');
         });
     }
     if ($.planExportBtn) {
@@ -346,6 +356,7 @@ function setupUI() {
                 const name = await importPlan(file);
                 renderPlansList();
                 showToast(`Imported "${name}"`);
+                _haptics.trigger('success');
             } catch (err) {
                 showToast(err.message);
             }
@@ -367,6 +378,7 @@ function setupUI() {
     });
     $.swingSigma?.addEventListener('input', e => {
         $.swingValue.textContent = e.target.value + '%';
+        _haptics.trigger('selection');
     });
     if ($.electionOverlay) {
         $.electionOverlay.addEventListener('click', (e) => {
@@ -428,6 +440,7 @@ function setupUI() {
     if ($.introStart && $.introScreen) {
         $.introStart.addEventListener('click', () => {
             $.introScreen.classList.add('hidden');
+            _haptics.trigger('medium');
             document.body.classList.add('app-ready');
             if ($.mapContainer) $.mapContainer.classList.remove('paused');
             // Remove from DOM after the fade-out transition completes.

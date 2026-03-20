@@ -472,43 +472,19 @@ main {
 .legend-swatch.seat-swatch { opacity: 0.38; }
 
 
-/* ─── Hex Tooltip ─── */
-.hex-tooltip {
-    position: absolute;
-    pointer-events: none;
-    background: var(--tooltip-bg);
-    color: var(--tooltip-fg);
-    font-family: var(--font-mono);
-    font-size: 0.72rem;
-    line-height: 1.55;
-    padding: 0.45rem 0.65rem;
-    border-radius: var(--radius-sm);
-    z-index: 50;
-    opacity: 0;
-    transform: translateY(4px);
-    transition: opacity 0.12s ease, transform 0.12s ease;
-    white-space: nowrap;
-    box-shadow: var(--shadow-lg);
-    max-width: 220px;
-}
+/* ─── Hex Tooltip (child classes for shared sim-tooltip) ─── */
+.sim-tooltip .tt-pop { font-weight: 600; }
 
-.hex-tooltip.visible {
-    opacity: 1;
-    transform: translateY(0);
-}
-
-.hex-tooltip .tt-pop { font-weight: 600; }
-
-.hex-tooltip .tt-votes {
+.sim-tooltip .tt-votes {
     display: flex;
     gap: 0.4rem;
     margin-top: 2px;
 }
 
-.hex-tooltip .tt-r { color: var(--tip-red); }
-.hex-tooltip .tt-b { color: var(--tip-blue); }
-.hex-tooltip .tt-y { color: var(--tip-yellow); }
-.hex-tooltip .tt-m { color: var(--tip-green); }
+.sim-tooltip .tt-r { color: var(--tip-red); }
+.sim-tooltip .tt-b { color: var(--tip-blue); }
+.sim-tooltip .tt-y { color: var(--tip-yellow); }
+.sim-tooltip .tt-m { color: var(--tip-green); }
 
 /* ─── Plans Dialog ─── */
 .plans-content {

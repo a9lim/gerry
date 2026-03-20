@@ -32,7 +32,7 @@ src/
   state.js              -- state object, hexElements Map, initDistricts, undo/redo (snapshot/restore), mode management (setMode/clearModes)
   metrics.js            -- calculateMetrics, calculateEfficiencyGap, calculatePartisanSymmetry, calculateCompetitiveDistricts, calculateRequiredMMD, votePcts
   renderer.js           -- renderMap (SVG hex polygons + minority markers), renderBorders (incremental border cache), renderDistrictLabels, updateHexVisuals, refreshMinOpacity
-  input.js              -- Mouse handlers, paintHexByKey/paintBrush, startPaintingAt/stopPainting, autoFillDistrict, getHexFromEvent/getHexFromPoint, hover/tooltip, scheduleBorderUpdate
+  input.js              -- Mouse handlers, paintHexByKey/paintBrush, startPaintingAt/stopPainting, autoFillDistrict, getHexFromEvent/getHexFromPoint, hover/tooltip (via shared createSimTooltip), scheduleBorderUpdate
   touch.js              -- Pinch-zoom, pan, single-finger paint (delegates to input.js functions and camera)
   zoom.js               -- Camera init via shared createCamera(), resetCamera, zoomToFit, shiftForSidebar (reads --panel-w from computed styles)
   sidebar.js            -- updateMetrics UI, updateSidebarDetails (per-district detail), updateProportionality (vote% vs seat%), animated counters
@@ -79,7 +79,7 @@ Extends `shared-tokens.js` with project-specific party colors referencing `_PALE
 An IIFE injects `<style id="project-vars">` with themed CSS vars:
 - `--party-red/blue/yellow/green` with `-tint` (8% alpha) and `-wash` (18% alpha) variants for the three main parties
 - `--tip-red/blue/yellow/green` (darker in dark theme, lighter in light theme -- opposite of party colors)
-- `--hex-stroke`, `--hex-hover-stroke`, `--bar-track`, `--tooltip-bg/fg`, `--party-none`
+- `--hex-stroke`, `--hex-hover-stroke`, `--bar-track`, `--party-none`
 - `--hex-min-opacity` (0.22 light, 0.30 dark)
 - `--label-fill`, `--label-stroke`
 

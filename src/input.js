@@ -175,43 +175,67 @@ function paintIfActive(qr, $, updateSidebarDetails) {
     scheduleBorderUpdate($);
 }
 
+// ─── Tooltip ───
+
+const hexTip = (typeof createSimTooltip === 'function') ? createSimTooltip() : null;
+
 export function clearHover($) {
     if (state.hoveredHex) {
         const el = hexElements.get(state.hoveredHex);
         if (el) el.classList.remove('hovered');
         state.hoveredHex = null;
     }
-    if ($.tooltip) $.tooltip.classList.remove('visible');
+    if (hexTip) hexTip.hide();
 }
 
-// ─── Tooltip ───
-
-function showHexTooltip(e, qr, $) {
-    if (!$.tooltip) return;
-    if (!qr) { $.tooltip.classList.remove('visible'); return; }
+function showHexTooltip(e, qr) {
+    if (!hexTip) return;
+    if (!qr) { hexTip.hide(); return; }
     const hex = state.hexes.get(qr);
-    if (!hex) { $.tooltip.classList.remove('visible'); return; }
+    if (!hex) { hexTip.hide(); return; }
 
     const pct = votePcts(hex.votes);
     const pR = Math.round(pct.red), pB = Math.round(pct.blue), pY = Math.round(pct.yellow);
 
     // Safe: all values are numeric or from controlled state, not user input.
-    $.tooltip.innerHTML = `<span class="tt-pop">Pop: ${hex.population.toLocaleString()}</span>`
-        + `<div class="tt-votes"><span class="tt-r">R ${pR}%</span> <span class="tt-b">B ${pB}%</span> <span class="tt-y">Y ${pY}%</span></div>`
-        + (hex.minority ? `<span class="tt-m">Minority area</span>` : '')
-        + (hex.district > 0 ? `<span>District ${hex.district}</span>` : '');
+    // Build tooltip content via DOM methods for safety, though values are all controlled.
+    const frag = document.createDocumentFragment();
+    const popSpan = document.createElement('span');
+    popSpan.className = 'tt-pop';
+    popSpan.textContent = `Pop: ${hex.population.toLocaleString()}`;
+    frag.appendChild(popSpan);
 
-    // Position relative to map container, offset from cursor.
-    const rect = $.mapContainer.getBoundingClientRect();
-    $.tooltip.style.left = `${e.clientX - rect.left + 12}px`;
-    $.tooltip.style.top = `${e.clientY - rect.top - 10}px`;
-    $.tooltip.classList.add('visible');
+    const votesDiv = document.createElement('div');
+    votesDiv.className = 'tt-votes';
+    for (const [cls, label, val] of [['tt-r', 'R', pR], ['tt-b', 'B', pB], ['tt-y', 'Y', pY]]) {
+        const s = document.createElement('span');
+        s.className = cls;
+        s.textContent = `${label} ${val}%`;
+        votesDiv.appendChild(s);
+    }
+    frag.appendChild(votesDiv);
+
+    if (hex.minority) {
+        const mSpan = document.createElement('span');
+        mSpan.className = 'tt-m';
+        mSpan.textContent = 'Minority area';
+        frag.appendChild(mSpan);
+    }
+    if (hex.district > 0) {
+        const dSpan = document.createElement('span');
+        dSpan.textContent = `District ${hex.district}`;
+        frag.appendChild(dSpan);
+    }
+
+    hexTip.el.textContent = '';
+    hexTip.el.appendChild(frag);
+    hexTip.show(e.clientX, e.clientY);
 }
 
 export function handleHover(e, qr, $, updateSidebarDetails) {
     updateHoverTarget(qr);
     paintIfActive(qr, $, updateSidebarDetails);
-    showHexTooltip(e, qr, $);
+    showHexTooltip(e, qr);
 }
 
 /** Same as handleHover but without tooltip (used by touch where there's no pointer position). */

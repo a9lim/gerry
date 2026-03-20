@@ -25,7 +25,6 @@ function cacheDOMElements() {
     $.minorityGroup = document.getElementById('minority-group');
     $.labelGroup = document.getElementById('label-group');
     $.mapContainer = document.getElementById('map-container');
-    $.tooltip = document.getElementById('hex-tooltip');
     $.sidebar = document.getElementById('sidebar');
     $.palette = document.getElementById('district-palette');
     $.undoBtn = document.getElementById('undo-btn');

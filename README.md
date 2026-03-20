@@ -1,4 +1,4 @@
-# Redistricting Simulator
+# Redistricting
 
 An interactive gerrymandering simulation where you paint congressional districts on a procedurally-generated hex map and watch how boundary placement affects electoral outcomes in real time. Three parties, ten districts, and a battery of fairness metrics let you explore the mechanics of redistricting -- from pack-and-crack gerrymanders to proportional fair draws.
 
@@ -63,8 +63,9 @@ Zero-dependency vanilla JS/HTML/CSS. SVG rendering (not Canvas). ES6 modules loa
 
 ## Sibling Projects
 
-- [Relativistic N-Body](https://github.com/a9lim/physsim) -- [a9l.im/physsim](https://a9l.im/physsim)
-- [Cellular Metabolism](https://github.com/a9lim/biosim) -- [a9l.im/biosim](https://a9l.im/biosim)
+- [Geon](https://github.com/a9lim/physsim) -- [a9l.im/physsim](https://a9l.im/physsim)
+- [Metabolism](https://github.com/a9lim/biosim) -- [a9l.im/biosim](https://a9l.im/biosim)
+- [Shoals](https://github.com/a9lim/finsim) -- [a9l.im/finsim](https://a9l.im/finsim)
 
 ## License
 

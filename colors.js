@@ -28,8 +28,6 @@ Object.freeze(_PALETTE);
     ['hex-stroke',       'text',          0.06,  0.04],
     ['hex-hover-stroke', 'text',          0.28,  0.22],
     ['bar-track',        'text',          0.07,  0.06],
-    ['tooltip-bg',       'text'],
-    ['tooltip-fg',       'canvas'],
   ];
 
   const genThemed = (T, dark) => themed.map(([name, key, lA, dA]) => {

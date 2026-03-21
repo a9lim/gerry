@@ -234,11 +234,9 @@ function setupUI() {
         if (e.ctrlKey && e.key === 'y') { e.preventDefault(); doRedo(); }
     });
 
-    // On desktop (>900px), open sidebar by default.
     if ($.statsToggle && $.sidebar) {
         _toolbar.initSidebar($.statsToggle, $.sidebar, $.closeStats, {
             onToggle: shiftForSidebar,
-            openOnDesktop: true,
         });
     }
 

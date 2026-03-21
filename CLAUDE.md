@@ -289,6 +289,7 @@ Wraps `shared-camera.js`'s `createCamera()`. Camera is initialized from the SVG 
 - **`font-variant-numeric: tabular-nums`**: inherited from `.stats-scroll` and `#map-controls` -- don't add individually to children.
 - **Bar widths**: `.vote-bar, .prop-bar-fill { width: 0 }` in CSS -- JS sets width via inline style.
 - Project-specific CSS var override: `--palette-h: 56px` (52px at 900px breakpoint).
+- **Shared utilities**: `_toolbar.initSidebar()` for sidebar toggle/close/swipe/auto-open-on-desktop with `shiftForSidebar` callback, `_toolbar.initTheme('gerry-theme')` for theme persistence + system preference, `_intro.init()` for intro screen, `_forms.bindModeGroup()` for brush size toggles, `registerInfoTips()` for info tips, `initOverlayDismiss()` for plans dialog and election overlay dismiss.
 
 ### URL Hash Seeding
 

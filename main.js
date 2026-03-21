@@ -242,20 +242,18 @@ function setupUI() {
     // On desktop (>900px), open sidebar by default.
     if ($.statsToggle && $.sidebar) {
         $.statsToggle.addEventListener('click', () => {
-            const opening = !$.sidebar.classList.contains('open');
-            $.sidebar.classList.toggle('open');
-            $.statsToggle.classList.toggle('active');
-            shiftForSidebar(opening);
+            const isOpen = _toolbar.toggleSidebar($.statsToggle, $.sidebar);
+            shiftForSidebar(isOpen);
         });
         if (window.innerWidth > 900) {
             $.sidebar.classList.add('open');
             $.statsToggle.classList.add('active');
+            $.statsToggle.setAttribute('aria-expanded', 'true');
         }
     }
     if ($.closeStats && $.sidebar) {
         $.closeStats.addEventListener('click', () => {
-            $.sidebar.classList.remove('open');
-            $.statsToggle?.classList.remove('active');
+            _toolbar.closeSidebar($.statsToggle, $.sidebar);
             shiftForSidebar(false);
         });
     }
@@ -264,7 +262,7 @@ function setupUI() {
     if (typeof initSwipeDismiss === 'function' && $.sidebar) {
         initSwipeDismiss($.sidebar, {
             onDismiss() {
-                $.statsToggle?.classList.remove('active');
+                _toolbar.closeSidebar($.statsToggle, $.sidebar);
                 shiftForSidebar(false);
             }
         });

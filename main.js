@@ -236,30 +236,9 @@ function setupUI() {
 
     // On desktop (>900px), open sidebar by default.
     if ($.statsToggle && $.sidebar) {
-        $.statsToggle.addEventListener('click', () => {
-            const isOpen = _toolbar.toggleSidebar($.statsToggle, $.sidebar);
-            shiftForSidebar(isOpen);
-        });
-        if (window.innerWidth > 900) {
-            $.sidebar.classList.add('open');
-            $.statsToggle.classList.add('active');
-            $.statsToggle.setAttribute('aria-expanded', 'true');
-        }
-    }
-    if ($.closeStats && $.sidebar) {
-        $.closeStats.addEventListener('click', () => {
-            _toolbar.closeSidebar($.statsToggle, $.sidebar);
-            shiftForSidebar(false);
-        });
-    }
-
-    // shared-touch.js provides swipe-to-dismiss for the mobile bottom sheet.
-    if (typeof initSwipeDismiss === 'function' && $.sidebar) {
-        initSwipeDismiss($.sidebar, {
-            onDismiss() {
-                _toolbar.closeSidebar($.statsToggle, $.sidebar);
-                shiftForSidebar(false);
-            }
+        _toolbar.initSidebar($.statsToggle, $.sidebar, $.closeStats, {
+            onToggle: shiftForSidebar,
+            openOnDesktop: true,
         });
     }
 
@@ -315,14 +294,7 @@ function setupUI() {
             renderPlansList();
         });
     }
-    if ($.plansClose) {
-        $.plansClose.addEventListener('click', () => $.plansDialog?.classList.add('hidden'));
-    }
-    if ($.plansDialog) {
-        $.plansDialog.addEventListener('click', (e) => {
-            if (e.target === $.plansDialog) $.plansDialog.classList.add('hidden');
-        });
-    }
+    initOverlayDismiss($.plansDialog, $.plansClose, () => $.plansDialog.classList.add('hidden'));
     if ($.planSaveBtn && $.planNameInput) {
         $.planSaveBtn.addEventListener('click', () => {
             const name = $.planNameInput.value.trim();
@@ -359,9 +331,7 @@ function setupUI() {
     $.simulateBtn?.addEventListener('click', () => {
         $.electionOverlay.hidden = false;
     });
-    $.electionClose?.addEventListener('click', () => {
-        $.electionOverlay.hidden = true;
-    });
+    initOverlayDismiss($.electionOverlay, $.electionClose);
     $.runElections?.addEventListener('click', () => {
         const sigma = parseFloat($.swingSigma.value) / 100;
         const count = parseInt($.electionCount.value);
@@ -372,11 +342,6 @@ function setupUI() {
         $.swingValue.textContent = e.target.value + '%';
         _haptics.trigger('selection');
     });
-    if ($.electionOverlay) {
-        $.electionOverlay.addEventListener('click', (e) => {
-            if (e.target === $.electionOverlay) $.electionOverlay.hidden = true;
-        });
-    }
 
     // Info tip popover content (tooltip data already rewritten by prior task).
     const infoData = {
@@ -389,12 +354,7 @@ function setupUI() {
         popbalance: { title: 'Population Balance', body: 'Measures how close each district is to the ideal population (total population \u00F7 number of districts). Districts deviating by more than 10\u2009% turn red. The principle of "one person, one vote" requires roughly equal district sizes so that every voter\'s ballot carries the same weight.' },
     };
 
-    if (typeof createInfoTip === 'function') {
-        document.querySelectorAll('.info-trigger[data-info]').forEach(trigger => {
-            const key = trigger.dataset.info;
-            if (infoData[key]) createInfoTip(trigger, infoData[key]);
-        });
-    }
+    registerInfoTips(infoData);
 
     const shortcuts = [
         { key: 'E', label: 'Toggle erase mode', group: 'Tools', action: () => setMode('erase', $) },
@@ -429,16 +389,9 @@ function setupUI() {
         initShortcuts(shortcuts, { helpTitle: 'Keyboard Shortcuts' });
     }
 
-    if ($.introStart && $.introScreen) {
-        $.introStart.addEventListener('click', () => {
-            $.introScreen.classList.add('hidden');
-            _haptics.trigger('medium');
-            document.body.classList.add('app-ready');
-            if ($.mapContainer) $.mapContainer.classList.remove('paused');
-            // Remove from DOM after the fade-out transition completes.
-            setTimeout(() => { $.introScreen.style.display = 'none'; }, 850);
-        });
-    }
+    _intro.init($.introScreen, $.introStart, () => {
+        if ($.mapContainer) $.mapContainer.classList.remove('paused');
+    });
 }
 
 // ─── Init ───

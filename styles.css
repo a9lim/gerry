@@ -601,16 +601,6 @@ main {
         --palette-h: 52px;
     }
 
-    .tool-btn {
-        width: 36px;
-        height: 36px;
-    }
-
-    .tool-btn svg {
-        width: 16px;
-        height: 16px;
-    }
-
     #district-palette {
         bottom: 6px;
         gap: 3px;
@@ -661,11 +651,6 @@ main {
 
 /* Small phones: tighter touch targets. */
 @media (max-width: 600px) {
-    .tool-btn {
-        width: 34px;
-        height: 34px;
-    }
-
     .palette-btn {
         width: 28px;
         height: 28px;
@@ -680,17 +665,4 @@ main {
 .election-controls label { display: flex; align-items: center; gap: 8px; font-size: 0.82rem; }
 #election-histogram { width: 100%; border-radius: var(--radius-sm); background: var(--bg-elevated); }
 
-/* Extra small: hide brand, center toolbar icons. */
-@media (max-width: 440px) {
-    .toolbar-brand {
-        display: none;
-    }
-
-    #toolbar {
-        justify-content: center;
-    }
-
-    .toolbar-actions {
-        gap: 1px;
-    }
-}
+/* Extra small: handled by shared-base.css (hide .sim-brand, tight gap) */

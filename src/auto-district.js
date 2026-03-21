@@ -15,7 +15,7 @@ import { state } from './state.js';
  * BFS growth with a priority queue sorted by opposition/party share keeps
  * districts contiguous and geographically compact.
  *
- * @param {'red'|'blue'|'yellow'} targetParty
+ * @param {'orange'|'lime'|'purple'} targetParty
  */
 export function packAndCrack(targetParty) {
     state.hexes.forEach(hex => { hex.district = 0; });
@@ -27,7 +27,7 @@ export function packAndCrack(targetParty) {
     const popCap = targetPopPerDistrict * CONFIG.popCapRatio;
 
     const oppShare = (h) => {
-        const total = h.votes.red + h.votes.blue + h.votes.yellow;
+        const total = h.votes.orange + h.votes.lime + h.votes.purple;
         return total > 0 ? 1 - h.votes[targetParty] / total : 0.5;
     };
 
@@ -75,7 +75,7 @@ export function packAndCrack(targetParty) {
         if (remaining.length === 0) break;
 
         const partyShare = (h) => {
-            const total = h.votes.red + h.votes.blue + h.votes.yellow;
+            const total = h.votes.orange + h.votes.lime + h.votes.purple;
             return total > 0 ? h.votes[targetParty] / total : 0;
         };
         remaining.sort((a, b) => partyShare(b) - partyShare(a));
@@ -134,32 +134,32 @@ export function packAndCrack(targetParty) {
 export function fairDraw() {
     _greedySeed();
 
-    const parties = ['red', 'blue', 'yellow'];
+    const parties = ['orange', 'lime', 'purple'];
     const hexList = [...state.hexes.values()].filter(h => h.population > 0);
     const totalPop = hexList.reduce((s, h) => s + h.population, 0);
     const targetPop = totalPop / CONFIG.numDistricts;
 
-    const totalVotes = { red: 0, blue: 0, yellow: 0 };
+    const totalVotes = { orange: 0, lime: 0, purple: 0 };
     for (const h of hexList) {
-        totalVotes.red += h.votes.red;
-        totalVotes.blue += h.votes.blue;
-        totalVotes.yellow += h.votes.yellow;
+        totalVotes.orange += h.votes.orange;
+        totalVotes.lime += h.votes.lime;
+        totalVotes.purple += h.votes.purple;
     }
-    const totalVotesAll = totalVotes.red + totalVotes.blue + totalVotes.yellow;
+    const totalVotesAll = totalVotes.orange + totalVotes.lime + totalVotes.purple;
 
     function objective() {
         const distPop = new Float64Array(CONFIG.numDistricts + 1);
-        const distVotes = Array.from({ length: CONFIG.numDistricts + 1 }, () => ({ red: 0, blue: 0, yellow: 0 }));
+        const distVotes = Array.from({ length: CONFIG.numDistricts + 1 }, () => ({ orange: 0, lime: 0, purple: 0 }));
 
         for (const h of hexList) {
             if (h.district < 1) continue;
             distPop[h.district] += h.population;
-            distVotes[h.district].red += h.votes.red;
-            distVotes[h.district].blue += h.votes.blue;
-            distVotes[h.district].yellow += h.votes.yellow;
+            distVotes[h.district].orange += h.votes.orange;
+            distVotes[h.district].lime += h.votes.lime;
+            distVotes[h.district].purple += h.votes.purple;
         }
 
-        const seats = { red: 0, blue: 0, yellow: 0 };
+        const seats = { orange: 0, lime: 0, purple: 0 };
         let maxDeviation = 0;
         let compactnessSum = 0;
         let activeDistricts = 0;
@@ -169,10 +169,10 @@ export function fairDraw() {
             activeDistricts++;
 
             const v = distVotes[i];
-            const max = Math.max(v.red, v.blue, v.yellow);
-            if (max === v.red) seats.red++;
-            else if (max === v.blue) seats.blue++;
-            else seats.yellow++;
+            const max = Math.max(v.orange, v.lime, v.purple);
+            if (max === v.orange) seats.orange++;
+            else if (max === v.lime) seats.lime++;
+            else seats.purple++;
 
             const dev = Math.abs(distPop[i] - targetPop) / targetPop;
             if (dev > maxDeviation) maxDeviation = dev;
@@ -191,7 +191,7 @@ export function fairDraw() {
             compactnessSum += interior / (border + interior + 1);
         }
 
-        const totalSeats = seats.red + seats.blue + seats.yellow;
+        const totalSeats = seats.orange + seats.lime + seats.purple;
         if (totalSeats === 0) return 1e6;
 
         // Sum of |voteShare - seatShare| per party.

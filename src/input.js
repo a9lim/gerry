@@ -195,7 +195,7 @@ function showHexTooltip(e, qr) {
     if (!hex) { hexTip.hide(); return; }
 
     const pct = votePcts(hex.votes);
-    const pR = Math.round(pct.red), pB = Math.round(pct.blue), pY = Math.round(pct.yellow);
+    const pO = Math.round(pct.orange), pL = Math.round(pct.lime), pP = Math.round(pct.purple);
 
     // Safe: all values are numeric or from controlled state, not user input.
     // Build tooltip content via DOM methods for safety, though values are all controlled.
@@ -207,7 +207,7 @@ function showHexTooltip(e, qr) {
 
     const votesDiv = document.createElement('div');
     votesDiv.className = 'tt-votes';
-    for (const [cls, label, val] of [['tt-r', 'R', pR], ['tt-b', 'B', pB], ['tt-y', 'Y', pY]]) {
+    for (const [cls, label, val] of [['tt-o', 'O', pO], ['tt-l', 'L', pL], ['tt-p', 'P', pP]]) {
         const s = document.createElement('span');
         s.className = cls;
         s.textContent = `${label} ${val}%`;

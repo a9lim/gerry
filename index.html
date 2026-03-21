@@ -151,9 +151,9 @@
                     </svg>
                 </button>
                 <select id="gerrymander-party" class="party-select" aria-label="Party to advantage">
-                    <option value="red">Red</option>
-                    <option value="blue">Blue</option>
-                    <option value="yellow">Yellow</option>
+                    <option value="orange">Orange</option>
+                    <option value="lime">Lime</option>
+                    <option value="purple">Purple</option>
                 </select>
             </div>
             <button id="fair-draw-btn" class="tool-btn" aria-label="Fair Draw" title="Fair Draw">
@@ -277,17 +277,17 @@
                         <div class="group-label">Statewide Results</div>
                         <div id="state-results">
                             <div class="seats-grid">
-                                <div class="seat-block red">
-                                    <span class="seat-num" id="red-seats">0</span>
-                                    <span class="seat-label">Red</span>
+                                <div class="seat-block orange">
+                                    <span class="seat-num" id="orange-seats">0</span>
+                                    <span class="seat-label">Orange</span>
                                 </div>
-                                <div class="seat-block blue">
-                                    <span class="seat-num" id="blue-seats">0</span>
-                                    <span class="seat-label">Blue</span>
+                                <div class="seat-block lime">
+                                    <span class="seat-num" id="lime-seats">0</span>
+                                    <span class="seat-label">Lime</span>
                                 </div>
-                                <div class="seat-block yellow">
-                                    <span class="seat-num" id="yellow-seats">0</span>
-                                    <span class="seat-label">Yellow</span>
+                                <div class="seat-block purple">
+                                    <span class="seat-num" id="purple-seats">0</span>
+                                    <span class="seat-label">Purple</span>
                                 </div>
                             </div>
                             <div class="stat-row">
@@ -317,48 +317,48 @@
                         <div class="group-label">Popular Vote vs Seats</div>
                         <p class="panel-hint">When seat share diverges from vote share, gerrymandering may be at work.</p>
                         <div class="proportionality-row">
-                            <span class="prop-label red-text">Red</span>
+                            <span class="prop-label orange-text">Oran</span>
                             <div class="prop-bars">
                                 <div class="prop-bar-track">
-                                    <div class="prop-bar-fill vote-fill red" id="prop-red-votes"></div>
+                                    <div class="prop-bar-fill vote-fill orange" id="prop-orange-votes"></div>
                                 </div>
                                 <div class="prop-bar-track">
-                                    <div class="prop-bar-fill seat-fill red" id="prop-red-seats"></div>
+                                    <div class="prop-bar-fill seat-fill orange" id="prop-orange-seats"></div>
                                 </div>
                             </div>
                             <div class="prop-values">
-                                <span class="prop-pct" id="prop-red-vote-pct">0%</span>
-                                <span class="prop-pct" id="prop-red-seat-pct">0%</span>
+                                <span class="prop-pct" id="prop-orange-vote-pct">0%</span>
+                                <span class="prop-pct" id="prop-orange-seat-pct">0%</span>
                             </div>
                         </div>
                         <div class="proportionality-row">
-                            <span class="prop-label blue-text">Blue</span>
+                            <span class="prop-label lime-text">Lime</span>
                             <div class="prop-bars">
                                 <div class="prop-bar-track">
-                                    <div class="prop-bar-fill vote-fill blue" id="prop-blue-votes"></div>
+                                    <div class="prop-bar-fill vote-fill lime" id="prop-lime-votes"></div>
                                 </div>
                                 <div class="prop-bar-track">
-                                    <div class="prop-bar-fill seat-fill blue" id="prop-blue-seats"></div>
+                                    <div class="prop-bar-fill seat-fill lime" id="prop-lime-seats"></div>
                                 </div>
                             </div>
                             <div class="prop-values">
-                                <span class="prop-pct" id="prop-blue-vote-pct">0%</span>
-                                <span class="prop-pct" id="prop-blue-seat-pct">0%</span>
+                                <span class="prop-pct" id="prop-lime-vote-pct">0%</span>
+                                <span class="prop-pct" id="prop-lime-seat-pct">0%</span>
                             </div>
                         </div>
                         <div class="proportionality-row">
-                            <span class="prop-label yellow-text">Yell</span>
+                            <span class="prop-label purple-text">Purp</span>
                             <div class="prop-bars">
                                 <div class="prop-bar-track">
-                                    <div class="prop-bar-fill vote-fill yellow" id="prop-yellow-votes"></div>
+                                    <div class="prop-bar-fill vote-fill purple" id="prop-purple-votes"></div>
                                 </div>
                                 <div class="prop-bar-track">
-                                    <div class="prop-bar-fill seat-fill yellow" id="prop-yellow-seats"></div>
+                                    <div class="prop-bar-fill seat-fill purple" id="prop-purple-seats"></div>
                                 </div>
                             </div>
                             <div class="prop-values">
-                                <span class="prop-pct" id="prop-yellow-vote-pct">0%</span>
-                                <span class="prop-pct" id="prop-yellow-seat-pct">0%</span>
+                                <span class="prop-pct" id="prop-purple-vote-pct">0%</span>
+                                <span class="prop-pct" id="prop-purple-seat-pct">0%</span>
                             </div>
                         </div>
                         <div class="prop-legend">
@@ -388,14 +388,14 @@
                             <div class="stat-row"><span class="stat-label">Minority-Majority <button class="info-trigger" data-info="mmd">?</button></span><span
                                     class="stat-value" id="detail-mm">No</span></div>
                             <div class="vote-bar-container">
-                                <div class="vote-bar red" id="vote-bar-red"></div>
-                                <div class="vote-bar blue" id="vote-bar-blue"></div>
-                                <div class="vote-bar yellow" id="vote-bar-yellow"></div>
+                                <div class="vote-bar orange" id="vote-bar-orange"></div>
+                                <div class="vote-bar lime" id="vote-bar-lime"></div>
+                                <div class="vote-bar purple" id="vote-bar-purple"></div>
                             </div>
                             <div class="vote-labels">
-                                <span id="vote-pct-red" class="red-text">0%</span>
-                                <span id="vote-pct-yellow" class="yellow-text">0%</span>
-                                <span id="vote-pct-blue" class="blue-text">0%</span>
+                                <span id="vote-pct-orange" class="orange-text">0%</span>
+                                <span id="vote-pct-purple" class="purple-text">0%</span>
+                                <span id="vote-pct-lime" class="lime-text">0%</span>
                             </div>
                         </div>
                         <p id="no-selection-msg" class="panel-hint">Select a district to view details.</p>

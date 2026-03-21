@@ -7,7 +7,7 @@ import { state } from './state.js';
 export function calculateMetrics() {
     for (let i = 1; i <= CONFIG.numDistricts; i++) {
         state.districts[i] = {
-            id: i, population: 0, votes: { red: 0, blue: 0, yellow: 0 },
+            id: i, population: 0, votes: { orange: 0, lime: 0, purple: 0 },
             hexes: [], minorityPop: 0, isContiguous: false, compactness: 0,
             winner: 'none', isMinorityMajority: false
         };
@@ -16,9 +16,9 @@ export function calculateMetrics() {
         const d = state.districts[hex.district];
         if (d) {
             d.population += hex.population;
-            d.votes.red += hex.votes.red;
-            d.votes.blue += hex.votes.blue;
-            d.votes.yellow += hex.votes.yellow;
+            d.votes.orange += hex.votes.orange;
+            d.votes.lime += hex.votes.lime;
+            d.votes.purple += hex.votes.purple;
             if (hex.minority) d.minorityPop += hex.population;
             d.hexes.push(hex);
         }
@@ -26,9 +26,9 @@ export function calculateMetrics() {
     for (let i = 1; i <= CONFIG.numDistricts; i++) {
         const d = state.districts[i];
         if (d.population > 0) {
-            const { red, blue, yellow } = d.votes;
-            const max = Math.max(red, blue, yellow);
-            d.winner = max === red ? 'red' : max === blue ? 'blue' : 'yellow';
+            const { orange, lime, purple } = d.votes;
+            const max = Math.max(orange, lime, purple);
+            d.winner = max === orange ? 'orange' : max === lime ? 'lime' : 'purple';
             d.isMinorityMajority = (d.minorityPop / d.population) > 0.5;
             d.isContiguous = checkContiguity(d);
             d.compactness = calculateCompactness(d);
@@ -88,7 +88,7 @@ function calculateCompactness(d) {
  * Returns per-party wasted-vote ratios, or null if < 2 active districts.
  */
 export function calculateEfficiencyGap() {
-    const wasted = { red: 0, blue: 0, yellow: 0 };
+    const wasted = { orange: 0, lime: 0, purple: 0 };
     let totalVotes = 0;
     let numActiveDistricts = 0;
 
@@ -97,18 +97,18 @@ export function calculateEfficiencyGap() {
         if (d.population === 0) continue;
         numActiveDistricts++;
 
-        const { red, blue, yellow } = d.votes;
-        const districtTotal = red + blue + yellow;
+        const { orange, lime, purple } = d.votes;
+        const districtTotal = orange + lime + purple;
         if (districtTotal === 0) continue;
 
         totalVotes += districtTotal;
-        const max = Math.max(red, blue, yellow);
-        const winner = max === red ? 'red' : max === blue ? 'blue' : 'yellow';
+        const max = Math.max(orange, lime, purple);
+        const winner = max === orange ? 'orange' : max === lime ? 'lime' : 'purple';
 
-        for (const party of ['red', 'blue', 'yellow']) {
+        for (const party of ['orange', 'lime', 'purple']) {
             if (party === winner) {
                 // Plurality threshold = second-place votes + 1.
-                const others = [red, blue, yellow].filter((_, j) => ['red', 'blue', 'yellow'][j] !== party);
+                const others = [orange, lime, purple].filter((_, j) => ['orange', 'lime', 'purple'][j] !== party);
                 const threshold = Math.max(...others) + 1;
                 wasted[party] += d.votes[party] - threshold;
             } else {
@@ -119,9 +119,9 @@ export function calculateEfficiencyGap() {
 
     if (totalVotes === 0 || numActiveDistricts < 2) return null;
     return {
-        red: wasted.red / totalVotes,
-        blue: wasted.blue / totalVotes,
-        yellow: wasted.yellow / totalVotes,
+        orange: wasted.orange / totalVotes,
+        lime: wasted.lime / totalVotes,
+        purple: wasted.purple / totalVotes,
     };
 }
 
@@ -141,8 +141,8 @@ export function calculatePartisanSymmetry() {
     }
     if (activeDistricts.length < 2) return null;
 
-    const parties = ['red', 'blue', 'yellow'];
-    const actualSeats = { red: 0, blue: 0, yellow: 0 };
+    const parties = ['orange', 'lime', 'purple'];
+    const actualSeats = { orange: 0, lime: 0, purple: 0 };
     for (const d of activeDistricts) {
         if (d.winner !== 'none') actualSeats[d.winner]++;
     }
@@ -153,15 +153,15 @@ export function calculatePartisanSymmetry() {
     for (let a = 0; a < parties.length; a++) {
         for (let b = a + 1; b < parties.length; b++) {
             const pA = parties[a], pB = parties[b];
-            const swappedSeats = { red: 0, blue: 0, yellow: 0 };
+            const swappedSeats = { orange: 0, lime: 0, purple: 0 };
 
             for (const d of activeDistricts) {
                 const swapped = { ...d.votes };
                 const tmp = swapped[pA];
                 swapped[pA] = swapped[pB];
                 swapped[pB] = tmp;
-                const max = Math.max(swapped.red, swapped.blue, swapped.yellow);
-                const winner = max === swapped.red ? 'red' : max === swapped.blue ? 'blue' : 'yellow';
+                const max = Math.max(swapped.orange, swapped.lime, swapped.purple);
+                const winner = max === swapped.orange ? 'orange' : max === swapped.lime ? 'lime' : 'purple';
                 swappedSeats[winner]++;
             }
 
@@ -191,10 +191,10 @@ export function calculateCompetitiveDistricts() {
         if (d.population === 0) continue;
         total++;
 
-        const totalVotes = d.votes.red + d.votes.blue + d.votes.yellow;
+        const totalVotes = d.votes.orange + d.votes.lime + d.votes.purple;
         if (totalVotes === 0) continue;
 
-        const sorted = [d.votes.red, d.votes.blue, d.votes.yellow].sort((a, b) => b - a);
+        const sorted = [d.votes.orange, d.votes.lime, d.votes.purple].sort((a, b) => b - a);
         const margin = (sorted[0] - sorted[1]) / totalVotes;
         if (margin < 0.1) competitive++;
     }
@@ -222,7 +222,7 @@ export function calculateRequiredMMD() {
 
 /** Returns vote shares as raw percentages (0-100). Callers round as needed. */
 export function votePcts(votes) {
-    const total = votes.red + votes.blue + votes.yellow;
-    if (total === 0) return { red: 0, blue: 0, yellow: 0 };
-    return { red: votes.red / total * 100, blue: votes.blue / total * 100, yellow: votes.yellow / total * 100 };
+    const total = votes.orange + votes.lime + votes.purple;
+    if (total === 0) return { orange: 0, lime: 0, purple: 0 };
+    return { orange: votes.orange / total * 100, lime: votes.lime / total * 100, purple: votes.purple / total * 100 };
 }

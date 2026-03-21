@@ -20,23 +20,23 @@ function gaussRandom(mean, stddev) {
  *
  * @param {number} numElections
  * @param {number} swingSigma  Standard deviation of national swing (0-1 scale)
- * @returns {{ red: number[], blue: number[], yellow: number[] }} Seat counts per election
+ * @returns {{ orange: number[], lime: number[], purple: number[] }} Seat counts per election
  */
 export function simulateElections(numElections, swingSigma) {
-    const parties = ['red', 'blue', 'yellow'];
-    const results = { red: [], blue: [], yellow: [] };
+    const parties = ['orange', 'lime', 'purple'];
+    const results = { orange: [], lime: [], purple: [] };
 
     for (let e = 0; e < numElections; e++) {
         const nationalSwing = {};
         for (const p of parties) nationalSwing[p] = gaussRandom(0, swingSigma);
 
-        const seats = { red: 0, blue: 0, yellow: 0 };
+        const seats = { orange: 0, lime: 0, purple: 0 };
 
         for (let d = 1; d <= CONFIG.numDistricts; d++) {
             const dist = state.districts[d];
             if (!dist || dist.hexes.length === 0) continue;
 
-            const totalVotes = dist.votes.red + dist.votes.blue + dist.votes.yellow;
+            const totalVotes = dist.votes.orange + dist.votes.lime + dist.votes.purple;
             if (totalVotes === 0) continue;
 
             const swungShares = {};
@@ -49,7 +49,7 @@ export function simulateElections(numElections, swingSigma) {
             }
             for (const p of parties) swungShares[p] /= shareSum;
 
-            let winner = 'red', maxShare = 0;
+            let winner = 'orange', maxShare = 0;
             for (const p of parties) {
                 if (swungShares[p] > maxShare) { maxShare = swungShares[p]; winner = p; }
             }
@@ -72,14 +72,14 @@ export function renderHistogram(canvas, results, numDistricts) {
     const w = canvas.width, h = canvas.height;
     ctx.clearRect(0, 0, w, h);
 
-    const parties = ['red', 'blue', 'yellow'];
+    const parties = ['orange', 'lime', 'purple'];
     const colors = {
-        red: getComputedStyle(document.documentElement).getPropertyValue('--party-red').trim(),
-        blue: getComputedStyle(document.documentElement).getPropertyValue('--party-blue').trim(),
-        yellow: getComputedStyle(document.documentElement).getPropertyValue('--party-yellow').trim(),
+        orange: getComputedStyle(document.documentElement).getPropertyValue('--party-orange').trim(),
+        lime: getComputedStyle(document.documentElement).getPropertyValue('--party-lime').trim(),
+        purple: getComputedStyle(document.documentElement).getPropertyValue('--party-purple').trim(),
     };
 
-    const n = results.red.length;
+    const n = results.orange.length;
     const barGroupW = w / (numDistricts + 1);
 
     for (const p of parties) {

@@ -40,21 +40,21 @@ function animateValue(el, end, duration, formatFn = Math.round, id) {
 
 /** Updates vote% vs seat% comparison bars for the three parties. */
 function updateProportionality(seats, $) {
-    const totalVotes = { red: 0, blue: 0, yellow: 0 };
-    const totalSeats = (seats.red || 0) + (seats.blue || 0) + (seats.yellow || 0);
+    const totalVotes = { orange: 0, lime: 0, purple: 0 };
+    const totalSeats = (seats.orange || 0) + (seats.lime || 0) + (seats.purple || 0);
 
     for (let i = 1; i <= CONFIG.numDistricts; i++) {
         const d = state.districts[i];
         if (d.population > 0) {
-            totalVotes.red += d.votes.red;
-            totalVotes.blue += d.votes.blue;
-            totalVotes.yellow += d.votes.yellow;
+            totalVotes.orange += d.votes.orange;
+            totalVotes.lime += d.votes.lime;
+            totalVotes.purple += d.votes.purple;
         }
     }
 
-    const grandTotal = totalVotes.red + totalVotes.blue + totalVotes.yellow;
+    const grandTotal = totalVotes.orange + totalVotes.lime + totalVotes.purple;
 
-    for (const party of ['red', 'blue', 'yellow']) {
+    for (const party of ['orange', 'lime', 'purple']) {
         const p = $.prop[party];
         if (!p) continue;
         const votePct = grandTotal > 0 ? (totalVotes[party] / grandTotal) * 100 : 0;
@@ -86,7 +86,7 @@ export function updateSidebarDetails(dId, $) {
         // Red title when population deviates >10% or district is non-contiguous.
         if (state.targetPop > 0) {
             const dev = Math.abs((d.population - state.targetPop) / state.targetPop);
-            $.detailTitle.style.color = (dev > 0.1 || !d.isContiguous) ? 'var(--party-red)' : 'inherit';
+            $.detailTitle.style.color = (dev > 0.1 || !d.isContiguous) ? 'var(--party-orange)' : 'inherit';
         }
     }
 
@@ -95,9 +95,9 @@ export function updateSidebarDetails(dId, $) {
         $.detailWinner.style.color = d.winner !== 'none' ? _PALETTE[d.winner] : 'var(--text-secondary)';
     }
 
-    const totalVotes = d.votes.red + d.votes.blue + d.votes.yellow;
+    const totalVotes = d.votes.orange + d.votes.lime + d.votes.purple;
     if (totalVotes > 0) {
-        const sorted = [d.votes.red, d.votes.blue, d.votes.yellow].sort((a, b) => b - a);
+        const sorted = [d.votes.orange, d.votes.lime, d.votes.purple].sort((a, b) => b - a);
         const margin = (sorted[0] - sorted[1]) / totalVotes * 100;
         animateValue($.detailMargin, margin, 600, v => `+${v.toFixed(1)}%`, 'detail-margin');
     } else if ($.detailMargin) {
@@ -110,29 +110,29 @@ export function updateSidebarDetails(dId, $) {
     if (state.targetPop > 0 && $.detailDeviation) {
         const dev = ((d.population - state.targetPop) / state.targetPop) * 100;
         animateValue($.detailDeviation, dev, 600, v => `${v > 0 ? '+' : ''}${v.toFixed(1)}%`, 'detail-dev');
-        $.detailDeviation.style.color = Math.abs(dev) > 10 ? 'var(--party-red)' : 'var(--text-secondary)';
+        $.detailDeviation.style.color = Math.abs(dev) > 10 ? 'var(--party-orange)' : 'var(--text-secondary)';
     }
 
     animateValue($.detailCompactness, d.compactness, 600, v => `${Math.round(v)}%`, 'detail-comp');
 
     if ($.detailContiguous) {
         $.detailContiguous.textContent = d.isContiguous ? 'Yes' : 'No';
-        $.detailContiguous.style.color = d.isContiguous ? 'var(--party-green)' : 'var(--party-red)';
+        $.detailContiguous.style.color = d.isContiguous ? 'var(--party-blue)' : 'var(--party-orange)';
     }
 
     if ($.detailMm) {
         $.detailMm.textContent = d.isMinorityMajority ? 'Yes' : 'No';
-        $.detailMm.style.color = d.isMinorityMajority ? 'var(--party-green)' : 'var(--text-secondary)';
+        $.detailMm.style.color = d.isMinorityMajority ? 'var(--party-blue)' : 'var(--text-secondary)';
     }
 
     if (totalVotes > 0) {
         const pct = votePcts(d.votes);
-        if ($.voteBarRed) $.voteBarRed.style.width = `${pct.red}%`;
-        if ($.voteBarBlue) $.voteBarBlue.style.width = `${pct.blue}%`;
-        if ($.voteBarYellow) $.voteBarYellow.style.width = `${pct.yellow}%`;
-        if ($.votePctRed) $.votePctRed.textContent = `${Math.round(pct.red)}% Red`;
-        if ($.votePctBlue) $.votePctBlue.textContent = `${Math.round(pct.blue)}% Blue`;
-        if ($.votePctYellow) $.votePctYellow.textContent = `${Math.round(pct.yellow)}% Yell`;
+        if ($.voteBarOrange) $.voteBarOrange.style.width = `${pct.orange}%`;
+        if ($.voteBarLime) $.voteBarLime.style.width = `${pct.lime}%`;
+        if ($.voteBarPurple) $.voteBarPurple.style.width = `${pct.purple}%`;
+        if ($.votePctOrange) $.votePctOrange.textContent = `${Math.round(pct.orange)}% Oran`;
+        if ($.votePctLime) $.votePctLime.textContent = `${Math.round(pct.lime)}% Lime`;
+        if ($.votePctPurple) $.votePctPurple.textContent = `${Math.round(pct.purple)}% Purp`;
     }
 }
 
@@ -143,7 +143,7 @@ export function updateMetrics($, updateDistrictPalette) {
     calculateMetrics();
     renderBorders($);
 
-    let seats = { red: 0, blue: 0, yellow: 0 };
+    let seats = { orange: 0, lime: 0, purple: 0 };
     let mmdCount = 0;
     let activeDistrictCount = 0;
 
@@ -156,9 +156,9 @@ export function updateMetrics($, updateDistrictPalette) {
         }
     }
 
-    animateValue($.redSeats, seats.red, 600, v => Math.round(v), 'seats-red');
-    animateValue($.blueSeats, seats.blue, 600, v => Math.round(v), 'seats-blue');
-    animateValue($.yellowSeats, seats.yellow, 600, v => Math.round(v), 'seats-yellow');
+    animateValue($.orangeSeats, seats.orange, 600, v => Math.round(v), 'seats-orange');
+    animateValue($.limeSeats, seats.lime, 600, v => Math.round(v), 'seats-lime');
+    animateValue($.purpleSeats, seats.purple, 600, v => Math.round(v), 'seats-purple');
 
     const requiredMMD = calculateRequiredMMD();
     if ($.mmdCount) $.mmdCount.textContent = `${mmdCount} / ${requiredMMD} min`;
@@ -168,13 +168,13 @@ export function updateMetrics($, updateDistrictPalette) {
     const eg = calculateEfficiencyGap();
     if ($.efficiencyGap) {
         if (eg !== null) {
-            const entries = [['Red', eg.red], ['Blue', eg.blue], ['Yellow', eg.yellow]];
+            const entries = [['Orange', eg.orange], ['Lime', eg.lime], ['Purple', eg.purple]];
             entries.sort((a, b) => a[1] - b[1]);
             const advantaged = entries[0][0];
             const gap = entries[1][1] - entries[0][1];
             const pct = (gap * 100).toFixed(1);
             $.efficiencyGap.textContent = `${pct}% \u2192 ${advantaged}`;
-            $.efficiencyGap.style.color = gap > 0.07 ? 'var(--party-red)' : 'var(--text)';
+            $.efficiencyGap.style.color = gap > 0.07 ? 'var(--party-orange)' : 'var(--text)';
         } else {
             $.efficiencyGap.textContent = '\u2014';
             $.efficiencyGap.style.color = 'var(--text-secondary)';
@@ -185,7 +185,7 @@ export function updateMetrics($, updateDistrictPalette) {
     if ($.partisanSymmetry) {
         if (symmetry !== null) {
             $.partisanSymmetry.textContent = `${symmetry}%`;
-            $.partisanSymmetry.style.color = symmetry < 80 ? 'var(--party-red)' : 'var(--text)';
+            $.partisanSymmetry.style.color = symmetry < 80 ? 'var(--party-orange)' : 'var(--text)';
         } else {
             $.partisanSymmetry.textContent = '\u2014';
             $.partisanSymmetry.style.color = 'var(--text-secondary)';

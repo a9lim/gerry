@@ -41,9 +41,9 @@ export const HEX_CORNER_OFFSETS = Array.from({ length: 6 }, (_, i) => {
 export const HEX_RENDER_SIZE = CONFIG.hexSize + 0.5;
 
 export const PALETTE_COLOR_MAP = {
-    red: 'var(--party-red)',
-    blue: 'var(--party-blue)',
-    yellow: 'var(--party-yellow)'
+    orange: 'var(--party-orange)',
+    lime: 'var(--party-lime)',
+    purple: 'var(--party-purple)'
 };
 
 /** Returns all axial "q,r" keys within `radius` of (q, r). */

@@ -5,11 +5,11 @@
    ═══════════════════════════════════════════════════ */
 
 // ─── Party Color Aliases ───
-_PALETTE.red    = _PALETTE.extended.rose;
-_PALETTE.blue   = _PALETTE.extended.blue;
-_PALETTE.yellow = _PALETTE.extended.orange;
+_PALETTE.orange = _PALETTE.extended.orange;
+_PALETTE.lime   = _PALETTE.extended.lime;
+_PALETTE.purple = _PALETTE.extended.purple;
 _PALETTE.none   = _PALETTE.extended.slate;
-_PALETTE.green  = _PALETTE.extended.green;
+_PALETTE.blue   = _PALETTE.extended.blue;
 
 Object.freeze(_PALETTE.extended);
 Object.freeze(_PALETTE.light);
@@ -39,12 +39,12 @@ Object.freeze(_PALETTE);
   // Dark mode: use base palette colors; darken the tooltip variants instead.
   const genParty = (darkenParty) => {
     const lines = [];
-    for (const c of ['red', 'blue', 'yellow', 'green']) {
+    for (const c of ['orange', 'lime', 'purple', 'blue']) {
       const base = P[c], dark = _darken(base);
       const party = darkenParty ? dark : base;
       const tip   = darkenParty ? base : dark;
       lines.push(`  --party-${c}: ${party};`);
-      if (c !== 'green') {
+      if (c !== 'blue') {
         lines.push(`  --party-${c}-tint: ${_r(party, 0.08)};`);
         lines.push(`  --party-${c}-wash: ${_r(party, 0.18)};`);
       }

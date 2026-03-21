@@ -29,7 +29,7 @@ export const hexElements = new Map();
 export function initDistricts() {
     for (let i = 1; i <= CONFIG.numDistricts; i++) {
         state.districts[i] = {
-            id: i, population: 0, votes: { red: 0, blue: 0, yellow: 0 },
+            id: i, population: 0, votes: { orange: 0, lime: 0, purple: 0 },
             hexes: [], minorityPop: 0, isContiguous: true, compactness: 0,
             winner: 'none', isMinorityMajority: false
         };

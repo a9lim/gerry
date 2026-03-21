@@ -8,11 +8,11 @@ import { createPRNG } from './prng.js';
 import { calculateMetrics } from './metrics.js';
 
 function getHexWinner(hex) {
-    const { red, blue, yellow } = hex.votes;
-    const max = Math.max(red, blue, yellow);
-    if (max === red) return 'red';
-    if (max === blue) return 'blue';
-    return 'yellow';
+    const { orange, lime, purple } = hex.votes;
+    const max = Math.max(orange, lime, purple);
+    if (max === orange) return 'orange';
+    if (max === lime) return 'lime';
+    return 'purple';
 }
 
 /**
@@ -25,8 +25,8 @@ function getHexWinner(hex) {
  *    fractal Brownian motion terrain noise and random outlier spikes.
  * 3. **Party lean**: three density tiers (urban/suburban/rural) set base
  *    probabilities; low-frequency fbm regional lean shifts them per-hex.
- * 4. **Vote split**: winning party gets 54-83% of non-Yellow votes;
- *    Yellow-plurality hexes get 28-36% Yellow. Remaining votes split
+ * 4. **Vote split**: winning party gets 54-83% of non-Purple votes;
+ *    Purple-plurality hexes get 28-36% Purple. Remaining votes split
  *    randomly between the other two parties.
  * 5. **Minority status**: fbm noise against density-dependent thresholds
  *    (lower threshold in urban areas = more minority hexes near cities).
@@ -156,41 +156,41 @@ export function generateHexes(seed) {
         const isSuburban = pop > CONFIG.suburbanThreshold && pop <= CONFIG.urbanThreshold;
 
         // Three density tiers with different base probabilities.
-        // Urban skews Blue (~70%), rural skews Red (~76%), Yellow is the third party.
+        // Urban skews Lime (~70%), rural skews Orange (~76%), Purple is the third party.
         let party;
         const roll = rand();
 
         if (isUrban) {
-            const blueChance = 0.70 + (regionalLean - 0.5) * 0.15;
-            const redChance = 0.22 - (regionalLean - 0.5) * 0.1;
-            party = roll < blueChance ? 'blue' : roll < blueChance + redChance ? 'red' : 'yellow';
+            const limeChance = 0.70 + (regionalLean - 0.5) * 0.15;
+            const orangeChance = 0.22 - (regionalLean - 0.5) * 0.1;
+            party = roll < limeChance ? 'lime' : roll < limeChance + orangeChance ? 'orange' : 'purple';
         } else if (isSuburban) {
-            const redChance = 0.62 + (0.5 - regionalLean) * 0.15;
-            const blueChance = 0.25 + (regionalLean - 0.5) * 0.1;
-            party = roll < redChance ? 'red' : roll < redChance + blueChance ? 'blue' : 'yellow';
+            const orangeChance = 0.62 + (0.5 - regionalLean) * 0.15;
+            const limeChance = 0.25 + (regionalLean - 0.5) * 0.1;
+            party = roll < orangeChance ? 'orange' : roll < orangeChance + limeChance ? 'lime' : 'purple';
         } else {
-            const redChance = 0.76 + (0.5 - regionalLean) * 0.12;
-            const blueChance = 0.16 + (regionalLean - 0.5) * 0.08;
-            party = roll < redChance ? 'red' : roll < redChance + blueChance ? 'blue' : 'yellow';
+            const orangeChance = 0.76 + (0.5 - regionalLean) * 0.12;
+            const limeChance = 0.16 + (regionalLean - 0.5) * 0.08;
+            party = roll < orangeChance ? 'orange' : roll < orangeChance + limeChance ? 'lime' : 'purple';
         }
 
         // Vote distribution: winning party gets a majority; remainder split.
-        const votes = { red: 0, blue: 0, yellow: 0 };
-        if (party === 'yellow') {
-            const yellowBoost = 0.28 + rand() * 0.08;
-            votes.yellow = Math.floor(pop * yellowBoost);
-            const rest = pop - votes.yellow;
-            const redShare = 0.3 + rand() * 0.4;
-            votes.red = Math.floor(rest * redShare);
-            votes.blue = rest - votes.red;
+        const votes = { orange: 0, lime: 0, purple: 0 };
+        if (party === 'purple') {
+            const purpleBoost = 0.28 + rand() * 0.08;
+            votes.purple = Math.floor(pop * purpleBoost);
+            const rest = pop - votes.purple;
+            const orangeShare = 0.3 + rand() * 0.4;
+            votes.orange = Math.floor(rest * orangeShare);
+            votes.lime = rest - votes.orange;
         } else {
-            const yellowPct = 0.04 + rand() * 0.08;
-            votes.yellow = Math.floor(pop * yellowPct);
-            const majorRemainder = pop - votes.yellow;
+            const purplePct = 0.04 + rand() * 0.08;
+            votes.purple = Math.floor(pop * purplePct);
+            const majorRemainder = pop - votes.purple;
             const baseMargin = isUrban ? 0.58 : (isSuburban ? 0.54 : 0.58);
             const winningPct = baseMargin + rand() * 0.25;
             votes[party] = Math.floor(majorRemainder * winningPct);
-            const loser = party === 'red' ? 'blue' : 'red';
+            const loser = party === 'orange' ? 'lime' : 'orange';
             votes[loser] = majorRemainder - votes[party];
         }
 

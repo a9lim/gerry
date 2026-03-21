@@ -32,25 +32,25 @@ body {
 
 /* Active tool states: tinted background matches each mode's party color. */
 #delete-btn.active {
-    color: var(--party-red);
-    background: var(--party-red-tint);
-    border-color: var(--party-red-wash);
+    color: var(--party-orange);
+    background: var(--party-orange-tint);
+    border-color: var(--party-orange-wash);
 }
 
 #erase-btn.active {
-    color: var(--party-yellow);
-    background: var(--party-yellow-tint);
-    border-color: var(--party-yellow-wash);
+    color: var(--party-purple);
+    background: var(--party-purple-tint);
+    border-color: var(--party-purple-wash);
 }
 
 #move-btn.active {
-    color: var(--party-blue);
-    background: var(--party-blue-tint);
-    border-color: var(--party-blue-wash);
+    color: var(--party-lime);
+    background: var(--party-lime-tint);
+    border-color: var(--party-lime-wash);
 }
 
-#reset-btn:hover { color: var(--party-red); }
-#randomize-btn:hover { color: var(--party-blue); }
+#reset-btn:hover { color: var(--party-orange); }
+#randomize-btn:hover { color: var(--party-lime); }
 
 /* Gerrymander button + party dropdown inline pair */
 .auto-district-group {
@@ -154,7 +154,7 @@ main {
 }
 
 .minority-marker {
-    fill: var(--party-green);
+    fill: var(--party-blue);
     pointer-events: none;
     opacity: 0.7;
     transform-origin: center;
@@ -185,7 +185,7 @@ main {
 /* Green overlay for majority-minority districts. */
 .district-path.mmd-overlay {
     stroke-width: 2px;
-    stroke: var(--party-green);
+    stroke: var(--party-blue);
     opacity: 0.85;
 }
 
@@ -308,9 +308,9 @@ main {
     margin-bottom: 2px;
 }
 
-.seat-block.red .seat-num { color: var(--party-red); }
-.seat-block.blue .seat-num { color: var(--party-blue); }
-.seat-block.yellow .seat-num { color: var(--party-yellow); }
+.seat-block.orange .seat-num { color: var(--party-orange); }
+.seat-block.lime .seat-num { color: var(--party-lime); }
+.seat-block.purple .seat-num { color: var(--party-purple); }
 
 .seat-label {
     font-family: var(--font-mono);
@@ -368,9 +368,9 @@ main {
     transition: width 0.45s var(--ease-out);
 }
 
-.vote-bar.red, .prop-bar-fill.red { background: var(--party-red); }
-.vote-bar.blue, .prop-bar-fill.blue { background: var(--party-blue); }
-.vote-bar.yellow, .prop-bar-fill.yellow { background: var(--party-yellow); }
+.vote-bar.orange, .prop-bar-fill.orange { background: var(--party-orange); }
+.vote-bar.lime, .prop-bar-fill.lime { background: var(--party-lime); }
+.vote-bar.purple, .prop-bar-fill.purple { background: var(--party-purple); }
 
 .vote-labels {
     display: flex;
@@ -381,9 +381,9 @@ main {
     letter-spacing: 0.02em;
 }
 
-.red-text { color: var(--party-red); }
-.blue-text { color: var(--party-blue); }
-.yellow-text { color: var(--party-yellow); }
+.orange-text { color: var(--party-orange); }
+.lime-text { color: var(--party-lime); }
+.purple-text { color: var(--party-purple); }
 
 /* ─── Proportionality Panel ─── */
 /* Side-by-side vote% vs seat% bars; seat bars dimmed to distinguish. */
@@ -481,10 +481,10 @@ main {
     margin-top: 2px;
 }
 
-.sim-tooltip .tt-r { color: var(--tip-red); }
-.sim-tooltip .tt-b { color: var(--tip-blue); }
-.sim-tooltip .tt-y { color: var(--tip-yellow); }
-.sim-tooltip .tt-m { color: var(--tip-green); }
+.sim-tooltip .tt-o { color: var(--tip-orange); }
+.sim-tooltip .tt-l { color: var(--tip-lime); }
+.sim-tooltip .tt-p { color: var(--tip-purple); }
+.sim-tooltip .tt-m { color: var(--tip-blue); }
 
 /* ─── Plans Dialog ─── */
 .plans-content {
@@ -567,7 +567,7 @@ main {
     transition: background 0.15s, color 0.15s;
 }
 .plan-item-btn:hover { background: var(--bg-hover); color: var(--text); }
-.plan-item-btn.delete:hover { color: var(--party-red); }
+.plan-item-btn.delete:hover { color: var(--party-orange); }
 
 .plans-actions {
     display: flex;

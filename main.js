@@ -44,9 +44,9 @@ function cacheDOMElements() {
     $.zoomOutBtn = document.getElementById('zoom-out-btn');
     $.zoomFitBtn = document.getElementById('zoom-fit-btn');
 
-    $.redSeats = document.getElementById('red-seats');
-    $.blueSeats = document.getElementById('blue-seats');
-    $.yellowSeats = document.getElementById('yellow-seats');
+    $.orangeSeats = document.getElementById('orange-seats');
+    $.limeSeats = document.getElementById('lime-seats');
+    $.purpleSeats = document.getElementById('purple-seats');
     $.mmdCount = document.getElementById('mmd-count');
     $.districtCount = document.getElementById('district-count');
     $.efficiencyGap = document.getElementById('efficiency-gap');
@@ -81,15 +81,15 @@ function cacheDOMElements() {
     $.detailContiguous = document.getElementById('detail-contiguous');
     $.detailMm = document.getElementById('detail-mm');
 
-    $.voteBarRed = document.getElementById('vote-bar-red');
-    $.voteBarBlue = document.getElementById('vote-bar-blue');
-    $.voteBarYellow = document.getElementById('vote-bar-yellow');
-    $.votePctRed = document.getElementById('vote-pct-red');
-    $.votePctBlue = document.getElementById('vote-pct-blue');
-    $.votePctYellow = document.getElementById('vote-pct-yellow');
+    $.voteBarOrange = document.getElementById('vote-bar-orange');
+    $.voteBarLime = document.getElementById('vote-bar-lime');
+    $.voteBarPurple = document.getElementById('vote-bar-purple');
+    $.votePctOrange = document.getElementById('vote-pct-orange');
+    $.votePctLime = document.getElementById('vote-pct-lime');
+    $.votePctPurple = document.getElementById('vote-pct-purple');
 
     $.prop = {};
-    for (const party of ['red', 'blue', 'yellow']) {
+    for (const party of ['orange', 'lime', 'purple']) {
         $.prop[party] = {
             votes: document.getElementById(`prop-${party}-votes`),
             seats: document.getElementById(`prop-${party}-seats`),

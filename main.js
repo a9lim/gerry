@@ -338,8 +338,10 @@ function setupUI() {
         const results = simulateElections(count, sigma);
         renderHistogram($.electionHistogram, results, CONFIG.numDistricts);
     });
+    if ($.swingSigma) _forms.updateSliderFill($.swingSigma);
     $.swingSigma?.addEventListener('input', e => {
         $.swingValue.textContent = e.target.value + '%';
+        _forms.updateSliderFill(e.target);
         _haptics.trigger('selection');
     });
 

@@ -190,13 +190,8 @@ function setupUI() {
     if ($.themeBtn) $.themeBtn.addEventListener('click', () => { toggleTheme($); _haptics.trigger('light'); });
 
     if ($.brushToggles) {
-        $.brushToggles.addEventListener('click', (e) => {
-            const btn = e.target.closest('[data-brush]');
-            if (!btn) return;
-            $.brushToggles.querySelectorAll('.mode-btn').forEach(b => b.classList.remove('active'));
-            btn.classList.add('active');
-            state.brushSize = parseInt(btn.dataset.brush, 10);
-            _haptics.trigger('selection');
+        _forms.bindModeGroup($.brushToggles, 'brush', v => {
+            state.brushSize = parseInt(v, 10);
         });
     }
 

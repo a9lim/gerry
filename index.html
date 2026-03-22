@@ -4,14 +4,20 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>Redistricting</title>
+    <title>Redistricting — Gerrymandering & Electoral Fairness Simulator</title>
     <meta name="description"
-        content="An interactive gerrymandering and redistricting simulator. Paint districts on a hex map to explore how borders shape electoral outcomes.">
-    <meta property="og:title" content="Redistricting">
-    <meta property="og:description" content="An interactive gerrymandering and redistricting simulator. Paint districts on a hex map to explore how borders shape electoral outcomes.">
+        content="Draw congressional districts on a procedural hex-tile map and see how borders shape elections. This interactive simulator measures efficiency gap, partisan symmetry, and compactness, and includes automated pack-and-crack gerrymandering, simulated-annealing fair draw, and Monte Carlo election stress tests.">
+    <meta property="og:title" content="Redistricting — Gerrymandering & Electoral Fairness Simulator">
+    <meta property="og:description" content="Paint districts on a hex map to explore gerrymandering, efficiency gap, partisan symmetry, and electoral fairness with automated algorithms and Monte Carlo simulations.">
     <meta property="og:type" content="website">
     <meta property="og:url" content="https://a9l.im/gerry">
+    <meta property="og:site_name" content="Hayashinet">
     <meta name="twitter:card" content="summary">
+    <meta name="twitter:site" content="@a9_lim">
+    <meta name="twitter:creator" content="@a9_lim">
+    <meta name="author" content="Hayashi">
+    <meta name="theme-color" content="#C8553D">
+    <link rel="canonical" href="https://a9l.im/gerry">
     <meta name="mobile-web-app-capable" content="yes">
     <meta name="apple-mobile-web-app-status-bar-style" content="default">
     <script src="/shared-tokens.js"></script>
@@ -32,6 +38,46 @@
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Noto+Sans:ital,wght@0,300;0,400;0,500;0,600;0,700;1,400&family=Noto+Sans+Mono:wght@300;400;500;600;700&family=Noto+Serif:ital,wght@0,300;0,400;0,500;0,700;1,400&display=swap"
         rel="stylesheet">
+
+    <script type="application/ld+json">
+    {
+      "@context": "https://schema.org",
+      "@type": "WebApplication",
+      "name": "Redistricting Simulator",
+      "url": "https://a9l.im/gerry",
+      "description": "Interactive gerrymandering and redistricting simulator with three parties, ten districts, and six fairness metrics including efficiency gap and partisan symmetry. Features automated pack-and-crack gerrymandering, simulated-annealing fair draw, Monte Carlo election stress tests, and seeded procedural map generation on a hex-tile grid.",
+      "applicationCategory": "EducationalApplication",
+      "educationalUse": "Interactive simulation for learning about gerrymandering, redistricting, electoral fairness, and voting rights",
+      "learningResourceType": "Simulation",
+      "educationalLevel": "Undergraduate",
+      "about": [
+        {"@type": "Thing", "name": "Gerrymandering"},
+        {"@type": "Thing", "name": "Redistricting"},
+        {"@type": "Thing", "name": "Electoral fairness"},
+        {"@type": "Thing", "name": "Efficiency gap"},
+        {"@type": "Thing", "name": "Partisan symmetry"},
+        {"@type": "Thing", "name": "Monte Carlo simulation"}
+      ],
+      "keywords": "gerrymandering simulator, redistricting, efficiency gap, partisan symmetry, electoral fairness, voting rights, Monte Carlo, educational",
+      "operatingSystem": "Any (Web Browser)",
+      "browserRequirements": "Modern browser with SVG support",
+      "author": {
+        "@type": "Person",
+        "name": "Hayashi",
+        "url": "https://a9l.im/#about"
+      },
+      "isPartOf": {
+        "@type": "WebSite",
+        "name": "Hayashinet",
+        "url": "https://a9l.im"
+      },
+      "offers": {
+        "@type": "Offer",
+        "price": "0",
+        "priceCurrency": "USD"
+      }
+    }
+    </script>
 </head>
 
 <body>

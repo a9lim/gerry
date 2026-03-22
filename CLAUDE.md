@@ -283,7 +283,7 @@ Wraps `shared-camera.js`'s `createCamera()`. Camera is initialized from the SVG 
 - **`votePcts(votes)`** in `src/metrics.js`: returns `{ red, blue, yellow }` as raw percentages. Callers round as needed.
 - **`getHexesInRadius(q, r, radius)`** in `src/config.js`: returns array of `"q,r"` keys within axial distance. Used by brush painting.
 - **`shiftForSidebar(opening)`** in `src/zoom.js`: reads `--panel-w` from computed styles -- no hardcoded pixel values.
-- **`animateValue(el, end, duration, formatFn, id)`** in `src/sidebar.js`: eased counter animation with cancelation support for smooth metric updates.
+- **`animateValue(el, end, duration, formatFn, id)`** from `shared-utils.js`: eased counter animation with cancelation support for smooth metric updates.
 
 ### CSS Patterns
 

@@ -4,37 +4,7 @@ import { state } from './state.js';
 import { calculateMetrics, calculateEfficiencyGap, calculatePartisanSymmetry, calculateCompetitiveDistricts, calculateRequiredMMD, votePcts } from './metrics.js';
 import { renderBorders, renderDistrictLabels } from './renderer.js';
 
-// ─── Animated Counters ───
-// Tracks rAF IDs so in-flight animations can be cancelled on new updates.
-const animatedCounters = {};
-
-/** Eases `el.textContent` from its current value to `end` over `duration` ms (quartic ease-out). */
-function animateValue(el, end, duration, formatFn = Math.round, id) {
-    if (!el) return;
-    const start = el._currentVal || 0;
-    if (start === end) {
-        el.textContent = formatFn(end);
-        el._currentVal = end;
-        return;
-    }
-
-    let startTimestamp = null;
-    const step = (timestamp) => {
-        if (!startTimestamp) startTimestamp = timestamp;
-        const progress = Math.min((timestamp - startTimestamp) / duration, 1);
-        const ease = 1 - Math.pow(1 - progress, 4);
-        const current = progress < 1 ? start + (end - start) * ease : end;
-
-        el.textContent = formatFn(current);
-        el._currentVal = current;
-
-        if (progress < 1) {
-            animatedCounters[id] = requestAnimationFrame(step);
-        }
-    };
-    if (animatedCounters[id]) cancelAnimationFrame(animatedCounters[id]);
-    animatedCounters[id] = requestAnimationFrame(step);
-}
+// animateValue() is provided by shared-utils.js (window.animateValue)
 
 // ─── Proportionality Panel ───
 

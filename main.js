@@ -389,6 +389,21 @@ function setupUI() {
         initShortcuts(shortcuts, { helpTitle: 'Keyboard Shortcuts' });
     }
 
+    if (typeof initAboutPanel === 'function') {
+        initAboutPanel({
+            title: 'Redistricting',
+            description: 'Redistricting and gerrymandering simulator on a procedural hex-tile map. Assign hexes to 10 districts across 3 parties, then analyze fairness metrics or run Monte Carlo election simulations.',
+            controls: [
+                { label: 'Assign hex', value: 'Click on hex' },
+                { label: 'Erase hex', value: 'E then click' },
+                { label: 'Pan', value: 'Click + drag on empty space' },
+                { label: 'Zoom', value: 'Scroll wheel / pinch' },
+            ],
+            shortcuts: shortcuts,
+            repo: 'https://github.com/a9lim/gerry',
+        });
+    }
+
     _intro.init($.introScreen, $.introStart, () => {
         if ($.mapContainer) $.mapContainer.classList.remove('paused');
     });

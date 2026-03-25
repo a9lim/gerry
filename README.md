@@ -97,9 +97,9 @@ src/
 
 ## Sibling Projects
 
-- [Geon](https://github.com/a9lim/physsim) -- [a9l.im/physsim](https://a9l.im/physsim)
-- [Cyano](https://github.com/a9lim/biosim) -- [a9l.im/biosim](https://a9l.im/biosim)
-- [Shoals](https://github.com/a9lim/finsim) -- [a9l.im/finsim](https://a9l.im/finsim)
+- [Geon](https://github.com/a9lim/geon) -- [a9l.im/geon](https://a9l.im/geon)
+- [Cyano](https://github.com/a9lim/cyano) -- [a9l.im/cyano](https://a9l.im/cyano)
+- [Shoals](https://github.com/a9lim/shoals) -- [a9l.im/shoals](https://a9l.im/shoals)
 
 ## License
 

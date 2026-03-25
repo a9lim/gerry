@@ -262,10 +262,66 @@ Wraps `shared-camera.js`'s `createCamera()`. Camera is initialized from the SVG 
 
 `shiftForSidebar(opening)`: on desktop (>900px), animates camera pan by half panel width when sidebar opens/closes. Reads `--panel-w` from computed styles (no hardcoded pixel values).
 
-### Keyboard Shortcuts and Info Tips
+### Keyboard Shortcuts
 
-- **Shortcuts** via `initShortcuts()` from `shared-shortcuts.js`: E (erase mode), D (delete mode), A (auto-fill), N (randomize map), 1-9/0 (select district 1-10), T (theme), S (sidebar). Press `?` for help overlay.
-- **Info tips** via `createInfoTip()` from `shared-info.js`: `?` buttons next to metrics triggered by `data-info` attribute. Data defined inline in `main.js` for: Efficiency Gap, Partisan Symmetry, Competitive Districts, Compactness, Contiguity, Majority-Minority, Population Balance.
+All shortcuts registered via `initShortcuts()` from `shared-shortcuts.js`. Press `?` to open the help overlay.
+
+| Group | Key | Action |
+|-------|-----|--------|
+| **Tools** | `E` | Toggle erase mode |
+| | `D` | Toggle delete mode |
+| | `P` | Toggle pan mode |
+| | `A` | Auto-fill current district |
+| | `B` | Cycle brush size (1 / 7 / 19 hexes) |
+| | `Ctrl+Z` | Undo |
+| | `Ctrl+Y` / `Ctrl+Shift+Z` | Redo |
+| **Map** | `R` | Reset districts (clear all assignments) |
+| | `N` | Randomize map (new seed) |
+| | `G` | Auto-gerrymander (uses party dropdown selection) |
+| | `F` | Fair draw (simulated annealing) |
+| | `M` | Run Monte Carlo election simulation |
+| **Districts** | `1`-`9` | Select district 1-9 |
+| **View** | `T` | Toggle theme |
+| | `S` | Toggle sidebar |
+| | `Escape` | Close sidebar |
+| | `[` / `]` | Previous / next sidebar tab |
+| | `=` / `-` | Zoom in / out |
+| | `0` | Reset zoom (zoom-to-fit) |
+| | `?` | Open keyboard shortcuts help overlay |
+
+Note: `0` is zoom reset, not district 10. Space/comma/period are not bound (no simulation playback in this project).
+
+### Info Tips
+
+Via `createInfoTip()` from `shared-info.js`: `?` buttons next to metrics triggered by `data-info` attribute. Data defined inline in `main.js` for: Efficiency Gap, Partisan Symmetry, Competitive Districts, Compactness, Contiguity, Majority-Minority, Population Balance.
+
+### Touch Interactions
+
+Touch input handled by `src/touch.js`, which delegates painting to `input.js` functions and zoom/pan to the shared camera.
+
+- **Single-finger tap/drag**: paints the active district (or erases if erase mode is active via `#erase-btn` or `E` key)
+- **Two-finger pinch**: zoom in/out
+- **Two-finger drag**: pan the map
+- There is no touch-native erase gesture; erase mode must be toggled via the `#erase-btn` toolbar button or the `E` key
+- The hint bar at the bottom of the intro screen shows touch-appropriate instruction text on `(pointer: coarse)` devices
+
+### Touch Targets
+
+Touch-friendly sizing is applied via `@media (pointer: coarse)` rules in both `shared-base.css` (shared tool buttons, form controls) and `gerry/styles.css` (project-specific elements):
+
+- District palette buttons expand to 44px minimum on touch devices
+- Plan action buttons (save, load, delete, export) expand to 44px
+- Map control buttons (zoom in/out/fit) expand to 44px
+
+### Accessibility
+
+- **Dialogs**: Plans dialog (`#plans-dialog`) and election overlay (`#election-overlay`) use `role="dialog"` and `aria-modal="true"` with `trapFocus()` to constrain keyboard navigation
+- **Palette buttons**: each district palette button has `aria-pressed` reflecting the active selection state
+- **Brush-size buttons**: have `aria-pressed` reflecting the current brush size
+- **Skip link**: targets `#map-container` with `tabindex="-1"` for keyboard users to skip navigation
+- **Election close button**: has `aria-label="Close"` for screen readers
+- **About panel**: uses focus trap (via `shared-about.js`) when open
+- **Tab navigation**: `shared-tabs.js` provides arrow-key navigation between sidebar tabs (Statewide, District, Tools)
 
 ## Key Patterns
 

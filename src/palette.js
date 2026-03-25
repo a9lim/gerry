@@ -18,6 +18,7 @@ export function renderDistrictPalette($, updateSidebarDetails) {
         btn.dataset.district = i;
         btn.textContent = i;
         btn.title = `District ${i}`;
+        btn.setAttribute('aria-pressed', i === state.currentDistrict ? 'true' : 'false');
         if (i === state.currentDistrict) btn.classList.add('active');
 
         btn.addEventListener('click', () => {
@@ -43,6 +44,7 @@ export function updateDistrictPalette() {
         const d = state.districts[dId];
 
         btn.classList.toggle('active', dId === state.currentDistrict);
+        btn.setAttribute('aria-pressed', dId === state.currentDistrict ? 'true' : 'false');
 
         // Assigned districts show winner's party color; active button uses accent instead.
         if (d && d.population > 0 && d.winner !== 'none') {

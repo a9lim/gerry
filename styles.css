@@ -666,3 +666,9 @@ main {
 #election-histogram { width: 100%; border-radius: var(--radius-sm); background: var(--bg-elevated); }
 
 /* Extra small: handled by shared-base.css (hide .sim-brand, tight gap) */
+
+@media (pointer: coarse) {
+    .palette-btn { width: 44px; height: 44px; }
+    .plan-item-btn { min-height: 44px; min-width: 44px; }
+    .map-ctrl-btn { height: 44px; width: 44px; }
+}

@@ -84,7 +84,7 @@
 </head>
 
 <body>
-    <a href="#hex-map" class="skip-link">Skip to map</a>
+    <a href="#map-container" class="skip-link">Skip to map</a>
 
     <!-- Intro Screen -->
     <div id="intro-screen">
@@ -270,7 +270,7 @@
 
     <!-- Full-viewport SVG Map -->
     <main>
-        <div id="map-container">
+        <div id="map-container" tabindex="-1">
             <svg id="hex-map">
                 <g id="hex-group"></g>
                 <g id="border-group"></g>
@@ -471,7 +471,7 @@
     </aside>
 
     <!-- Plans Dialog (save / load / import / export) -->
-    <div id="plans-dialog" class="sim-overlay hidden">
+    <div id="plans-dialog" class="sim-overlay hidden" role="dialog" aria-label="Plans">
         <div class="sim-overlay-panel glass plans-content">
             <div class="stats-header">
                 <h2 class="stats-title">Saved Plans</h2>
@@ -495,9 +495,9 @@
     </div>
 
     <!-- Election Simulation Overlay (Monte Carlo with Gaussian swing) -->
-    <div id="election-overlay" class="sim-overlay" hidden>
+    <div id="election-overlay" class="sim-overlay" hidden role="dialog" aria-label="Election results">
         <div class="sim-overlay-panel glass election-panel">
-            <button class="election-close" id="election-close">&times;</button>
+            <button class="election-close" id="election-close" aria-label="Close">&times;</button>
             <h3>Election Simulation</h3>
             <div class="election-controls">
                 <label>Swing σ: <input type="range" id="swing-sigma" min="1" max="10" value="5" step="0.5">

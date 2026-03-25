@@ -190,8 +190,16 @@ function setupUI() {
     if ($.themeBtn) $.themeBtn.addEventListener('click', () => { toggleTheme($); _haptics.trigger('light'); });
 
     if ($.brushToggles) {
+        // Set initial aria-pressed on brush buttons
+        $.brushToggles.querySelectorAll('.mode-btn').forEach(function(b) {
+            b.setAttribute('aria-pressed', b.classList.contains('active') ? 'true' : 'false');
+        });
         _forms.bindModeGroup($.brushToggles, 'brush', v => {
             state.brushSize = parseInt(v, 10);
+            // Sync aria-pressed with active class
+            $.brushToggles.querySelectorAll('.mode-btn').forEach(function(b) {
+                b.setAttribute('aria-pressed', b.classList.contains('active') ? 'true' : 'false');
+            });
         });
     }
 
@@ -440,15 +448,16 @@ function setupUI() {
     }
 
     if (typeof initAboutPanel === 'function') {
+        var isTouch = window.matchMedia('(pointer: coarse)').matches;
         initAboutPanel({
             title: 'Gerry',
             description: 'Draw congressional districts on a procedural hex-tile map with three political parties. Paint hexes into 10 districts, track six fairness metrics in real time, then run automated gerrymanders or fair-draw algorithms to compare outcomes.',
             controls: [
-                { label: 'Paint hex', value: 'Click or drag on hex' },
-                { label: 'Erase hex', value: 'Right-click, or E then click' },
+                { label: 'Paint hex', value: isTouch ? 'Tap hex' : 'Click or drag on hex' },
+                { label: 'Erase hex', value: isTouch ? 'Toggle erase (E)' : 'Right-click, or E then click' },
                 { label: 'Select district', value: 'Bottom palette or keys 1\u20139' },
-                { label: 'Pan', value: 'Middle-click + drag, or P to toggle' },
-                { label: 'Zoom', value: 'Scroll wheel / pinch / = / - / 0' },
+                { label: 'Pan', value: isTouch ? 'Two-finger drag' : 'Middle-click + drag, or P to toggle' },
+                { label: 'Zoom', value: isTouch ? 'Pinch' : 'Scroll wheel / pinch / = / - / 0' },
                 { label: 'Undo / Redo', value: 'Ctrl+Z / Ctrl+Y or Ctrl+Shift+Z' },
                 { label: 'Change brush', value: 'Tools tab or B to cycle' },
             ],
@@ -460,6 +469,11 @@ function setupUI() {
     _intro.init($.introScreen, $.introStart, () => {
         if ($.mapContainer) $.mapContainer.classList.remove('paused');
     });
+
+    if (window.matchMedia('(pointer: coarse)').matches) {
+        var hint = document.getElementById('hint-bar') || document.querySelector('.hint-bar');
+        if (hint) hint.textContent = 'Tap to Paint \u00b7 Pinch to Zoom \u00b7 E to Toggle Erase';
+    }
 }
 
 // ─── Init ───

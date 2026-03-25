@@ -1,4 +1,4 @@
-# Redistricting
+# Gerry
 
 An interactive gerrymandering simulator where you paint congressional districts on a procedurally-generated hex map and watch how boundary placement affects electoral outcomes in real time. Three parties, ten districts, six fairness metrics, automated gerrymander and fair-draw algorithms, and Monte Carlo election simulation -- all in zero-dependency vanilla JavaScript with SVG rendering.
 
@@ -98,7 +98,7 @@ src/
 ## Sibling Projects
 
 - [Geon](https://github.com/a9lim/physsim) -- [a9l.im/physsim](https://a9l.im/physsim)
-- [Metabolism](https://github.com/a9lim/biosim) -- [a9l.im/biosim](https://a9l.im/biosim)
+- [Cyano](https://github.com/a9lim/biosim) -- [a9l.im/biosim](https://a9l.im/biosim)
 - [Shoals](https://github.com/a9lim/finsim) -- [a9l.im/finsim](https://a9l.im/finsim)
 
 ## License

@@ -388,7 +388,7 @@ function setupUI() {
 
     if (typeof initAboutPanel === 'function') {
         initAboutPanel({
-            title: 'Redistricting',
+            title: 'Gerry',
             description: 'Draw congressional districts on a procedural hex-tile map with three political parties. Paint hexes into 10 districts, track six fairness metrics in real time, then run automated gerrymanders or fair-draw algorithms to compare outcomes.',
             controls: [
                 { label: 'Paint hex', value: 'Click or drag on hex' },

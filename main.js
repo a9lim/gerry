@@ -351,14 +351,55 @@ function setupUI() {
 
     registerInfoTips(infoData);
 
+    function cycleTab(dir) {
+        var btns = document.querySelectorAll('.tab-btn');
+        var idx = 0;
+        btns.forEach(function(b, i) { if (b.classList.contains('active')) idx = i; });
+        var next = (idx + dir + btns.length) % btns.length;
+        btns[next].click();
+    }
+
+    function cycleBrush() {
+        const sizes = [0, 1, 2];
+        const idx = sizes.indexOf(state.brushSize);
+        state.brushSize = sizes[(idx + 1) % sizes.length];
+        if ($.brushToggles) {
+            const btn = $.brushToggles.querySelector(`[data-brush="${state.brushSize}"]`);
+            if (btn) btn.click();
+        }
+    }
+
     const shortcuts = [
         { key: 'E', label: 'Toggle erase mode', group: 'Tools', action: () => setMode('erase', $) },
         { key: 'D', label: 'Toggle delete mode', group: 'Tools', action: () => setMode('delete', $) },
+        { key: 'P', label: 'Toggle pan mode', group: 'Tools', action: () => { setMode('pan', $); _haptics.trigger('light'); } },
         { key: 'A', label: 'Auto-fill district', group: 'Tools', action: () => {
             const count = autoFillDistrict(state.currentDistrict, updateHexVisuals, doUpdateMetrics, pushUndoSnapshot);
             showToast(count > 0 ? `Auto-filled ${count} hexes` : 'Nothing to fill');
         }},
+        { key: 'B', label: 'Cycle brush size', group: 'Tools', action: cycleBrush },
+        { key: 'R', label: 'Reset districts', group: 'Map', action: resetMap },
         { key: 'N', label: 'Randomize map', group: 'Map', action: randomizeMap },
+        { key: 'G', label: 'Auto-gerrymander', group: 'Map', action: () => {
+            const party = $.gerrymanderParty.value;
+            pushUndoSnapshot();
+            packAndCrack(party);
+            state.hexes.forEach((_, qr) => updateHexVisuals(qr));
+            doUpdateMetrics();
+            pushUndoSnapshot();
+            showToast(`Auto-gerrymandered for ${party}`);
+            _haptics.trigger('medium');
+        }},
+        { key: 'F', label: 'Fair draw', group: 'Map', action: () => {
+            pushUndoSnapshot();
+            fairDraw();
+            state.hexes.forEach((_, qr) => updateHexVisuals(qr));
+            doUpdateMetrics();
+            pushUndoSnapshot();
+            showToast('Fair districts drawn');
+            _haptics.trigger('medium');
+        }},
+        { key: 'M', label: 'Monte Carlo simulate', group: 'Map', action: () => { $.electionOverlay.hidden = false; } },
         { key: '1', label: 'Select district 1', group: 'Districts', action: () => { state.currentDistrict = 1; renderDistrictPalette($, doUpdateSidebarDetails); } },
         { key: '2', label: 'Select district 2', group: 'Districts', action: () => { state.currentDistrict = 2; renderDistrictPalette($, doUpdateSidebarDetails); } },
         { key: '3', label: 'Select district 3', group: 'Districts', action: () => { state.currentDistrict = 3; renderDistrictPalette($, doUpdateSidebarDetails); } },
@@ -368,10 +409,7 @@ function setupUI() {
         { key: '7', label: 'Select district 7', group: 'Districts', action: () => { state.currentDistrict = 7; renderDistrictPalette($, doUpdateSidebarDetails); } },
         { key: '8', label: 'Select district 8', group: 'Districts', action: () => { state.currentDistrict = 8; renderDistrictPalette($, doUpdateSidebarDetails); } },
         { key: '9', label: 'Select district 9', group: 'Districts', action: () => { state.currentDistrict = 9; renderDistrictPalette($, doUpdateSidebarDetails); } },
-        { key: '0', label: 'Select district 10', group: 'Districts', action: () => { state.currentDistrict = 10; renderDistrictPalette($, doUpdateSidebarDetails); } },
         { key: 'T', label: 'Toggle theme', group: 'View', action: () => toggleTheme($) },
-        { key: 'Ctrl+Z', label: 'Undo', group: 'Tools', action: () => doUndo() },
-        { key: 'Ctrl+Y', label: 'Redo', group: 'Tools', action: () => doRedo() },
         { key: 'S', label: 'Toggle sidebar', group: 'View', action: () => {
             if ($.sidebar) {
                 const opening = !$.sidebar.classList.contains('open');
@@ -380,6 +418,21 @@ function setupUI() {
                 shiftForSidebar(opening);
             }
         }},
+        { key: 'Escape', label: 'Close sidebar', group: 'View', action: () => {
+            if ($.sidebar?.classList.contains('open')) {
+                $.sidebar.classList.remove('open');
+                $.statsToggle?.classList.remove('active');
+                shiftForSidebar(false);
+            }
+        }},
+        { key: '[', label: 'Previous tab', group: 'View', action: () => cycleTab(-1) },
+        { key: ']', label: 'Next tab', group: 'View', action: () => cycleTab(1) },
+        { key: '=', label: 'Zoom in', group: 'View', action: () => $.zoomInBtn?.click() },
+        { key: '-', label: 'Zoom out', group: 'View', action: () => $.zoomOutBtn?.click() },
+        { key: '0', label: 'Reset zoom', group: 'View', action: () => $.zoomFitBtn?.click() },
+        { key: 'Ctrl+Z', label: 'Undo', group: 'Tools', action: () => doUndo() },
+        { key: 'Ctrl+Y', label: 'Redo', group: 'Tools', action: () => doRedo() },
+        { key: 'Ctrl+Shift+Z', label: 'Redo', group: 'Tools', action: () => doRedo() },
     ];
 
     if (typeof initShortcuts === 'function') {
@@ -393,11 +446,11 @@ function setupUI() {
             controls: [
                 { label: 'Paint hex', value: 'Click or drag on hex' },
                 { label: 'Erase hex', value: 'Right-click, or E then click' },
-                { label: 'Select district', value: 'Bottom palette or keys 0\u20139' },
-                { label: 'Pan', value: 'Middle-click + drag on map' },
-                { label: 'Zoom', value: 'Scroll wheel / pinch' },
-                { label: 'Undo / Redo', value: 'Ctrl+Z / Ctrl+Y' },
-                { label: 'Change brush', value: 'Tools tab (1 / 7 / 19 hexes)' },
+                { label: 'Select district', value: 'Bottom palette or keys 1\u20139' },
+                { label: 'Pan', value: 'Middle-click + drag, or P to toggle' },
+                { label: 'Zoom', value: 'Scroll wheel / pinch / = / - / 0' },
+                { label: 'Undo / Redo', value: 'Ctrl+Z / Ctrl+Y or Ctrl+Shift+Z' },
+                { label: 'Change brush', value: 'Tools tab or B to cycle' },
             ],
             shortcuts: shortcuts,
             repo: 'https://github.com/a9lim/gerry',

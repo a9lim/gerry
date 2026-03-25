@@ -229,11 +229,6 @@ function setupUI() {
         _haptics.trigger('medium');
     });
 
-    document.addEventListener('keydown', (e) => {
-        if (e.ctrlKey && e.key === 'z') { e.preventDefault(); doUndo(); }
-        if (e.ctrlKey && e.key === 'y') { e.preventDefault(); doRedo(); }
-    });
-
     if ($.statsToggle && $.sidebar) {
         _toolbar.initSidebar($.statsToggle, $.sidebar, $.closeStats, {
             onToggle: shiftForSidebar,
@@ -375,6 +370,8 @@ function setupUI() {
         { key: '9', label: 'Select district 9', group: 'Districts', action: () => { state.currentDistrict = 9; renderDistrictPalette($, doUpdateSidebarDetails); } },
         { key: '0', label: 'Select district 10', group: 'Districts', action: () => { state.currentDistrict = 10; renderDistrictPalette($, doUpdateSidebarDetails); } },
         { key: 'T', label: 'Toggle theme', group: 'View', action: () => toggleTheme($) },
+        { key: 'Ctrl+Z', label: 'Undo', group: 'Tools', action: () => doUndo() },
+        { key: 'Ctrl+Y', label: 'Redo', group: 'Tools', action: () => doRedo() },
         { key: 'S', label: 'Toggle sidebar', group: 'View', action: () => {
             if ($.sidebar) {
                 const opening = !$.sidebar.classList.contains('open');
@@ -392,12 +389,15 @@ function setupUI() {
     if (typeof initAboutPanel === 'function') {
         initAboutPanel({
             title: 'Redistricting',
-            description: 'Redistricting and gerrymandering simulator on a procedural hex-tile map. Assign hexes to 10 districts across 3 parties, then analyze fairness metrics or run Monte Carlo election simulations.',
+            description: 'Draw congressional districts on a procedural hex-tile map with three political parties. Paint hexes into 10 districts, track six fairness metrics in real time, then run automated gerrymanders or fair-draw algorithms to compare outcomes.',
             controls: [
-                { label: 'Assign hex', value: 'Click on hex' },
-                { label: 'Erase hex', value: 'E then click' },
-                { label: 'Pan', value: 'Click + drag on empty space' },
+                { label: 'Paint hex', value: 'Click or drag on hex' },
+                { label: 'Erase hex', value: 'Right-click, or E then click' },
+                { label: 'Select district', value: 'Bottom palette or keys 0\u20139' },
+                { label: 'Pan', value: 'Middle-click + drag on map' },
                 { label: 'Zoom', value: 'Scroll wheel / pinch' },
+                { label: 'Undo / Redo', value: 'Ctrl+Z / Ctrl+Y' },
+                { label: 'Change brush', value: 'Tools tab (1 / 7 / 19 hexes)' },
             ],
             shortcuts: shortcuts,
             repo: 'https://github.com/a9lim/gerry',

@@ -270,7 +270,7 @@ function setupUI() {
                 e.stopPropagation();
                 loadPlan(p.name, updateHexVisuals, doUpdateMetrics, () => renderMap($));
                 pushUndoSnapshot();
-                $.plansDialog?.classList.add('hidden');
+                _closePlansDialog();
                 showToast(`Loaded "${p.name}"`);
                 _haptics.trigger('success');
             });
@@ -289,13 +289,24 @@ function setupUI() {
         }
     }
 
+    var _plansTrapCleanup = null;
+    var _plansPrevFocus = null;
+    function _closePlansDialog() {
+        $.plansDialog.classList.add('hidden');
+        if (_plansTrapCleanup) { _plansTrapCleanup(); _plansTrapCleanup = null; }
+        if (_plansPrevFocus && _plansPrevFocus.focus) { _plansPrevFocus.focus(); _plansPrevFocus = null; }
+    }
     if ($.plansBtn && $.plansDialog) {
         $.plansBtn.addEventListener('click', () => {
+            _plansPrevFocus = document.activeElement;
             $.plansDialog.classList.remove('hidden');
+            if (typeof trapFocus === 'function') _plansTrapCleanup = trapFocus($.plansDialog);
             renderPlansList();
+            var firstFocusable = $.plansDialog.querySelector('input, button');
+            if (firstFocusable) firstFocusable.focus();
         });
     }
-    initOverlayDismiss($.plansDialog, $.plansClose, () => $.plansDialog.classList.add('hidden'));
+    initOverlayDismiss($.plansDialog, $.plansClose, _closePlansDialog);
     if ($.planSaveBtn && $.planNameInput) {
         $.planSaveBtn.addEventListener('click', () => {
             const name = $.planNameInput.value.trim();
@@ -329,10 +340,21 @@ function setupUI() {
         });
     }
 
+    var _electionTrapCleanup = null;
+    var _electionPrevFocus = null;
+    function _closeElection() {
+        $.electionOverlay.hidden = true;
+        if (_electionTrapCleanup) { _electionTrapCleanup(); _electionTrapCleanup = null; }
+        if (_electionPrevFocus && _electionPrevFocus.focus) { _electionPrevFocus.focus(); _electionPrevFocus = null; }
+    }
     $.simulateBtn?.addEventListener('click', () => {
+        _electionPrevFocus = document.activeElement;
         $.electionOverlay.hidden = false;
+        if (typeof trapFocus === 'function') _electionTrapCleanup = trapFocus($.electionOverlay);
+        var firstFocusable = $.electionOverlay.querySelector('input, button, select');
+        if (firstFocusable) firstFocusable.focus();
     });
-    initOverlayDismiss($.electionOverlay, $.electionClose);
+    initOverlayDismiss($.electionOverlay, $.electionClose, _closeElection);
     $.runElections?.addEventListener('click', () => {
         const sigma = parseFloat($.swingSigma.value) / 100;
         const count = parseInt($.electionCount.value);
@@ -407,7 +429,7 @@ function setupUI() {
             showToast('Fair districts drawn');
             _haptics.trigger('medium');
         }},
-        { key: 'M', label: 'Monte Carlo simulate', group: 'Map', action: () => { $.electionOverlay.hidden = false; } },
+        { key: 'M', label: 'Monte Carlo simulate', group: 'Map', action: () => { $.simulateBtn?.click(); } },
         { key: '1', label: 'Select district 1', group: 'Districts', action: () => { state.currentDistrict = 1; renderDistrictPalette($, doUpdateSidebarDetails); } },
         { key: '2', label: 'Select district 2', group: 'Districts', action: () => { state.currentDistrict = 2; renderDistrictPalette($, doUpdateSidebarDetails); } },
         { key: '3', label: 'Select district 3', group: 'Districts', action: () => { state.currentDistrict = 3; renderDistrictPalette($, doUpdateSidebarDetails); } },

@@ -66,14 +66,14 @@ export function generateHexes(seed) {
     const minoritySeed = rand() * 10000;
 
     // Place population centers: large cities, suburbs (near cities), small towns.
-    const numLargeCities = Math.floor(rand() * 2) + 2;
-    const numSmallTowns = Math.floor(rand() * 6) + 5;
-    const numSuburbs = Math.floor(rand() * 4) + 3;
+    const numLargeCities = Math.floor(rand() * 2) + 1;
+    const numSmallTowns = Math.floor(rand() * 6) + 6;
+    const numSuburbs = Math.floor(rand() * 3) + 2;
     const centers = [];
 
     for (let i = 0; i < numLargeCities; i++) {
         const c = validCoords[Math.floor(rand() * validCoords.length)];
-        centers.push({ q: c.q, r: c.r, strength: rand() * 600 + 350, decay: rand() * 1.8 + 1.2, type: 'city' });
+        centers.push({ q: c.q, r: c.r, strength: rand() * 400 + 250, decay: rand() * 1.2 + 0.8, type: 'city' });
     }
     // Suburbs placed at random angles 1.5-5.5 hexes from a city center.
     for (let i = 0; i < numSuburbs; i++) {
@@ -83,7 +83,7 @@ export function generateHexes(seed) {
         centers.push({
             q: city.q + Math.round(Math.cos(angle) * dist),
             r: city.r + Math.round(Math.sin(angle) * dist),
-            strength: rand() * 250 + 100, decay: rand() * 1.2 + 0.6, type: 'suburb'
+            strength: rand() * 180 + 70, decay: rand() * 0.9 + 0.4, type: 'suburb'
         });
     }
     for (let i = 0; i < numSmallTowns; i++) {
@@ -156,21 +156,21 @@ export function generateHexes(seed) {
         const isSuburban = pop > CONFIG.suburbanThreshold && pop <= CONFIG.urbanThreshold;
 
         // Three density tiers with different base probabilities.
-        // Urban skews Lime (~70%), rural skews Orange (~76%), Purple is the third party.
+        // Urban skews Lime (~68%), rural skews Orange (~82%), Purple is the third party.
         let party;
         const roll = rand();
 
         if (isUrban) {
-            const limeChance = 0.70 + (regionalLean - 0.5) * 0.15;
-            const orangeChance = 0.22 - (regionalLean - 0.5) * 0.1;
+            const limeChance = 0.64 + (regionalLean - 0.5) * 0.15;
+            const orangeChance = 0.28 - (regionalLean - 0.5) * 0.1;
             party = roll < limeChance ? 'lime' : roll < limeChance + orangeChance ? 'orange' : 'purple';
         } else if (isSuburban) {
-            const orangeChance = 0.62 + (0.5 - regionalLean) * 0.15;
-            const limeChance = 0.25 + (regionalLean - 0.5) * 0.1;
+            const orangeChance = 0.76 + (0.5 - regionalLean) * 0.15;
+            const limeChance = 0.14 + (regionalLean - 0.5) * 0.1;
             party = roll < orangeChance ? 'orange' : roll < orangeChance + limeChance ? 'lime' : 'purple';
         } else {
-            const orangeChance = 0.76 + (0.5 - regionalLean) * 0.12;
-            const limeChance = 0.16 + (regionalLean - 0.5) * 0.08;
+            const orangeChance = 0.85 + (0.5 - regionalLean) * 0.08;
+            const limeChance = 0.08 + (regionalLean - 0.5) * 0.05;
             party = roll < orangeChance ? 'orange' : roll < orangeChance + limeChance ? 'lime' : 'purple';
         }
 
@@ -198,7 +198,7 @@ export function generateHexes(seed) {
         // Lower threshold in urban areas = higher minority concentration near cities.
         const minorityNoise = fbmNoise(q * 0.35, r * 0.35, minoritySeed, 4) * 0.7
             + fbmNoise(q * 0.9, r * 0.9, minoritySeed + 500, 3) * 0.3;
-        const minorityThreshold = isUrban ? 0.48 : (isSuburban ? 0.60 : 0.78);
+        const minorityThreshold = isUrban ? 0.58 : (isSuburban ? 0.72 : 0.88);
 
         const hex = {
             id: ++idCounter, q, r, s: -q - r,

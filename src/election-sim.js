@@ -1,5 +1,5 @@
 // Monte Carlo election simulation with Gaussian partisan swing.
-import { CONFIG } from './config.js';
+import { CONFIG, PARTY_NAMES } from './config.js';
 import { state } from './state.js';
 
 /** Box-Muller transform: converts uniform [0,1) pairs to normal distribution. */
@@ -118,7 +118,7 @@ export function renderHistogram(canvas, results, numDistricts) {
     let y = 14;
     for (const p of parties) {
         ctx.fillStyle = colors[p];
-        ctx.fillText(`${p[0].toUpperCase() + p.slice(1)}: \u03BC=${meanSeats[p]} seats`, 8, y);
+        ctx.fillText(`${PARTY_NAMES[p]}: \u03BC=${meanSeats[p]} seats`, 8, y);
         y += 16;
     }
 }

@@ -217,7 +217,7 @@ export function calculateRequiredMMD() {
     if (totalPop === 0) return 0;
     const minorityShare = totalMinority / totalPop;
     if (minorityShare < 0.15) return 0;
-    return Math.max(1, Math.floor(minorityShare * CONFIG.numDistricts));
+    return Math.max(1, Math.floor(minorityShare * CONFIG.numDistricts * 0.5));
 }
 
 /** Returns vote shares as raw percentages (0-100). Callers round as needed. */

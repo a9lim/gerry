@@ -1,5 +1,5 @@
 // Sidebar UI: statewide metrics, per-district details, proportionality bars.
-import { CONFIG } from './config.js';
+import { CONFIG, PARTY_NAMES } from './config.js';
 import { state } from './state.js';
 import { calculateMetrics, calculateEfficiencyGap, calculatePartisanSymmetry, calculateCompetitiveDistricts, calculateRequiredMMD, votePcts } from './metrics.js';
 import { renderBorders, renderDistrictLabels } from './renderer.js';
@@ -61,7 +61,7 @@ export function updateSidebarDetails(dId, $) {
     }
 
     if ($.detailWinner) {
-        $.detailWinner.textContent = d.winner.charAt(0).toUpperCase() + d.winner.slice(1);
+        $.detailWinner.textContent = PARTY_NAMES[d.winner] || d.winner;
         $.detailWinner.style.color = d.winner !== 'none' ? _PALETTE[d.winner] : 'var(--text-secondary)';
     }
 
@@ -100,9 +100,9 @@ export function updateSidebarDetails(dId, $) {
         if ($.voteBarOrange) $.voteBarOrange.style.width = `${pct.orange}%`;
         if ($.voteBarLime) $.voteBarLime.style.width = `${pct.lime}%`;
         if ($.voteBarPurple) $.voteBarPurple.style.width = `${pct.purple}%`;
-        if ($.votePctOrange) $.votePctOrange.textContent = `${Math.round(pct.orange)}% Oran`;
-        if ($.votePctLime) $.votePctLime.textContent = `${Math.round(pct.lime)}% Lime`;
-        if ($.votePctPurple) $.votePctPurple.textContent = `${Math.round(pct.purple)}% Purp`;
+        if ($.votePctOrange) $.votePctOrange.textContent = `${Math.round(pct.orange)}% Fed`;
+        if ($.votePctLime) $.votePctLime.textContent = `${Math.round(pct.lime)}% F-L`;
+        if ($.votePctPurple) $.votePctPurple.textContent = `${Math.round(pct.purple)}% Ref`;
     }
 }
 
@@ -138,7 +138,7 @@ export function updateMetrics($, updateDistrictPalette) {
     const eg = calculateEfficiencyGap();
     if ($.efficiencyGap) {
         if (eg !== null) {
-            const entries = [['Orange', eg.orange], ['Lime', eg.lime], ['Purple', eg.purple]];
+            const entries = [['Federalist', eg.orange], ['Farmer-Labor', eg.lime], ['Reform', eg.purple]];
             entries.sort((a, b) => a[1] - b[1]);
             const advantaged = entries[0][0];
             const gap = entries[1][1] - entries[0][1];

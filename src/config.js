@@ -1,7 +1,7 @@
 // Simulation constants, hex geometry, and shared helpers.
 
 export const CONFIG = {
-    numDistricts: 10,
+    numDistricts: 8,
     rows: 18,
     cols: 25,
     hexSize: 18,
@@ -44,6 +44,13 @@ export const PALETTE_COLOR_MAP = {
     orange: 'var(--party-orange)',
     lime: 'var(--party-lime)',
     purple: 'var(--party-purple)'
+};
+
+export const PARTY_NAMES = {
+    orange: 'Federalist',
+    lime: 'Farmer-Labor',
+    purple: 'Reform',
+    none: 'None',
 };
 
 /** Returns all axial "q,r" keys within `radius` of (q, r). */

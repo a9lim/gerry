@@ -8,7 +8,7 @@ Always prefer shared modules over project-specific reimplementations. This proje
 
 ## Overview
 
-Interactive redistricting/gerrymandering simulator. Users paint congressional districts on a procedurally-generated hex-tile map with three parties, ten districts, and real-time fairness metrics. Zero dependencies -- vanilla HTML/CSS/JS with SVG rendering.
+Interactive redistricting/gerrymandering simulator. Users paint congressional districts on a procedurally-generated hex-tile map with three parties (Federalist, Farmer-Labor, Reform), eight districts, and real-time fairness metrics. Zero dependencies -- vanilla HTML/CSS/JS with SVG rendering.
 
 ## Running Locally
 
@@ -28,7 +28,7 @@ styles.css              -- Layout, glass panels, hex tiles, vote bars, tab syste
 colors.js               -- Extends shared palette with party colors, themed CSS var injection via IIFE
 main.js                 -- Entry point: DOM cache ($), init, setupUI(), keyboard shortcuts, info tips, auto-district/election wiring
 src/
-  config.js             -- CONFIG object, hex geometry constants (SQRT3, HEX_W, HEX_H, HEX_CORNER_OFFSETS, HEX_DIRS), getHexesInRadius(), EASE_OUT, PALETTE_COLOR_MAP
+  config.js             -- CONFIG object, hex geometry constants (SQRT3, HEX_W, HEX_H, HEX_CORNER_OFFSETS, HEX_DIRS), getHexesInRadius(), EASE_OUT, PALETTE_COLOR_MAP, PARTY_NAMES
   hex-math.js           -- hexToPixel, hexCorners, cornersToString, hexDistance (axial coordinate math)
   noise.js              -- hashNoise (sin-based hash), smoothNoise (bilinear interpolation), fbmNoise (fractal Brownian motion)
   prng.js               -- createPRNG (Mulberry32 seeded PRNG), randomSeed
@@ -43,7 +43,7 @@ src/
   palette.js            -- renderDistrictPalette, updateDistrictPalette (active/party-color styling)
   plans.js              -- Plan save/load/delete/export/import (localStorage key "gerry-plans" + JSON file I/O)
   theme.js              -- initTheme, toggleTheme, syncTheme (refreshes hex opacity)
-  auto-district.js      -- packAndCrack (gerrymander), fairDraw (simulated annealing), helper: _greedySeed, _spreadSeeds, _assignOrphans, _quickContiguityCheck
+  auto-district.js      -- packAndCrack (gerrymander), fairDraw (Lloyd's Voronoi relaxation), helpers: _voronoiAssign, _spreadSeeds, _assignOrphans, _mergeSmallDistricts, _quickContiguityCheck, _getNeighbors
   election-sim.js       -- simulateElections (Monte Carlo with Gaussian swings), renderHistogram (Canvas 2D bar chart)
 ```
 
@@ -72,17 +72,19 @@ main.js
 
 Extends `shared-tokens.js` with project-specific party colors referencing `_PALETTE.extended.*`:
 
-| Party | `_PALETTE` key | Extended source |
-|-------|---------------|-----------------|
-| Red | `red` | `extended.rose` (`#C46272`) |
-| Blue | `blue` | `extended.blue` (`#5C92A8`) |
-| Yellow | `yellow` | `extended.orange` (`#CC8E4E`) |
-| None | `none` | `extended.slate` (`#8A7E72`) |
-| Green (minority) | `green` | `extended.green` (`#509878`) |
+| Party | Display Name | `_PALETTE` key | Extended source |
+|-------|-------------|---------------|-----------------|
+| Orange (Federalist) | Federalist | `orange` | `extended.orange` (`#CC8E4E`) |
+| Lime (Farmer-Labor) | Farmer-Labor | `lime` | `extended.lime` |
+| Purple (Reform) | Reform | `purple` | `extended.purple` |
+| None | None | `none` | `extended.slate` (`#8A7E72`) |
+| Blue (minority) | — | `blue` | `extended.blue` (`#5C92A8`) |
+
+Internal keys are `orange`/`lime`/`purple` throughout the codebase. Display names are defined in `PARTY_NAMES` (src/config.js) and used in UI labels, toasts, sidebar, and election histogram.
 
 An IIFE injects `<style id="project-vars">` with themed CSS vars:
-- `--party-red/blue/yellow/green` with `-tint` (8% alpha) and `-wash` (18% alpha) variants for the three main parties
-- `--tip-red/blue/yellow/green` (darker in dark theme, lighter in light theme -- opposite of party colors)
+- `--party-orange/lime/purple/blue` with `-tint` (8% alpha) and `-wash` (18% alpha) variants for the three main parties
+- `--tip-orange/lime/purple/blue` (darker in dark theme, lighter in light theme -- opposite of party colors)
 - `--hex-stroke`, `--hex-hover-stroke`, `--bar-track`, `--party-none`
 - `--hex-min-opacity` (0.22 light, 0.30 dark)
 - `--label-fill`, `--label-stroke`
@@ -92,10 +94,10 @@ Light theme darkens party colors via `_darken()` (from `shared-tokens.js`); dark
 ## State Management (src/state.js)
 
 All application state lives in a single `state` object:
-- `hexes` (Map): hex tiles keyed by `"q,r"` axial coordinates, each storing `{ id, q, r, s, population, votes: {red,blue,yellow}, party, partyWinner, minority, district }`
-- `districts` (Object): 10 districts keyed 1-10, each with `{ id, population, votes, hexes[], minorityPop, isContiguous, compactness, winner, isMinorityMajority }`
+- `hexes` (Map): hex tiles keyed by `"q,r"` axial coordinates, each storing `{ id, q, r, s, population, votes: {orange,lime,purple}, party, partyWinner, minority, district }`
+- `districts` (Object): 8 districts keyed 1-8, each with `{ id, population, votes, hexes[], minorityPop, isContiguous, compactness, winner, isMinorityMajority }`
 - `undoStack` / `redoStack`: snapshots of hex-to-district assignments (max 50 entries)
-- `currentDistrict`: active district being painted (1-10)
+- `currentDistrict`: active district being painted (1-8)
 - `brushSize`: 0 (single hex), 1 (radius-1 = 7 hexes), 2 (radius-2 = 19 hexes)
 - `paintState`: `{ mode: 'none'|'paint'|'erase', districtId }`
 - Mode booleans: `deleteMode`, `eraseMode`, `panMode` (mutually exclusive via `setMode()`)
@@ -132,29 +134,29 @@ User input (mouse/touch/keyboard)
 
 Uses seeded Mulberry32 PRNG (`src/prng.js`) for deterministic output from a given seed. Grid is ~18 rows x 25 columns with an organic boundary generated by trigonometric noise (sin/cos at random frequencies and phases, not fbm).
 
-Population centers:
-- 2-3 large cities (strength 350-950, decay 1.2-3.0)
-- 3-6 suburbs (placed near cities, strength 100-350, decay 0.6-1.8)
-- 5-10 small towns (strength 50-250, decay 0.3-1.3)
+Population centers (rural-dominated maps):
+- 1-2 large cities (strength 250-650, decay 0.8-2.0)
+- 2-4 suburbs (placed near cities, strength 70-250, decay 0.4-1.3)
+- 6-11 small towns (strength 50-250, decay 0.3-1.3)
 - 1-3 transportation corridors between cities (linear population boost with exponential falloff)
 
 Population uses Gaussian decay from centers, scaled by fbm terrain noise and micro-noise, with random outlier spikes and dead zones.
 
 Three density tiers determine partisan lean:
-- **Urban** (pop > 150): ~70% Blue, ~22% Red, ~8% Yellow
-- **Suburban** (80-150): ~62% Red, ~25% Blue, ~13% Yellow
-- **Rural** (<=80): ~76% Red, ~16% Blue, ~8% Yellow
+- **Urban** (pop > 150): ~64% Lime (Farmer-Labor), ~28% Orange (Federalist), ~8% Purple (Reform)
+- **Suburban** (80-150): ~76% Orange, ~14% Lime, ~10% Purple
+- **Rural** (<=80): ~85% Orange, ~8% Lime, ~7% Purple
 
-Regional lean (`fbmNoise` at low frequency) shifts these probabilities per-hex. A `leanScale` factor (0.15-0.25) controls regional variation strength.
+Regional lean (`fbmNoise` at low frequency) shifts these probabilities per-hex. A `leanScale` factor (0.15-0.25) controls regional variation strength. Target overall vote split is roughly 45% Orange / 45% Lime / 10% Purple.
 
-Vote assignment: winning-party hex gets 54-83% of non-Yellow votes; Yellow hexes get 28-36% Yellow. Minority status determined by fbm noise against density-dependent thresholds (urban 0.48, suburban 0.60, rural 0.78).
+Vote assignment: winning-party hex gets 54-83% of non-Purple votes; Purple hexes get 28-36% Purple. Minority status determined by fbm noise against density-dependent thresholds (urban 0.58, suburban 0.72, rural 0.88).
 
 ### Efficiency Gap (src/metrics.js, `calculateEfficiencyGap`)
 
 All-party wasted-vote analysis using plurality thresholds:
 - Winner's wasted votes = votes above (second-place votes + 1)
 - Each loser's wasted votes = all their votes
-- Returns `{ red, blue, yellow }` wasted-vote ratios (wasted / totalVotes)
+- Returns `{ orange, lime, purple }` wasted-vote ratios (wasted / totalVotes)
 - Returns `null` if fewer than 2 active districts
 - Sidebar displays: gap between least-wasted and second-least-wasted party, with arrow showing advantaged party. Color warning at > 7%.
 
@@ -168,7 +170,7 @@ Counts districts where `(first - second) / total < 0.1`. Returns `{ competitive,
 
 ### Required Majority-Minority Districts (src/metrics.js, `calculateRequiredMMD`)
 
-`floor(minorityShare * numDistricts)`, minimum 1 if minority share > 15%, else 0.
+`floor(minorityShare * numDistricts * 0.5)`, minimum 1 if minority share > 15%, else 0.
 
 ### Compactness (src/metrics.js, `calculateCompactness`)
 
@@ -181,18 +183,18 @@ BFS from first hex in district; valid if visited count equals total hex count.
 ### Pack-and-Crack Gerrymander (src/auto-district.js, `packAndCrack`)
 
 1. Clears all assignments
-2. **Pack phase**: fills ~25% of districts (1-3) with highest-opposition hexes via BFS, seeded from hex with highest opposition share, queue sorted by opposition share
-3. **Crack phase**: fills remaining districts seeded from hexes with highest target-party share, BFS expansion
-4. Orphan assignment: iteratively assigns unassigned hexes to nearest adjacent district
+2. **Pack phase**: fills ~25% of districts (1-2) with highest-opposition hexes via BFS, seeded from hex with highest opposition share, queue sorted by opposition share
+3. **Crack phase**: simultaneous round-robin BFS from seeds placed via farthest-point sampling among unassigned hexes; all crack districts grow one hex per round in lockstep to prevent any district from starving the others
+4. Orphan assignment: assigns unassigned hexes to adjacent district with lowest population
+5. **Merge pass** (`_mergeSmallDistricts`): any district below 30% of target population is dissolved, its hexes redistributed, and the empty district ID is re-grown by splitting the largest district
 
 ### Fair Draw (src/auto-district.js, `fairDraw`)
 
-1. **Greedy seed** (`_greedySeed`): places seeds via farthest-point sampling (`_spreadSeeds`), grows each district via BFS to population cap, then assigns orphans
-2. **Simulated annealing** (3000 iterations, T: 1.0 -> 0.01):
-   - Picks random border hex, swaps to random adjacent district
-   - Quick BFS contiguity check before accepting
-   - Objective function: proportionality error (|voteShare - seatShare| summed over parties) minus compactness bonus (interior/total hex ratio) minus population equality bonus
-   - Metropolis criterion: accept if objective improves, or with probability exp(-delta/T)
+Lloyd's Voronoi relaxation (15 iterations, no annealing):
+1. Place seeds via farthest-point sampling (`_spreadSeeds`), starting from the map centroid
+2. **Voronoi assignment** (`_voronoiAssign`): distance-priority BFS from all seeds simultaneously. Each hex goes to the nearest seed by axial distance, with a soft population weight that makes over-populated districts appear farther away (`effective_dist = geo_dist + 40 * max(0, pop/target - 0.8)^2`). Produces contiguous, compact, population-balanced partitions without hard cutoffs.
+3. Move seeds to population-weighted centroids (snap to nearest hex in district)
+4. Repeat 2-3. Districts converge to compact Voronoi cells.
 
 ### Election Simulation (src/election-sim.js)
 
@@ -204,7 +206,7 @@ Map-first floating-panel layout:
 - **Intro screen**: themed splash with instruction cards (Paint/Erase/Navigate) and CTA button, dismissed on click
 - **Toolbar** (`#toolbar.sim-toolbar.glass`): fixed glass bar at top with tool buttons. Title uses `<em>` for italic accent-gradient second word. Buttons: undo, redo, erase, delete, pan, auto-fill, auto-gerrymander (with party dropdown), fair draw, simulate elections, plans, randomize, reset, theme, stats toggle.
 - **Map**: full-viewport SVG (`<main>` with `position: fixed; inset: 0`). SVG groups: `hex-group` (polygons), `border-group` (district border paths), `minority-group` (circles), `label-group` (district number labels).
-- **District palette** (`#district-palette.sim-bar.glass`): fixed pill-shaped bar at bottom center with 10 numbered buttons. Active = bold + accent color. Assigned districts show party-color text.
+- **District palette** (`#district-palette.sim-bar.glass`): fixed pill-shaped bar at bottom center with 8 numbered buttons. Active = bold + accent color. Assigned districts show party-color text.
 - **Stats panel** (`#sidebar.sim-panel.glass`): toggleable floating panel, right side on desktop, bottom sheet on mobile (<=900px). **Three tabs** (Statewide, District, Tools):
   - **Statewide**: seat counts, districts created, MMD count, efficiency gap, partisan symmetry, competitive districts, popular-vote-vs-seats proportionality bars with legend
   - **District**: selected district details (winner, margin, population, deviation, compactness, contiguity, minority-majority, vote bar breakdown)
@@ -258,7 +260,7 @@ Map-first floating-panel layout:
 
 ### Camera / Zoom (src/zoom.js)
 
-Wraps `shared-camera.js`'s `createCamera()`. Camera is initialized from the SVG viewBox dimensions. Zoom range: base zoom (fit) to base * `CONFIG.zoomMaxRatio` (3x). Wheel zoom factor: 1.12. Button zoom: 1.25x with 200ms animation. Zoom-fit: 300ms to original viewBox center (offset for sidebar if open).
+Wraps `shared-camera.js`'s `createCamera()`. Camera is initialized from the SVG viewBox dimensions. Default zoom starts at 2/3 of the fit-to-viewport zoom (`_defaultZoom = _baseZoom / 1.5`) to show the full map with padding. Zoom range: default zoom to default * `CONFIG.zoomMaxRatio` (3x), so the display reads 100%-300%. Wheel zoom factor: 1.12. Button zoom: 1.25x with 200ms animation. Zoom-fit: 300ms to original viewBox center (offset for sidebar if open).
 
 `shiftForSidebar(opening)`: on desktop (>900px), animates camera pan by half panel width when sidebar opens/closes. Reads `--panel-w` from computed styles (no hardcoded pixel values).
 
@@ -278,9 +280,9 @@ All shortcuts registered via `initShortcuts()` from `shared-shortcuts.js`. Press
 | **Map** | `R` | Reset districts (clear all assignments) |
 | | `N` | Randomize map (new seed) |
 | | `G` | Auto-gerrymander (uses party dropdown selection) |
-| | `F` | Fair draw (simulated annealing) |
+| | `F` | Fair draw (Voronoi relaxation) |
 | | `M` | Run Monte Carlo election simulation |
-| **Districts** | `1`-`9` | Select district 1-9 |
+| **Districts** | `1`-`8` | Select district 1-8 |
 | **View** | `T` | Toggle theme |
 | | `S` | Toggle sidebar |
 | | `Escape` | Close sidebar |
@@ -289,7 +291,7 @@ All shortcuts registered via `initShortcuts()` from `shared-shortcuts.js`. Press
 | | `0` | Reset zoom (zoom-to-fit) |
 | | `?` | Open keyboard shortcuts help overlay |
 
-Note: `0` is zoom reset, not district 10. Space/comma/period are not bound (no simulation playback in this project).
+Note: `0` is zoom reset. Space/comma/period are not bound (no simulation playback in this project).
 
 ### Info Tips
 
@@ -336,7 +338,7 @@ Touch-friendly sizing is applied via `@media (pointer: coarse)` rules in both `s
 
 ### Helpers
 
-- **`votePcts(votes)`** in `src/metrics.js`: returns `{ red, blue, yellow }` as raw percentages. Callers round as needed.
+- **`votePcts(votes)`** in `src/metrics.js`: returns `{ orange, lime, purple }` as raw percentages. Callers round as needed.
 - **`getHexesInRadius(q, r, radius)`** in `src/config.js`: returns array of `"q,r"` keys within axial distance. Used by brush painting.
 - **`shiftForSidebar(opening)`** in `src/zoom.js`: reads `--panel-w` from computed styles -- no hardcoded pixel values.
 - **`animateValue(el, end, duration, formatFn, id)`** from `shared-utils.js`: eased counter animation with cancelation support for smooth metric updates.
@@ -366,4 +368,4 @@ Map seed is stored in `location.hash` as `#seed=<number>`. On init, if a valid s
 - **Brush size display vs value** -- buttons display "1", "3", "7" but `data-brush` values are 0, 1, 2 (radii). Actual hex counts painted: 1, 7, 19.
 - **Auto-fill breaks at capacity** -- `autoFillDistrict` stops when no candidate hex fits under `targetPop * 1.1`, even if district is not full. This is by design to prevent overfilling.
 - **Election simulation uses `Math.random()`** -- not the seeded PRNG. Results are non-deterministic by design.
-- **Fair draw uses `Math.random()`** -- simulated annealing is non-deterministic. Different runs on the same map produce different district plans.
+- **Fair draw is deterministic** -- Lloyd's Voronoi relaxation uses no randomness; same map always produces the same district plan.

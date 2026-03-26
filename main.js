@@ -1,5 +1,5 @@
 // Entry point: wires DOM, input, toolbar, sidebar, plans, and election UI.
-import { CONFIG } from './src/config.js';
+import { CONFIG, PARTY_NAMES } from './src/config.js';
 import { state, hexElements, initDistricts, setUndoRedoUICallback, pushUndoSnapshot, undo, redo, setMode, clearModes } from './src/state.js';
 import { generateHexes } from './src/hex-generator.js';
 import { randomSeed } from './src/prng.js';
@@ -180,7 +180,7 @@ function setupUI() {
     });
 
     $.resetBtn?.addEventListener('click', resetMap);
-    $.randomizeBtn?.addEventListener('click', randomizeMap);
+    $.randomizeBtn?.addEventListener('click', () => randomizeMap());
     $.deleteBtn?.addEventListener('click', () => { setMode('delete', $); _haptics.trigger('light'); });
     $.eraseBtn?.addEventListener('click', () => { setMode('erase', $); _haptics.trigger('light'); });
     $.moveBtn?.addEventListener('click', () => { setMode('pan', $); _haptics.trigger('light'); });
@@ -224,7 +224,7 @@ function setupUI() {
         state.hexes.forEach((_, qr) => updateHexVisuals(qr));
         doUpdateMetrics();
         pushUndoSnapshot();
-        showToast(`Auto-gerrymandered for ${party}`);
+        showToast(`Auto-gerrymandered for ${PARTY_NAMES[party]}`);
         _haptics.trigger('medium');
     });
     $.fairDrawBtn?.addEventListener('click', () => {
@@ -417,7 +417,7 @@ function setupUI() {
             state.hexes.forEach((_, qr) => updateHexVisuals(qr));
             doUpdateMetrics();
             pushUndoSnapshot();
-            showToast(`Auto-gerrymandered for ${party}`);
+            showToast(`Auto-gerrymandered for ${PARTY_NAMES[party]}`);
             _haptics.trigger('medium');
         }},
         { key: 'F', label: 'Fair draw', group: 'Map', action: () => {
@@ -438,7 +438,6 @@ function setupUI() {
         { key: '6', label: 'Select district 6', group: 'Districts', action: () => { state.currentDistrict = 6; renderDistrictPalette($, doUpdateSidebarDetails); } },
         { key: '7', label: 'Select district 7', group: 'Districts', action: () => { state.currentDistrict = 7; renderDistrictPalette($, doUpdateSidebarDetails); } },
         { key: '8', label: 'Select district 8', group: 'Districts', action: () => { state.currentDistrict = 8; renderDistrictPalette($, doUpdateSidebarDetails); } },
-        { key: '9', label: 'Select district 9', group: 'Districts', action: () => { state.currentDistrict = 9; renderDistrictPalette($, doUpdateSidebarDetails); } },
         { key: 'T', label: 'Toggle theme', group: 'View', action: () => toggleTheme($) },
         { key: 'S', label: 'Toggle sidebar', group: 'View', action: () => {
             if ($.sidebar) {

@@ -5,19 +5,21 @@ import { state } from './state.js';
 export let camera = null;
 let _$ = null;
 let _baseZoom = 1;   // Zoom level that fits the full map in the viewport.
+let _defaultZoom = 1; // Initial zoom (zoomed out from _baseZoom).
 
 /** Initializes the camera from the SVG's initial viewBox dimensions. */
 export function initCamera($) {
     _$ = $;
     const rect = $.svg.getBoundingClientRect();
     _baseZoom = rect.width / state.origViewBox.w;
+    _defaultZoom = _baseZoom / 1.5;
 
     camera = createCamera({
         width: rect.width,
         height: rect.height,
-        zoom: _baseZoom,
-        minZoom: _baseZoom,
-        maxZoom: _baseZoom * CONFIG.zoomMaxRatio,
+        zoom: _defaultZoom,
+        minZoom: _defaultZoom,
+        maxZoom: _defaultZoom * CONFIG.zoomMaxRatio,
         wheelFactor: CONFIG.zoomWheelFactor,
         x: state.viewBox.x + state.viewBox.w / 2,
         y: state.viewBox.y + state.viewBox.h / 2,
@@ -32,7 +34,7 @@ export function initCamera($) {
             state.viewBox.y = vb.y;
             state.viewBox.w = vb.w;
             state.viewBox.h = vb.h;
-            state.zoomLevel = cam.zoom / _baseZoom;
+            state.zoomLevel = cam.zoom / _defaultZoom;
             $.svg.setAttribute('viewBox', cam.getViewBoxString());
         }
     });
@@ -45,15 +47,15 @@ export function initCamera($) {
         reset: $.zoomFitBtn,
         display: $.zoomLevel,
         duration: CONFIG.zoomAnimDuration,
-        formatZoom: (z) => Math.round((z / _baseZoom) * 100) + '%',
+        formatZoom: (z) => Math.round((z / _defaultZoom) * 100) + '%',
         onReset: () => {
             // Offset center by half the panel width if sidebar is open.
             let tx = state.origViewBox.x + state.origViewBox.w / 2;
             if (_$?.sidebar?.classList.contains('open') && window.innerWidth > 900) {
                 const pw = parseInt(getComputedStyle(document.documentElement).getPropertyValue('--panel-w')) || 350;
-                tx += pw / (2 * _baseZoom);
+                tx += pw / (2 * _defaultZoom);
             }
-            camera._animateTo(tx, state.origViewBox.y + state.origViewBox.h / 2, _baseZoom, CONFIG.zoomFitDuration, EASE_OUT);
+            camera._animateTo(tx, state.origViewBox.y + state.origViewBox.h / 2, _defaultZoom, CONFIG.zoomFitDuration, EASE_OUT);
         },
     });
 }
@@ -63,10 +65,11 @@ export function resetCamera() {
     if (!camera || !_$) return;
     const rect = _$.svg.getBoundingClientRect();
     _baseZoom = rect.width / state.origViewBox.w;
+    _defaultZoom = _baseZoom / 1.5;
     camera.viewportW = rect.width;
     camera.viewportH = rect.height;
-    camera.minZoom = _baseZoom;
-    camera.maxZoom = _baseZoom * CONFIG.zoomMaxRatio;
+    camera.minZoom = _defaultZoom;
+    camera.maxZoom = _defaultZoom * CONFIG.zoomMaxRatio;
     camera.setFromViewBox(state.viewBox);
 }
 
@@ -77,9 +80,9 @@ export function zoomToFit() {
     let targetY = o.y + o.h / 2;
     if (_$?.sidebar?.classList.contains('open') && window.innerWidth > 900) {
         const panelW = parseInt(getComputedStyle(document.documentElement).getPropertyValue('--panel-w')) || 350;
-        targetX += panelW / (2 * _baseZoom);
+        targetX += panelW / (2 * _defaultZoom);
     }
-    camera._animateTo(targetX, targetY, _baseZoom, CONFIG.zoomFitDuration, EASE_OUT);
+    camera._animateTo(targetX, targetY, _defaultZoom, CONFIG.zoomFitDuration, EASE_OUT);
 }
 
 /**
@@ -89,7 +92,7 @@ export function zoomToFit() {
 export function shiftForSidebar(opening) {
     if (!camera || window.innerWidth <= 900) return;
     const panelW = parseInt(getComputedStyle(document.documentElement).getPropertyValue('--panel-w')) || 350;
-    const dx = panelW / (2 * _baseZoom);
+    const dx = panelW / (2 * _defaultZoom);
     const o = state.origViewBox;
     camera._animateTo(
         clamp(camera.x + (opening ? dx : -dx), o.x, o.x + o.w),

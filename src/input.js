@@ -207,7 +207,7 @@ function showHexTooltip(e, qr) {
 
     const votesDiv = document.createElement('div');
     votesDiv.className = 'tt-votes';
-    for (const [cls, label, val] of [['tt-o', 'O', pO], ['tt-l', 'L', pL], ['tt-p', 'P', pP]]) {
+    for (const [cls, label, val] of [['tt-o', 'Fed', pO], ['tt-l', 'F-L', pL], ['tt-p', 'Ref', pP]]) {
         const s = document.createElement('span');
         s.className = cls;
         s.textContent = `${label} ${val}%`;

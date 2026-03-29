@@ -39,7 +39,7 @@
     <link rel="stylesheet" href="styles.css">
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Noto+Sans:ital,wght@0,300;0,400;0,500;0,600;0,700;1,400&family=Noto+Sans+Mono:wght@300;400;500;600;700&family=Noto+Serif:ital,wght@0,300;0,400;0,500;0,700;1,400&display=swap"
+    <link href="https://fonts.googleapis.com/css2?family=Instrument+Serif:ital@0;1&family=DM+Sans:ital,wght@0,300;0,400;0,500;0,600;0,700;1,400&family=Fira+Code:wght@300;400;500;600;700&display=swap"
         rel="stylesheet">
 
     <script type="application/ld+json">
@@ -83,7 +83,7 @@
     </script>
 </head>
 
-<body>
+<body class="sim-body">
     <a href="#map-container" class="skip-link">Skip to map</a>
 
     <!-- Intro Screen -->
@@ -278,14 +278,14 @@
                 <g id="label-group"></g>
             </svg>
             <div id="map-controls" class="sim-controls glass">
-                <button class="tool-btn map-ctrl-btn" id="zoom-in-btn" aria-label="Zoom in">
+                <button class="tool-btn map-ctrl-btn icon-tight" id="zoom-in-btn" aria-label="Zoom in">
                     <svg width="16" height="16" viewBox="0 0 24 24">
                         <line x1="12" y1="5" x2="12" y2="19"></line>
                         <line x1="5" y1="12" x2="19" y2="12"></line>
                     </svg>
                 </button>
                 <span id="zoom-level" class="zoom-level">100%</span>
-                <button class="tool-btn map-ctrl-btn" id="zoom-out-btn" aria-label="Zoom out">
+                <button class="tool-btn map-ctrl-btn icon-tight" id="zoom-out-btn" aria-label="Zoom out">
                     <svg width="16" height="16" viewBox="0 0 24 24">
                         <line x1="5" y1="12" x2="19" y2="12"></line>
                     </svg>
@@ -311,7 +311,7 @@
         <div class="sheet-handle"></div>
         <div class="stats-header">
             <h2 class="stats-title">Analysis</h2>
-            <button id="close-stats" class="tool-btn" aria-label="Close panel">
+            <button id="close-stats" class="tool-btn icon-tight" aria-label="Close panel">
                 <svg width="16" height="16" viewBox="0 0 24 24">
                     <line x1="18" y1="6" x2="6" y2="18"></line>
                     <line x1="6" y1="6" x2="18" y2="18"></line>
@@ -480,7 +480,7 @@
                 </button>
             </div>
             <div class="plans-save-row">
-                <input type="text" id="plan-name-input" class="plans-input" placeholder="Plan name" maxlength="40">
+                <input type="text" id="plan-name-input" class="sim-input plans-input" placeholder="Plan name" maxlength="40">
                 <button id="plan-save-btn" class="ghost-btn">Save</button>
             </div>
             <div id="plans-list" class="plans-list scrollbar-thin"></div>

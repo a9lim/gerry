@@ -11,11 +11,7 @@ _PALETTE.purple = _PALETTE.extended.purple;
 _PALETTE.none   = _PALETTE.extended.slate;
 _PALETTE.blue   = _PALETTE.extended.blue;
 
-Object.freeze(_PALETTE.extended);
-Object.freeze(_PALETTE.light);
-Object.freeze(_PALETTE.dark);
-Object.freeze(_FONT);
-Object.freeze(_PALETTE);
+_freezeTokens();
 
 // ─── CSS Variable Injection ───
 (function injectProjectVars() {
@@ -53,23 +49,10 @@ Object.freeze(_PALETTE);
     return lines.join('\n');
   };
 
-  const style = document.createElement('style');
-  style.id = 'project-vars';
-  style.textContent = `:root {
-${genParty(true)}
-
-${genThemed(L, false)}
-
-  --hex-min-opacity:  0.22;
+  _injectProjectVars(
+    genParty(true) + '\n' + genThemed(L, false) + `\n  --hex-min-opacity: 0.22;
   --label-fill:       ${_r(D.text, 0.902)};
-  --label-stroke:     ${_r(L.text, 0.502)};
-}
-[data-theme="dark"] {
-${genParty(false)}
-
-${genThemed(D, true)}
-
-  --hex-min-opacity:  0.30;
-}`;
-  document.head.appendChild(style);
+  --label-stroke:     ${_r(L.text, 0.502)};`,
+    genParty(false) + '\n' + genThemed(D, true) + '\n  --hex-min-opacity: 0.30;'
+  );
 })();

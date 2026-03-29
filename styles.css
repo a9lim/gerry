@@ -10,26 +10,6 @@
     --palette-h: 56px;
 }
 
-/* ─── Base ─── */
-html, body {
-    overflow: hidden;
-}
-
-body {
-    font-size: 14px;
-    line-height: 1.5;
-    height: 100vh;
-    height: 100dvh;
-}
-
-/* ─── Tool Button Overrides ─── */
-/* Thicker strokes for small zoom/close icons to maintain legibility. */
-#zoom-in-btn svg,
-#zoom-out-btn svg,
-#close-stats svg {
-    stroke-width: 2.5;
-}
-
 /* Active tool states: tinted background matches each mode's party color. */
 #delete-btn.active {
     color: var(--party-orange);
@@ -500,17 +480,7 @@ main {
 
 .plans-input {
     flex: 1;
-    padding: 0.4rem 0.65rem;
-    border-radius: var(--radius-sm);
-    border: 1px solid var(--border);
-    background: var(--bg-elevated);
-    color: var(--text);
-    font-family: var(--font-body);
-    font-size: 0.8rem;
-    outline: none;
-    transition: border-color 0.15s;
 }
-.plans-input:focus { border-color: var(--accent); }
 
 .plans-list {
     flex: 1;
@@ -620,23 +590,11 @@ main {
     }
 
     #sidebar {
-        top: auto;
-        right: 0;
-        left: 0;
-        bottom: 0;
-        width: 100%;
-        max-height: 55vh;
-        border-radius: var(--radius-lg) var(--radius-lg) 0 0;
-        transform: translateY(100%);
         z-index: 110;
     }
 
     .app-ready #sidebar {
         animation: slideInRight 0.5s var(--ease-out) 0.15s both;
-    }
-
-    .app-ready #sidebar.open {
-        transform: translateY(0);
     }
 
     .tab-panel {

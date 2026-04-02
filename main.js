@@ -36,8 +36,7 @@ function cacheDOMElements() {
     $.statsToggle = document.getElementById('stats-toggle');
     $.closeStats = document.getElementById('close-stats');
     $.zoomLevel = document.getElementById('zoom-level');
-    $.introScreen = document.getElementById('intro-screen');
-    $.introStart = document.getElementById('intro-start');
+
     $.resetBtn = document.getElementById('reset-btn');
     $.randomizeBtn = document.getElementById('randomize-btn');
     $.zoomInBtn = document.getElementById('zoom-in-btn');
@@ -480,9 +479,6 @@ function setupUI() {
         });
     }
 
-    _intro.init($.introScreen, $.introStart, () => {
-        if ($.mapContainer) $.mapContainer.classList.remove('paused');
-    });
 
     if (window.matchMedia('(pointer: coarse)').matches) {
         var hint = document.getElementById('hint-bar') || document.querySelector('.hint-bar');
@@ -493,8 +489,6 @@ function setupUI() {
 // ─── Init ───
 function init() {
     refreshMinOpacity();
-    // Pause hex pop-in animations until intro screen is dismissed.
-    if ($.mapContainer) $.mapContainer.classList.add('paused');
     const hashSeed = parseInt(location.hash.replace('#seed=', ''), 10);
     const initialSeed = Number.isFinite(hashSeed) ? hashSeed : randomSeed();
     state.seed = initialSeed;

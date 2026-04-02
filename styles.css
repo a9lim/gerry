@@ -111,11 +111,6 @@ main {
     100% { transform: scale(1); opacity: 1; }
 }
 
-/* Paused while intro screen is showing; unpaused on dismiss. */
-#map-container.paused .hex polygon,
-#map-container.paused .minority-marker {
-    animation-play-state: paused;
-}
 
 .hex.hovered polygon {
     stroke: var(--hex-hover-stroke);

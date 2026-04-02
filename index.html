@@ -33,7 +33,7 @@
     <script src="/shared-about.js"></script>
     <script src="/shared-toolbar.js"></script>
     <script src="/shared-forms.js"></script>
-    <script src="/shared-intro.js"></script>
+
     <script src="/shared-tooltip.js"></script>
     <link rel="stylesheet" href="/shared-base.css">
     <link rel="stylesheet" href="styles.css">
@@ -83,65 +83,8 @@
     </script>
 </head>
 
-<body class="sim-body">
+<body class="sim-body app-ready">
     <a href="#map-container" class="skip-link">Skip to map</a>
-
-    <!-- Intro Screen -->
-    <div id="intro-screen">
-        <div class="intro-bg"></div>
-        <div class="intro-content">
-            <span class="intro-overline">Gerrymandering Lab</span>
-            <h1 class="intro-title">Gerry</h1>
-            <p class="intro-desc">Same voters, wildly different outcomes.
-                Draw the district lines yourself and watch fairness metrics shift in
-                real time&mdash;or let the algorithms do the dirty work.</p>
-            <div class="intro-cards">
-                <div class="intro-card">
-                    <div class="intro-card-icon">
-                        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor"
-                            stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                            <path d="M12 19l7-7 3 3-7 7-3-3z"/>
-                            <path d="M18 13l-1.5-7.5L2 2l3.5 14.5L13 18l5-5z"/>
-                            <path d="M2 2l7.586 7.586"/>
-                            <circle cx="11" cy="11" r="2"/>
-                        </svg>
-                    </div>
-                    <div class="intro-card-text">
-                        <strong>Paint Districts</strong>
-                        <span>Click hexes to assign them. Keys 0&ndash;9 switch districts.</span>
-                    </div>
-                </div>
-                <div class="intro-card">
-                    <div class="intro-card-icon">
-                        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor"
-                            stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                            <path d="M21.21 15.89A10 10 0 1 1 8 2.83"/>
-                            <path d="M22 12A10 10 0 0 0 12 2v10z"/>
-                        </svg>
-                    </div>
-                    <div class="intro-card-text">
-                        <strong>Measure Fairness</strong>
-                        <span>Efficiency gap, partisan symmetry, compactness, and more.</span>
-                    </div>
-                </div>
-                <div class="intro-card">
-                    <div class="intro-card-icon">
-                        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor"
-                            stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                            <path d="M12 20V10"/>
-                            <path d="M18 20V4"/>
-                            <path d="M6 20v-4"/>
-                        </svg>
-                    </div>
-                    <div class="intro-card-text">
-                        <strong>Run Elections</strong>
-                        <span>Monte Carlo simulation with configurable vote swings.</span>
-                    </div>
-                </div>
-            </div>
-            <button id="intro-start">Draw the Lines</button>
-        </div>
-    </div>
 
     <!-- Floating Toolbar -->
     <header id="toolbar" class="sim-toolbar glass" role="toolbar" aria-label="Map tools">

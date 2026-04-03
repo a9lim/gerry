@@ -1,105 +1,44 @@
 # Gerry
 
-An interactive gerrymandering simulator where you paint congressional districts on a procedurally-generated hex map and watch how boundary placement affects electoral outcomes in real time. Three parties, ten districts, six fairness metrics, automated gerrymander and fair-draw algorithms, and Monte Carlo election simulation -- all in zero-dependency vanilla JavaScript with SVG rendering.
+An interactive gerrymandering simulator. Paint congressional districts on a procedural hex-tile map and watch how boundary placement shapes electoral outcomes in real time.
 
-**[Live Demo](https://a9l.im/gerry)** | Part of the [a9l.im](https://a9l.im) portfolio
+**[Try it](https://a9l.im/gerry)** | Part of the [a9l.im](https://a9l.im) portfolio
 
-## Highlights
+## What It Does
 
-- **Three-party system** -- Red, Blue, and Yellow parties with realistic urban/suburban/rural demographic leans, generated via seeded fractal Brownian motion noise
-- **6 fairness metrics** -- all-party efficiency gap (wasted-vote analysis), partisan symmetry (vote-share swap test), competitive districts (< 10% margin), Polsby-Popper compactness, BFS contiguity, and majority-minority district requirements
-- **Automated algorithms** -- one-click pack-and-crack gerrymander that maximizes seats for a chosen party, and a simulated-annealing fair-draw algorithm (3,000 iterations) that minimizes proportionality error
-- **Monte Carlo election simulation** -- 50--500 elections with configurable Gaussian vote swings and correlated local noise, rendered as a per-party seat histogram
-- **Seeded procedural generation** -- Mulberry32 PRNG produces deterministic maps with cities, suburbs, towns, transportation corridors, and minority clusters. Seeds stored in URL hashes for sharing
-- **Plan management** -- save, load, export, and import district plans as JSON; up to 50-level undo/redo
-- **Adjustable brush** -- paint 1, 7, or 19 hexes at a time with radius 0/1/2 brushes
+You draw district boundaries on a randomly generated map populated by three political parties (Federalist, Farmer-Labor, Reform) with realistic urban/suburban/rural demographic leans. The simulator scores your map on six fairness metrics -- efficiency gap, partisan symmetry, competitive districts, compactness, contiguity, and majority-minority representation -- so you can see exactly how and why a given map is fair or unfair.
 
-## What Makes It Interesting
+Two automated algorithms let you compare extremes: a pack-and-crack gerrymander that maximizes seats for a chosen party, and a Lloyd's relaxation fair draw that optimizes for population balance and compactness. A Monte Carlo election simulator stress-tests any plan against random vote swings.
 
-The simulator goes beyond simple two-party models. With three parties, gerrymandering tactics become more nuanced -- you can pack one party's voters while splitting the other two, or create competitive three-way races. The efficiency gap and partisan symmetry metrics capture different aspects of fairness, and often disagree on what constitutes a "fair" map. The automated algorithms let you compare a maximally gerrymandered plan against a computationally optimized fair draw, then stress-test both with Monte Carlo elections to see which plans are resilient to vote swings.
+## Concepts Covered
 
-## Controls
+- **Gerrymandering tactics** -- packing and cracking, three-party dynamics where you can sacrifice one opposition to benefit another
+- **Efficiency gap** -- wasted-vote analysis across three parties, with the 7% warning threshold used in real court cases
+- **Partisan symmetry** -- whether a map treats parties equally when vote shares are swapped
+- **Compactness** -- Polsby-Popper score measuring how circular districts are
+- **Contiguity** -- whether all hexes in a district are physically connected
+- **Majority-minority districts** -- ensuring minority communities get adequate representation
+- **Monte Carlo simulation** -- running 50-500 elections with Gaussian vote swings to see which plans are resilient
 
-| Input | Action |
-|-------|--------|
-| Left-click / drag | Paint hex with active district (brush size adjustable) |
-| Right-click | Erase hex assignment |
-| Scroll wheel | Zoom in/out (up to 3x) |
-| Middle-click drag | Pan the map |
-| Touch: one finger | Paint |
-| Touch: two fingers | Pinch-zoom and pan |
-| Ctrl+Z / Ctrl+Y | Undo / Redo (50 levels) |
-| Number keys 0-9 | Select district (0 = district 10) |
-| District palette (bottom) | Click numbered buttons to select active district |
-| Brush toggle (sidebar Tools tab) | Switch between radius 0/1/2 (paints 1/7/19 hexes) |
-| Auto-fill (toolbar) | Greedy-fill current district to 110% population target |
-| Auto-gerrymander (toolbar) | Pack-and-crack for selected party |
-| Fair draw (toolbar) | Simulated-annealing proportional assignment |
-| Simulate elections (toolbar) | Monte Carlo election overlay |
-| Plans (toolbar) | Save, load, export, or import district plans |
-| Stats toggle (toolbar) | Show/hide analysis panel |
+## Quick Start
 
-### Keyboard Shortcuts
+Click or drag to paint hexes with the active district color. Right-click to erase. Use the numbered palette at the bottom to switch between 8 districts, or press keys 1-8. The sidebar shows live fairness metrics as you draw.
 
-E (erase mode), D (delete mode), A (auto-fill), N (randomize map), 1-9/0 (select district), T (theme), S (sidebar). Press `?` for the full help overlay.
+Toolbar buttons give you auto-fill (greedy fill to population target), automated gerrymander, fair draw, election simulation, and plan save/load/export.
 
-## Metrics
-
-- **Efficiency Gap** -- Three-party wasted-vote analysis. Winner's wasted votes = votes above second-place + 1; each loser wastes all votes. Values above 7% may indicate gerrymandering.
-- **Partisan Symmetry** -- For each pair of parties, swaps vote shares across all districts and recounts seats. Measures whether the map treats parties equally (0-100%, higher is fairer).
-- **Competitive Districts** -- Districts where the margin of victory is under 10%.
-- **Compactness** -- Polsby-Popper score (4pi * area / perimeter^2). Higher means more circular.
-- **Contiguity** -- BFS flood-fill verifies all hexes in a district are connected.
-- **Majority-Minority Districts** -- Required count derived from `floor(minorityShare * numDistricts)`, minimum 1 if minority population exceeds 15%.
-- **Population Balance** -- Districts should stay within 110% of the target population (total population / 10).
+Press `?` for the full keyboard shortcut overlay.
 
 ## Running Locally
 
 ```bash
-python -m http.server 8000
-# or: npx serve .
+cd path/to/a9lim.github.io && python -m http.server
 ```
 
-No build step, no dependencies. Shared design system files (`shared-tokens.js`, `shared-base.css`, etc.) load from the root site via absolute paths. For full functionality, serve from within the parent `a9lim.github.io/` directory so those shared files resolve.
+No build step or dependencies. Shared design system files load from the parent directory via absolute paths, so serve from the repository root.
 
 ## Tech
 
-Zero-dependency vanilla JS/HTML/CSS. SVG rendering (not Canvas). ES6 modules loaded via `<script type="module">`. Seeded PRNG (Mulberry32) for reproducible map generation. Simulated annealing for fair-draw optimization. Incremental border rendering with per-district SVG caching. Event delegation on SVG (no per-hex listeners). The shared design system from [a9lim.github.io](https://github.com/a9lim/a9lim.github.io) provides glass panels, tool buttons, camera/zoom, info tips, keyboard shortcuts, and responsive breakpoints.
-
-## Architecture
-
-```
-index.html              -- Markup: intro screen, toolbar, SVG map, sidebar (3 tabs), palette,
-                            plans dialog, election overlay
-styles.css              -- Layout, glass panels, hex tiles, vote bars, tab system, responsive
-colors.js               -- Extends shared palette with party colors, themed CSS var injection
-main.js                 -- Entry point: DOM cache, init, keyboard shortcuts, info tips
-src/
-  config.js             -- Hex geometry constants, getHexesInRadius(), palette color map
-  hex-math.js           -- Axial coordinate math: hexToPixel, hexCorners, hexDistance
-  noise.js              -- Hash noise, bilinear interpolation, fractal Brownian motion
-  prng.js               -- Mulberry32 seeded PRNG
-  hex-generator.js      -- Procedural map: population centers, corridors, demographics, minorities
-  state.js              -- State object, undo/redo snapshots, mode management
-  metrics.js            -- Efficiency gap, partisan symmetry, competitive districts, compactness,
-                            contiguity, majority-minority, vote percentages
-  renderer.js           -- SVG hex polygons, incremental border cache, district labels
-  input.js              -- Mouse handlers, brush painting, auto-fill, hover tooltip
-  touch.js              -- Pinch-zoom, pan, single-finger paint
-  zoom.js               -- Camera via shared-camera.js, sidebar-aware viewport shift
-  sidebar.js            -- Metric display, per-district details, proportionality bars
-  palette.js            -- District palette rendering and active-state styling
-  plans.js              -- Plan save/load/delete/export/import (localStorage + JSON)
-  theme.js              -- Light/dark theme toggle
-  auto-district.js      -- Pack-and-crack gerrymander, simulated-annealing fair draw
-  election-sim.js       -- Monte Carlo election simulation with Canvas 2D histogram
-```
-
-## Sibling Projects
-
-- [Geon](https://github.com/a9lim/geon) -- [a9l.im/geon](https://a9l.im/geon)
-- [Cyano](https://github.com/a9lim/cyano) -- [a9l.im/cyano](https://a9l.im/cyano)
-- [Shoals](https://github.com/a9lim/shoals) -- [a9l.im/shoals](https://a9l.im/shoals)
+Zero-dependency vanilla JS. SVG rendering with event delegation (no per-hex listeners). Seeded PRNG (Mulberry32) for reproducible maps -- seeds stored in URL hashes for sharing. ES6 modules, no build step.
 
 ## License
 

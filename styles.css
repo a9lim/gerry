@@ -73,11 +73,11 @@ main {
 /* Inline SVG cursors: data-URI avoids extra network requests.
    Hotspot coordinates (12,12 / 4,20) position the tip over the click point. */
 #map-container.delete-mode {
-    cursor: url('data:image/svg+xml;utf8,<svg fill="none" stroke="%23c93c3c" stroke-width="3" stroke-linecap="round" stroke-linejoin="round" viewBox="0 0 24 24" height="24" width="24" xmlns="http://www.w3.org/2000/svg"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg>') 12 12, crosshair;
+    cursor: url('data:image/svg+xml;utf8,<svg fill="none" stroke="%23c93c3c" stroke-width="3" stroke-linecap="square" stroke-linejoin="miter" viewBox="0 0 24 24" height="24" width="24" xmlns="http://www.w3.org/2000/svg"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg>') 12 12, crosshair;
 }
 
 #map-container.erase-mode {
-    cursor: url('data:image/svg+xml;utf8,<svg fill="none" stroke="%23b88a00" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" viewBox="0 0 24 24" height="22" width="22" xmlns="http://www.w3.org/2000/svg"><path d="M20 20H7L3 16c-.8-.8-.8-2 0-2.8L14.6 1.6c.8-.8 2-.8 2.8 0L21 5.2c.8.8.8 2 0 2.8L11 18"/></svg>') 4 20, crosshair;
+    cursor: url('data:image/svg+xml;utf8,<svg fill="none" stroke="%23b88a00" stroke-width="2.5" stroke-linecap="square" stroke-linejoin="miter" viewBox="0 0 24 24" height="22" width="22" xmlns="http://www.w3.org/2000/svg"><path d="M20 20H7L3 16c-.8-.8-.8-2 0-2.8L14.6 1.6c.8-.8 2-.8 2.8 0L21 5.2c.8.8.8 2 0 2.8L11 18"/></svg>') 4 20, crosshair;
 }
 
 #map-container.pan-mode {
@@ -188,7 +188,7 @@ main {
     paint-order: stroke;
     stroke: var(--label-stroke);
     stroke-width: 3px;
-    stroke-linejoin: round;
+    stroke-linejoin: miter;
     letter-spacing: 0.02em;
 }
 

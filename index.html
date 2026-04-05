@@ -4,17 +4,21 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>Gerry | a9l.im</title>
+    <title>Gerry — a9l.im</title>
     <meta name="description"
-        content="Draw congressional districts on a procedural hex-tile map and see how borders shape elections. This interactive simulator measures efficiency gap, partisan symmetry, and compactness, and includes automated pack-and-crack gerrymandering, simulated-annealing fair draw, and Monte Carlo election stress tests.">
+        content="See how district boundaries affect election outcomes. Draw districts on a procedural hex map, run Monte Carlo elections, and measure fairness with six metrics including efficiency gap and partisan symmetry.">
+    <meta name="robots" content="index, follow, max-image-preview:large, max-snippet:-1">
     <meta property="og:title" content="Gerry — Gerrymandering & Electoral Fairness Simulator">
-    <meta property="og:description" content="Paint districts on a hex map to explore gerrymandering, efficiency gap, partisan symmetry, and electoral fairness with automated algorithms and Monte Carlo simulations.">
+    <meta property="og:description" content="See how district boundaries affect election outcomes. An interactive gerrymandering simulator with Monte Carlo elections and fairness metrics.">
     <meta property="og:type" content="website">
     <meta property="og:url" content="https://a9l.im/gerry">
     <meta property="og:site_name" content="a9l.im">
     <meta name="twitter:card" content="summary_large_image">
     <meta property="og:image" content="https://a9l.im/gerry/og-image.webp">
     <meta name="twitter:image" content="https://a9l.im/gerry/og-image.webp">
+    <meta property="og:image:width" content="1200">
+    <meta property="og:image:height" content="630">
+    <meta property="og:image:type" content="image/webp">
     <meta name="twitter:site" content="@a9_lim">
     <meta name="twitter:creator" content="@a9_lim">
     <meta name="author" content="a9lim">
@@ -51,17 +55,22 @@
       "name": "Gerry",
       "url": "https://a9l.im/gerry",
       "description": "Interactive gerrymandering and redistricting simulator with three parties, ten districts, and six fairness metrics including efficiency gap and partisan symmetry. Features automated pack-and-crack gerrymandering, simulated-annealing fair draw, Monte Carlo election stress tests, and seeded procedural map generation on a hex-tile grid.",
+      "speakable": {
+        "@type": "SpeakableSpecification",
+        "cssSelector": ["meta[name='description']"]
+      },
       "applicationCategory": "EducationalApplication",
       "educationalUse": "Interactive simulation for learning about gerrymandering, redistricting, electoral fairness, and voting rights",
       "learningResourceType": "Simulation",
       "educationalLevel": "Undergraduate",
       "about": [
-        {"@type": "Thing", "name": "Gerrymandering"},
+        {"@type": "Thing", "@id": "https://www.wikidata.org/wiki/Q5765940", "name": "Gerrymandering"},
+        {"@type": "Thing", "@id": "https://www.wikidata.org/wiki/Q7188", "name": "Electoral system"},
+        {"@type": "Thing", "@id": "https://www.wikidata.org/wiki/Q1053636", "name": "Monte Carlo method"},
         {"@type": "Thing", "name": "Redistricting"},
         {"@type": "Thing", "name": "Electoral fairness"},
         {"@type": "Thing", "name": "Efficiency gap"},
-        {"@type": "Thing", "name": "Partisan symmetry"},
-        {"@type": "Thing", "name": "Monte Carlo simulation"}
+        {"@type": "Thing", "name": "Partisan symmetry"}
       ],
       "keywords": "gerrymandering simulator, redistricting, efficiency gap, partisan symmetry, electoral fairness, voting rights, Monte Carlo, educational",
       "operatingSystem": "Any (Web Browser)",

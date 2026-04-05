@@ -1,14 +1,14 @@
 # Gerry
 
-An interactive gerrymandering simulator. Paint congressional districts on a procedural hex-tile map and watch how boundary placement shapes electoral outcomes in real time.
+An interactive gerrymandering simulator that helps you understand how district boundaries shape elections. Paint congressional districts on a procedural hex-tile map and see the effects of your choices on fairness metrics in real time -- no poli-sci background required.
 
 **[Try it](https://a9l.im/gerry)** | Part of the [a9l.im](https://a9l.im) portfolio
 
 ## What It Does
 
-You draw district boundaries on a randomly generated map populated by three political parties (Federalist, Farmer-Labor, Reform) with realistic urban/suburban/rural demographic leans. The simulator scores your map on six fairness metrics -- efficiency gap, partisan symmetry, competitive districts, compactness, contiguity, and majority-minority representation -- so you can see exactly how and why a given map is fair or unfair.
+Draw district boundaries on a randomly generated map populated by three political parties (Federalist, Farmer-Labor, Reform) with realistic urban/suburban/rural demographic leans. The simulator scores your map on six fairness metrics -- efficiency gap, partisan symmetry, competitive districts, compactness, contiguity, and majority-minority representation -- so you can discover firsthand how and why a given map is fair or unfair.
 
-Two automated algorithms let you compare extremes: a pack-and-crack gerrymander that maximizes seats for a chosen party, and a Lloyd's relaxation fair draw that optimizes for population balance and compactness. A Monte Carlo election simulator stress-tests any plan against random vote swings.
+Two automated algorithms let you compare extremes: a pack-and-crack gerrymander that maximizes seats for a chosen party, and a Lloyd's relaxation fair draw that optimizes for population balance and compactness. A Monte Carlo election simulator stress-tests any plan against random vote swings. Together they make it easy to experiment and build intuition about redistricting.
 
 ## Concepts Covered
 
@@ -22,11 +22,9 @@ Two automated algorithms let you compare extremes: a pack-and-crack gerrymander 
 
 ## Quick Start
 
-Click or drag to paint hexes with the active district color. Right-click to erase. Use the numbered palette at the bottom to switch between 8 districts, or press keys 1-8. The sidebar shows live fairness metrics as you draw.
+Click or drag to paint hexes with the active district color. Right-click to erase. Use the numbered palette at the bottom to switch between 8 districts, or press keys 1-8. The sidebar updates fairness metrics as you draw, so you get immediate feedback on every change.
 
-Toolbar buttons give you auto-fill (greedy fill to population target), automated gerrymander, fair draw, election simulation, and plan save/load/export.
-
-Press `?` for the full keyboard shortcut overlay.
+Toolbar buttons give you auto-fill (greedy fill to population target), automated gerrymander, fair draw, election simulation, and plan save/load/export. Press `?` for the full keyboard shortcut overlay.
 
 ## Running Locally
 

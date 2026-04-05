@@ -153,15 +153,14 @@
     <aside id="sidebar" class="sim-panel glass" role="complementary" aria-label="Election statistics">
         <div class="sheet-handle"></div>
         <div class="stats-header">
-            <h2 class="stats-title">Analysis</h2>
-            <button id="close-stats" class="tool-btn icon-tight" aria-label="Close panel" data-icon="close" data-icon-size="16"></button>
-        </div>
-        <div class="tabs-wrap">
-            <nav class="tab-bar" role="tablist">
+            <div class="sidebar-tabs" role="tablist" aria-label="Sidebar tabs">
                 <button class="tab-btn active" data-tab="statewide" role="tab" aria-selected="true">Statewide</button>
                 <button class="tab-btn" data-tab="district" role="tab" aria-selected="false">District</button>
                 <button class="tab-btn" data-tab="tools" role="tab" aria-selected="false">Tools</button>
-            </nav>
+            </div>
+            <button id="close-stats" class="tool-btn icon-tight" aria-label="Close panel" data-icon="close" data-icon-size="16"></button>
+        </div>
+        <div class="tabs-wrap">
             <div class="tab-panels scrollbar-thin">
                 <!-- Statewide Tab -->
                 <div class="tab-panel active" id="tab-statewide" role="tabpanel">

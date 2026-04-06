@@ -28,6 +28,7 @@
     <link rel="icon" href="/favicon.ico">
     <meta name="theme-color" content="#C8553D">
     <link rel="canonical" href="https://a9l.im/gerry">
+    <link rel="alternate" hreflang="en" href="https://a9l.im/gerry">
     <meta name="mobile-web-app-capable" content="yes">
     <meta name="apple-mobile-web-app-status-bar-style" content="default">
     <link rel="manifest" href="/manifest.json">
@@ -72,11 +73,14 @@
         {"@type": "Thing", "@id": "https://www.wikidata.org/wiki/Q1503425", "name": "Redistricting"},
         {"@type": "Thing", "@id": "https://www.wikidata.org/wiki/Q189940", "name": "Proportional representation"},
         {"@type": "Thing", "@id": "https://www.wikidata.org/wiki/Q24039832", "name": "Efficiency gap"},
-        {"@type": "Thing", "@id": "https://www.wikidata.org/wiki/Q7137060", "name": "Partisan symmetry"}
+        {"@type": "Thing", "@id": "https://www.wikidata.org/wiki/Q7137060", "name": "Partisan symmetry"},
+        {"@type": "Thing", "@id": "https://www.wikidata.org/wiki/Q6347408", "name": "Polsby–Popper test"},
+        {"@type": "Thing", "@id": "https://www.wikidata.org/wiki/Q1533162", "name": "Geographic representation"}
       ],
       "keywords": "gerrymandering simulator, redistricting, efficiency gap, partisan symmetry, electoral fairness, voting rights, Monte Carlo, educational",
       "operatingSystem": "Any (Web Browser)",
       "browserRequirements": "Any modern browser",
+      "sameAs": "https://github.com/a9lim/a9lim.github.io",
       "codeRepository": "https://github.com/a9lim/a9lim.github.io",
       "license": "https://www.gnu.org/licenses/agpl-3.0.html",
       "interactivityType": "active",
@@ -86,6 +90,10 @@
         "Pack-and-crack gerrymandering strategies",
         "Monte Carlo methods for election simulation",
         "Trade-offs between compactness and proportional representation"
+      ],
+      "educationalAlignment": [
+        {"@type": "AlignmentObject", "alignmentType": "educationalSubject", "targetName": "AP United States Government and Politics"},
+        {"@type": "AlignmentObject", "alignmentType": "educationalSubject", "targetName": "NCSS C3 Framework: Civic Ideals and Practices"}
       ],
       "datePublished": "2026-02-21",
       "dateModified": "2026-04-05",
@@ -103,6 +111,9 @@
         "name": "a9l.im",
         "url": "https://a9l.im"
       },
+      "isBasedOn": [
+        {"@type": "ScholarlyArticle", "name": "Partisan Gerrymandering and the Efficiency Gap", "author": "N. Stephanopoulos, E. McGhee", "datePublished": "2015", "sameAs": "https://doi.org/10.2307/43999552"}
+      ],
       "offers": {
         "@type": "Offer",
         "price": "0",
@@ -186,6 +197,20 @@
     <script type="application/ld+json">
 {"@context":"https://schema.org","@type":"BreadcrumbList","itemListElement":[{"@type":"ListItem","position":1,"name":"Home","item":"https://a9l.im"},{"@type":"ListItem","position":2,"name":"Gerry","item":"https://a9l.im/gerry"}]}
     </script>
+    <script type="application/ld+json">
+    {
+      "@context": "https://schema.org",
+      "@type": "HowTo",
+      "name": "How to explore redistricting with Gerry",
+      "step": [
+        {"@type": "HowToStep", "position": 1, "name": "Generate a map", "text": "The simulator creates a seeded procedural hex-tile map with voters affiliated with three political parties, distributed across the grid."},
+        {"@type": "HowToStep", "position": 2, "name": "Draw districts", "text": "Paint hex tiles to partition the map into electoral districts, each electing one representative by plurality vote."},
+        {"@type": "HowToStep", "position": 3, "name": "Check fairness metrics", "text": "Evaluate your map using six metrics: efficiency gap, partisan symmetry, competitive districts, compactness, contiguity, and majority-minority representation."},
+        {"@type": "HowToStep", "position": 4, "name": "Run Monte Carlo elections", "text": "Stress-test your map with thousands of simulated elections using voter turnout noise to see how robust it is."},
+        {"@type": "HowToStep", "position": 5, "name": "Compare algorithms", "text": "Try pack-and-crack gerrymandering and the simulated-annealing fair draw algorithm to see how automated approaches differ."}
+      ]
+    }
+    </script>
 </head>
 
 <body class="sim-body app-ready">
@@ -230,7 +255,7 @@
     <!-- Full-viewport SVG Map -->
     <main>
         <div id="map-container" tabindex="-1">
-            <svg id="hex-map">
+            <svg id="hex-map" role="img" aria-label="Redistricting hex-tile map">
                 <g id="hex-group"></g>
                 <g id="border-group"></g>
                 <g id="minority-group"></g>
@@ -464,6 +489,12 @@
     <h3>Voting Rights Context</h3>
     <p>In the United States, the Voting Rights Act of 1965 requires that redistricting not dilute the voting power of racial or ethnic minorities. This often means creating majority-minority districts where minority communities can elect their preferred candidates. Gerry models this constraint by tracking majority-minority district counts and requiring a minimum of two, illustrating the tension between compactness, proportionality, and representation.</p>
     <p><em>See also: <a href="/shoals">Shoals</a> for financial market simulation, <a href="/cyano">Cyano</a> for cellular metabolism.</em></p>
+<h3>Learning Outcomes</h3>
+<p>After using Gerry, students should be able to: explain how pack-and-crack strategies manufacture electoral majorities from minority vote shares; compute the efficiency gap for a given district map and interpret values above the 8% threshold; describe the trade-off between compactness and proportional representation; and evaluate why contiguity alone is insufficient to guarantee fair districts.</p>
+<h3>Prerequisites</h3>
+<p>No prerequisites beyond basic arithmetic. The simulator introduces all fairness metrics with visual feedback — no prior knowledge of electoral law or political science is needed.</p>
+<h3>References</h3>
+<p>N. Stephanopoulos and E. McGhee, <a href="https://doi.org/10.2307/43999552" target="_blank" rel="noopener">"Partisan Gerrymandering and the Efficiency Gap"</a> (2015). D. Polsby and R. Popper, "The Third Criterion: Compactness as a Procedural Safeguard Against Partisan Gerrymandering" (1991). <em>Rucho v. Common Cause</em>, 588 U.S. ___ (2019).</p>
       </article>
     </details>
 </body>

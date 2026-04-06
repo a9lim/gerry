@@ -29,6 +29,10 @@ Designed for political science and civics education. Students experience firstha
 
 Maps are generated from a seeded Perlin noise function that assigns party affiliation probabilities to each hex cell. The seed is adjustable via the URL hash, producing reproducible maps with configurable partisan lean, urban clustering, and minority population density. Population per cell varies by a log-normal distribution to simulate real demographic density patterns. Three density tiers — urban, suburban, and rural — produce distinct partisan compositions mimicking the urban-rural political divide.
 
+## Accessibility
+
+Gerry supports keyboard navigation for all controls, high-contrast mode via the theme toggle, and ARIA labels on toolbar buttons and metric displays. District assignments are visible through both color and numerical labels. No flashing content or motion hazards.
+
 ## Majority-Minority Districts
 
 The simulator tracks districts where a minority group holds a voting majority, as required for Voting Rights Act Section 2 compliance. The fairness dashboard flags maps that pack or crack minority populations, and the fair-draw algorithm includes a constraint term for minority representation. The pack-and-crack algorithm demonstrates how concentrating opposition voters into a few districts while distributing the remainder thinly yields disproportionate seat shares.

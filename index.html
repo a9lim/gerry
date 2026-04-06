@@ -3,7 +3,7 @@
 
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Gerry — a9l.im</title>
     <meta name="description"
         content="See how district boundaries affect election outcomes. Draw districts on a procedural hex map, run Monte Carlo elections, and measure fairness with six metrics including efficiency gap and partisan symmetry.">
@@ -19,6 +19,7 @@
     <meta property="og:image:width" content="1200">
     <meta property="og:image:height" content="630">
     <meta property="og:image:type" content="image/webp">
+    <meta property="og:image:alt" content="Gerry gerrymandering simulator">
     <meta name="twitter:site" content="@a9_lim">
     <meta name="twitter:creator" content="@a9_lim">
     <meta name="author" content="a9lim">
@@ -28,19 +29,19 @@
     <meta name="mobile-web-app-capable" content="yes">
     <meta name="apple-mobile-web-app-status-bar-style" content="default">
     <script src="/shared-tokens.js"></script>
-    <script src="/shared-utils.js"></script>
-    <script src="/shared-haptics.js"></script>
-    <script src="/shared-camera.js"></script>
-    <script src="colors.js"></script>
-    <script src="/shared-touch.js"></script>
-    <script src="/shared-info.js"></script>
-    <script src="/shared-shortcuts.js"></script>
-    <script src="/shared-about.js"></script>
-    <script src="/shared-icons.js"></script>
-    <script src="/shared-toolbar.js"></script>
-    <script src="/shared-forms.js"></script>
+    <script defer src="/shared-utils.js"></script>
+    <script defer src="/shared-haptics.js"></script>
+    <script defer src="/shared-camera.js"></script>
+    <script defer src="colors.js"></script>
+    <script defer src="/shared-touch.js"></script>
+    <script defer src="/shared-info.js"></script>
+    <script defer src="/shared-shortcuts.js"></script>
+    <script defer src="/shared-about.js"></script>
+    <script defer src="/shared-icons.js"></script>
+    <script defer src="/shared-toolbar.js"></script>
+    <script defer src="/shared-forms.js"></script>
 
-    <script src="/shared-tooltip.js"></script>
+    <script defer src="/shared-tooltip.js"></script>
     <link rel="stylesheet" href="/shared-base.css">
     <link rel="stylesheet" href="styles.css">
     <link rel="stylesheet" href="/fonts/fonts.css">
@@ -48,7 +49,7 @@
     <script type="application/ld+json">
     {
       "@context": "https://schema.org",
-      "@type": "WebApplication",
+      "@type": ["WebApplication", "LearningResource"],
       "name": "Gerry",
       "url": "https://a9l.im/gerry",
       "description": "Interactive gerrymandering and redistricting simulator with three parties, ten districts, and six fairness metrics including efficiency gap and partisan symmetry. Features automated pack-and-crack gerrymandering, simulated-annealing fair draw, Monte Carlo election stress tests, and seeded procedural map generation on a hex-tile grid.",
@@ -64,14 +65,26 @@
         {"@type": "Thing", "@id": "https://www.wikidata.org/wiki/Q5765940", "name": "Gerrymandering"},
         {"@type": "Thing", "@id": "https://www.wikidata.org/wiki/Q7188", "name": "Electoral system"},
         {"@type": "Thing", "@id": "https://www.wikidata.org/wiki/Q1053636", "name": "Monte Carlo method"},
-        {"@type": "Thing", "name": "Redistricting"},
-        {"@type": "Thing", "name": "Electoral fairness"},
-        {"@type": "Thing", "name": "Efficiency gap"},
+        {"@type": "Thing", "@id": "https://www.wikidata.org/wiki/Q1503425", "name": "Redistricting"},
+        {"@type": "Thing", "@id": "https://www.wikidata.org/wiki/Q189940", "name": "Proportional representation"},
+        {"@type": "Thing", "@id": "https://www.wikidata.org/wiki/Q24039832", "name": "Efficiency gap"},
         {"@type": "Thing", "name": "Partisan symmetry"}
       ],
       "keywords": "gerrymandering simulator, redistricting, efficiency gap, partisan symmetry, electoral fairness, voting rights, Monte Carlo, educational",
       "operatingSystem": "Any (Web Browser)",
       "browserRequirements": "Modern browser with SVG support",
+      "codeRepository": "https://github.com/a9lim/a9lim.github.io",
+      "license": "https://www.gnu.org/licenses/agpl-3.0.html",
+      "interactivityType": "active",
+      "teaches": [
+        "How district boundaries affect election outcomes",
+        "Efficiency gap and partisan symmetry as fairness metrics",
+        "Pack-and-crack gerrymandering strategies",
+        "Monte Carlo methods for election simulation",
+        "Trade-offs between compactness and proportional representation"
+      ],
+      "datePublished": "2026-02-21",
+      "dateModified": "2026-04-05",
       "author": {
         "@type": "Person",
         "name": "a9lim",
@@ -92,6 +105,81 @@
         "priceCurrency": "USD"
       }
     }
+    </script>
+    <script type="application/ld+json">
+    {
+      "@context": "https://schema.org",
+      "@type": "FAQPage",
+      "mainEntity": [
+        {
+          "@type": "Question",
+          "name": "What is the efficiency gap in redistricting?",
+          "acceptedAnswer": {
+            "@type": "Answer",
+            "text": "The efficiency gap measures wasted votes as a fraction of total votes cast. Wasted votes include all votes for losing candidates plus excess votes for winners beyond what was needed to win. An efficiency gap above 7-8% is considered evidence of partisan gerrymandering. In Gerry, this metric updates in real time as you redraw district boundaries."
+          }
+        },
+        {
+          "@type": "Question",
+          "name": "What is partisan symmetry?",
+          "acceptedAnswer": {
+            "@type": "Answer",
+            "text": "Partisan symmetry tests whether both parties would win the same share of seats if they received the same share of votes. A perfectly symmetric map treats both parties equally. Asymmetry indicates structural bias built into the district boundaries, regardless of which party benefits."
+          }
+        },
+        {
+          "@type": "Question",
+          "name": "How does pack-and-crack gerrymandering work?",
+          "acceptedAnswer": {
+            "@type": "Answer",
+            "text": "Pack-and-crack is a gerrymandering strategy with two phases. Packing concentrates opposition voters into a few districts where they win by large margins, wasting their excess votes. Cracking spreads remaining opposition voters thinly across many districts so they lose each one narrowly. The result is the gerrymandering party wins more seats than their vote share would suggest."
+          }
+        },
+        {
+          "@type": "Question",
+          "name": "What are Monte Carlo elections?",
+          "acceptedAnswer": {
+            "@type": "Answer",
+            "text": "Monte Carlo election simulation runs thousands of elections with random voter turnout noise applied to the base partisan lean of each district. This stress-tests a district map to see how robust its outcomes are under realistic variation, revealing whether apparent fairness depends on specific turnout patterns."
+          }
+        },
+        {
+          "@type": "Question",
+          "name": "How is compactness measured in Gerry?",
+          "acceptedAnswer": {
+            "@type": "Answer",
+            "text": "Gerry uses Polsby-Popper compactness, which compares each district's area to the area of a circle with the same perimeter. A score of 1.0 is a perfect circle; lower scores indicate more irregular shapes typical of gerrymandering."
+          }
+        },
+        {
+          "@type": "Question",
+          "name": "Does Gerry collect any personal data?",
+          "acceptedAnswer": {
+            "@type": "Answer",
+            "text": "No. Gerry runs entirely in your browser with no server-side processing, no cookies, and no analytics tracking. All simulation state stays on your device."
+          }
+        },
+        {
+          "@type": "Question",
+          "name": "Is Gerry free and open source?",
+          "acceptedAnswer": {
+            "@type": "Answer",
+            "text": "Yes. Gerry is licensed under AGPL-3.0 and the source code is available on GitHub. It is free to use for educational and personal purposes."
+          }
+        },
+        {
+          "@type": "Question",
+          "name": "Does Gerry work on mobile devices?",
+          "acceptedAnswer": {
+            "@type": "Answer",
+            "text": "Yes. Gerry is fully responsive with touch-optimized controls for drawing district boundaries on the hex map."
+          }
+        }
+      ]
+    }
+    </script>
+    <script type="application/ld+json">
+{"@context":"https://schema.org","@type":"BreadcrumbList","itemListElement":[{"@type":"ListItem","position":1,"name":"Home","item":"https://a9l.im"},{"@type":"ListItem","position":2,"name":"Gerry"}]}
     </script>
 </head>
 
@@ -354,8 +442,21 @@
         </div>
     </div>
 
-    <script src="/shared-tabs.js"></script>
+    <script defer src="/shared-tabs.js"></script>
     <script type="module" src="main.js"></script>
+    <details class="edu-content">
+      <summary>About this simulation</summary>
+      <article>
+        <h2>What is Gerry?</h2>
+        <p>Gerry is a redistricting simulator that demonstrates how drawing district boundaries can determine election outcomes independently of how people vote. Players partition a procedural hex-tile map of voters into districts and immediately see how their choices affect six fairness metrics.</p>
+        <h3>Redistricting Mechanics</h3>
+        <p>The map generates voters affiliated with three political parties, distributed across population centers with realistic urban-suburban-rural gradients. Players paint hexes to assign them to districts. Each district elects one representative by plurality vote. Real-time feedback shows vote shares, seat counts, and all six fairness metrics as boundaries change.</p>
+        <h3>Fairness Metrics</h3>
+        <p>Six metrics evaluate every map: the efficiency gap (wasted votes as a fraction of total), partisan symmetry (whether both parties are treated equally), competitive district count (margins under 10%), compactness via the Polsby-Popper ratio, contiguity (no isolated fragments), and majority-minority district count. No single metric captures fairness completely &mdash; the simulation shows how they can conflict.</p>
+        <h3>Algorithms</h3>
+        <p>Two automated modes contrast deliberate gerrymandering with fairness optimization. Pack-and-crack concentrates opposition voters into a few districts while spreading the rest thin. The fair draw algorithm uses simulated annealing to optimize compactness and partisan symmetry simultaneously. Monte Carlo elections stress-test any map by running thousands of elections with turnout noise.</p>
+      </article>
+    </details>
 </body>
 
 </html>

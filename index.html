@@ -32,6 +32,7 @@
     <meta property="og:locale" content="en_US">
     <meta name="mobile-web-app-capable" content="yes">
     <meta name="apple-mobile-web-app-status-bar-style" content="default">
+    <meta name="apple-mobile-web-app-title" content="Gerry">
     <link rel="manifest" href="/manifest.json">
     <script src="/shared-tokens.js"></script>
     <script defer src="/shared-utils.js"></script>
@@ -96,7 +97,8 @@
       ],
       "educationalAlignment": [
         {"@type": "AlignmentObject", "alignmentType": "educationalSubject", "targetName": "AP United States Government and Politics", "targetUrl": "https://apcentral.collegeboard.org/courses/ap-united-states-government-and-politics"},
-        {"@type": "AlignmentObject", "alignmentType": "educationalSubject", "targetName": "NCSS C3 Framework: Civic Ideals and Practices", "targetUrl": "https://www.socialstudies.org/standards/c3"}
+        {"@type": "AlignmentObject", "alignmentType": "educationalSubject", "targetName": "NCSS C3 Framework: Civic Ideals and Practices", "targetUrl": "https://www.socialstudies.org/standards/c3"},
+        {"@type": "AlignmentObject", "alignmentType": "educationalSubject", "educationalFramework": "Common Core State Standards", "targetName": "CCSS.ELA-Literacy.RH.11-12: Integration of Knowledge and Ideas", "targetUrl": "https://www.thecorestandards.org/ELA-Literacy/RH/11-12/"}
       ],
       "datePublished": "2026-02-21",
       "dateModified": "2026-04-05",
@@ -497,6 +499,8 @@
         <p>Two automated modes contrast deliberate gerrymandering with fairness optimization. Pack-and-crack concentrates opposition voters into a few districts while spreading the rest thin. The fair draw algorithm uses simulated annealing to optimize compactness and partisan symmetry simultaneously. Monte Carlo elections stress-test any map by running thousands of elections with turnout noise.</p>
     <h3>Voting Rights Context</h3>
     <p>In the United States, the Voting Rights Act of 1965 requires that redistricting not dilute the voting power of racial or ethnic minorities. This often means creating majority-minority districts where minority communities can elect their preferred candidates. Gerry models this constraint by tracking majority-minority district counts and requiring a minimum of two, illustrating the tension between compactness, proportionality, and representation.</p>
+    <h3>Accessibility</h3>
+    <p>Gerry supports keyboard navigation for all controls, high-contrast mode via the theme toggle, and ARIA labels on toolbar buttons and metric displays. District assignments are visible through both color and numerical labels. No flashing content or motion simulation hazards.</p>
     <p><em>See also: <a href="/geon">Geon</a> for particle physics, <a href="/shoals">Shoals</a> for options trading, <a href="/cyano">Cyano</a> for cellular metabolism.</em></p>
 <h3>Learning Outcomes</h3>
 <p>After using Gerry, students should be able to: explain how pack-and-crack strategies manufacture electoral majorities from minority vote shares; compute the efficiency gap for a given district map and interpret values above the 8% threshold; describe the trade-off between compactness and proportional representation; and evaluate why contiguity alone is insufficient to guarantee fair districts.</p>

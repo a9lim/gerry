@@ -4,7 +4,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Gerry — a9l.im</title>
+    <title>Gerry — Gerrymandering &amp; Electoral Fairness Simulator | a9l.im</title>
     <meta name="description"
         content="See how district boundaries affect election outcomes. Draw districts on a procedural hex map, run Monte Carlo elections, and measure fairness with six metrics including efficiency gap and partisan symmetry.">
     <meta name="robots" content="index, follow, max-image-preview:large, max-snippet:-1">
@@ -22,6 +22,8 @@
     <meta property="og:image:alt" content="Gerry gerrymandering simulator">
     <meta name="twitter:site" content="@a9_lim">
     <meta name="twitter:creator" content="@a9_lim">
+    <meta name="twitter:title" content="Gerry — Gerrymandering &amp; Electoral Fairness Simulator">
+    <meta name="twitter:description" content="See how district boundaries affect election outcomes. Draw districts, run Monte Carlo elections, and measure fairness with six metrics.">
     <meta name="author" content="a9lim">
     <link rel="icon" href="/favicon.ico">
     <meta name="theme-color" content="#C8553D">
@@ -62,6 +64,7 @@
       "educationalUse": "Interactive simulation for learning about gerrymandering, redistricting, electoral fairness, and voting rights",
       "learningResourceType": "Simulation",
       "educationalLevel": "Undergraduate",
+      "inLanguage": "en",
       "about": [
         {"@type": "Thing", "@id": "https://www.wikidata.org/wiki/Q5765940", "name": "Gerrymandering"},
         {"@type": "Thing", "@id": "https://www.wikidata.org/wiki/Q7188", "name": "Electoral system"},
@@ -69,11 +72,11 @@
         {"@type": "Thing", "@id": "https://www.wikidata.org/wiki/Q1503425", "name": "Redistricting"},
         {"@type": "Thing", "@id": "https://www.wikidata.org/wiki/Q189940", "name": "Proportional representation"},
         {"@type": "Thing", "@id": "https://www.wikidata.org/wiki/Q24039832", "name": "Efficiency gap"},
-        {"@type": "Thing", "name": "Partisan symmetry"}
+        {"@type": "Thing", "@id": "https://www.wikidata.org/wiki/Q7137060", "name": "Partisan symmetry"}
       ],
       "keywords": "gerrymandering simulator, redistricting, efficiency gap, partisan symmetry, electoral fairness, voting rights, Monte Carlo, educational",
       "operatingSystem": "Any (Web Browser)",
-      "browserRequirements": "Modern browser with SVG support",
+      "browserRequirements": "Any modern browser",
       "codeRepository": "https://github.com/a9lim/a9lim.github.io",
       "license": "https://www.gnu.org/licenses/agpl-3.0.html",
       "interactivityType": "active",
@@ -104,7 +107,8 @@
         "@type": "Offer",
         "price": "0",
         "priceCurrency": "USD"
-      }
+      },
+      "timeRequired": "PT30M"
     }
     </script>
     <script type="application/ld+json">
@@ -170,21 +174,22 @@
         },
         {
           "@type": "Question",
-          "name": "Does Gerry work on mobile devices?",
+          "name": "What is a majority-minority district?",
           "acceptedAnswer": {
             "@type": "Answer",
-            "text": "Yes. Gerry is fully responsive with touch-optimized controls for drawing district boundaries on the hex map."
+            "text": "A majority-minority district is one where a racial or ethnic minority group constitutes the majority of the district's population. In the United States, the Voting Rights Act may require the creation of majority-minority districts to ensure minority communities have the opportunity to elect representatives of their choice. Gerry tracks majority-minority district counts as one of its six fairness metrics, requiring a minimum of two."
           }
         }
       ]
     }
     </script>
     <script type="application/ld+json">
-{"@context":"https://schema.org","@type":"BreadcrumbList","itemListElement":[{"@type":"ListItem","position":1,"name":"Home","item":"https://a9l.im"},{"@type":"ListItem","position":2,"name":"Gerry"}]}
+{"@context":"https://schema.org","@type":"BreadcrumbList","itemListElement":[{"@type":"ListItem","position":1,"name":"Home","item":"https://a9l.im"},{"@type":"ListItem","position":2,"name":"Gerry","item":"https://a9l.im/gerry"}]}
     </script>
 </head>
 
 <body class="sim-body app-ready">
+    <a href="#sidebar" class="skip-link">Skip to controls</a>
     <a href="#map-container" class="skip-link">Skip to map</a>
 
     <!-- Floating Toolbar -->
@@ -456,6 +461,9 @@
         <p>Six metrics evaluate every map: the efficiency gap (wasted votes as a fraction of total), partisan symmetry (whether both parties are treated equally), competitive district count (margins under 10%), compactness via the Polsby-Popper ratio, contiguity (no isolated fragments), and majority-minority district count. No single metric captures fairness completely &mdash; the simulation shows how they can conflict.</p>
         <h3>Algorithms</h3>
         <p>Two automated modes contrast deliberate gerrymandering with fairness optimization. Pack-and-crack concentrates opposition voters into a few districts while spreading the rest thin. The fair draw algorithm uses simulated annealing to optimize compactness and partisan symmetry simultaneously. Monte Carlo elections stress-test any map by running thousands of elections with turnout noise.</p>
+    <h3>Voting Rights Context</h3>
+    <p>In the United States, the Voting Rights Act of 1965 requires that redistricting not dilute the voting power of racial or ethnic minorities. This often means creating majority-minority districts where minority communities can elect their preferred candidates. Gerry models this constraint by tracking majority-minority district counts and requiring a minimum of two, illustrating the tension between compactness, proportionality, and representation.</p>
+    <p><em>See also: <a href="/shoals">Shoals</a> for financial market simulation, <a href="/cyano">Cyano</a> for cellular metabolism.</em></p>
       </article>
     </details>
 </body>

@@ -464,6 +464,7 @@ function setupUI() {
         var isTouch = window.matchMedia('(pointer: coarse)').matches;
         initAboutPanel({
             title: 'Gerry',
+            lastUpdated: '2026-04-05',
             description: 'Draw congressional districts on a procedural hex-tile map with three political parties. Paint hexes into 10 districts, track six fairness metrics in real time, then run automated gerrymanders or fair-draw algorithms to compare outcomes.',
             controls: [
                 { label: 'Paint hex', value: isTouch ? 'Tap hex' : 'Click or drag on hex' },

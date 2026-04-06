@@ -29,6 +29,7 @@
     <meta name="theme-color" content="#C8553D">
     <link rel="canonical" href="https://a9l.im/gerry">
     <link rel="alternate" hreflang="en" href="https://a9l.im/gerry">
+    <meta property="og:locale" content="en_US">
     <meta name="mobile-web-app-capable" content="yes">
     <meta name="apple-mobile-web-app-status-bar-style" content="default">
     <link rel="manifest" href="/manifest.json">
@@ -75,7 +76,9 @@
         {"@type": "Thing", "@id": "https://www.wikidata.org/wiki/Q24039832", "name": "Efficiency gap"},
         {"@type": "Thing", "@id": "https://www.wikidata.org/wiki/Q7137060", "name": "Partisan symmetry"},
         {"@type": "Thing", "@id": "https://www.wikidata.org/wiki/Q6347408", "name": "Polsby–Popper test"},
-        {"@type": "Thing", "@id": "https://www.wikidata.org/wiki/Q1533162", "name": "Geographic representation"}
+        {"@type": "Thing", "@id": "https://www.wikidata.org/wiki/Q1533162", "name": "Geographic representation"},
+        {"@type": "Thing", "@id": "https://www.wikidata.org/wiki/Q2333460", "name": "Voting Rights Act of 1965"},
+        {"@type": "Thing", "@id": "https://www.wikidata.org/wiki/Q868941", "name": "Apportionment"}
       ],
       "keywords": "gerrymandering simulator, redistricting, efficiency gap, partisan symmetry, electoral fairness, voting rights, Monte Carlo, educational",
       "operatingSystem": "Any (Web Browser)",
@@ -123,7 +126,7 @@
       },
       "timeRequired": "PT30M",
       "accessibilityFeature": ["highContrastDisplay", "readingOrder", "structuralNavigation"],
-      "accessibilityHazard": ["motionSimulation"],
+      "accessibilityHazard": ["flashing", "motionSimulation"],
       "relatedLink": ["https://a9l.im/geon", "https://a9l.im/cyano", "https://a9l.im/shoals"]
     }
     </script>
@@ -479,6 +482,7 @@
     </div>
 
     <script defer src="/shared-tabs.js"></script>
+    <link rel="modulepreload" href="main.js">
     <script type="module" src="main.js"></script>
     <details class="edu-content">
       <summary>About this simulation</summary>
@@ -493,7 +497,7 @@
         <p>Two automated modes contrast deliberate gerrymandering with fairness optimization. Pack-and-crack concentrates opposition voters into a few districts while spreading the rest thin. The fair draw algorithm uses simulated annealing to optimize compactness and partisan symmetry simultaneously. Monte Carlo elections stress-test any map by running thousands of elections with turnout noise.</p>
     <h3>Voting Rights Context</h3>
     <p>In the United States, the Voting Rights Act of 1965 requires that redistricting not dilute the voting power of racial or ethnic minorities. This often means creating majority-minority districts where minority communities can elect their preferred candidates. Gerry models this constraint by tracking majority-minority district counts and requiring a minimum of two, illustrating the tension between compactness, proportionality, and representation.</p>
-    <p><em>See also: <a href="/shoals">Shoals</a> for financial market simulation, <a href="/cyano">Cyano</a> for cellular metabolism.</em></p>
+    <p><em>See also: <a href="/geon">Geon</a> for particle physics, <a href="/shoals">Shoals</a> for options trading, <a href="/cyano">Cyano</a> for cellular metabolism.</em></p>
 <h3>Learning Outcomes</h3>
 <p>After using Gerry, students should be able to: explain how pack-and-crack strategies manufacture electoral majorities from minority vote shares; compute the efficiency gap for a given district map and interpret values above the 8% threshold; describe the trade-off between compactness and proportional representation; and evaluate why contiguity alone is insufficient to guarantee fair districts.</p>
 <h3>Prerequisites</h3>

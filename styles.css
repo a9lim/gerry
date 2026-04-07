@@ -101,7 +101,7 @@ main {
     stroke-width: 1px;
     transform-origin: center;
     transform-box: fill-box;
-    transition: stroke 0.15s ease, stroke-width 0.15s ease, fill 0.35s ease;
+    transition: stroke 0.15s var(--ease-smooth), stroke-width 0.15s var(--ease-smooth), fill 0.35s var(--ease-smooth);
     animation: hexPopIn 0.55s var(--ease-out) both;
 }
 
@@ -116,7 +116,7 @@ main {
     stroke: var(--hex-hover-stroke);
     stroke-width: 2px;
     filter: brightness(1.08);
-    transition: stroke 0.1s ease, stroke-width 0.1s ease, filter 0.1s ease;
+    transition: stroke 0.1s var(--ease-smooth), stroke-width 0.1s var(--ease-smooth), filter 0.1s var(--ease-smooth);
 }
 
 @keyframes hexPaintFlash {
@@ -125,7 +125,7 @@ main {
 }
 
 .hex.just-painted polygon {
-    animation: hexPaintFlash 0.2s ease-out forwards;
+    animation: hexPaintFlash 0.2s var(--ease-out) forwards;
 }
 
 .minority-marker {
@@ -214,7 +214,7 @@ main {
     background: transparent;
     color: var(--text-muted);
     font-family: var(--font-mono);
-    font-size: 0.78rem;
+    font-size: var(--font-base);
     font-weight: 500;
     cursor: pointer;
     transition: color 0.2s var(--ease-out), font-weight 0.2s var(--ease-out);
@@ -234,7 +234,7 @@ main {
 .palette-btn.active {
     color: var(--accent);
     font-weight: 800;
-    font-size: 0.88rem;
+    font-size: var(--font-lg);
 }
 
 .palette-btn.has-district {
@@ -289,7 +289,7 @@ main {
 
 .seat-label {
     font-family: var(--font-mono);
-    font-size: 0.62rem;
+    font-size: var(--font-sm);
     font-weight: 600;
     text-transform: uppercase;
     letter-spacing: 0.06em;
@@ -299,7 +299,7 @@ main {
 /* ─── Stat Rows ─── */
 .stat-note {
     color: var(--text-muted);
-    font-size: 0.68rem;
+    font-size: var(--font-sm);
     line-height: 1.4;
     font-family: var(--font-sans);
     padding: 2px 8px;
@@ -314,7 +314,7 @@ main {
 
 .metric-note {
     font-family: var(--font-sans);
-    font-size: 0.68rem;
+    font-size: var(--font-sm);
     color: var(--text-muted);
     text-align: right;
     margin-top: -1px;
@@ -350,7 +350,7 @@ main {
 .vote-labels {
     display: flex;
     justify-content: space-between;
-    font-size: 0.66rem;
+    font-size: var(--font-sm);
     font-weight: 600;
     font-family: var(--font-mono);
     letter-spacing: 0.02em;
@@ -371,7 +371,7 @@ main {
 
 .prop-label {
     font-family: var(--font-sans);
-    font-size: 0.72rem;
+    font-size: var(--font-sm);
     font-weight: 600;
     width: 30px;
     flex-shrink: 0;
@@ -413,7 +413,7 @@ main {
 
 .prop-pct {
     font-family: var(--font-mono);
-    font-size: 0.62rem;
+    font-size: var(--font-sm);
     font-weight: 600;
     color: var(--text-secondary);
     line-height: 1.35;
@@ -428,7 +428,7 @@ main {
 
 .prop-legend-item {
     font-family: var(--font-sans);
-    font-size: 0.62rem;
+    font-size: var(--font-sm);
     color: var(--text-muted);
     display: flex;
     align-items: center;
@@ -502,7 +502,7 @@ main {
 
 .plan-item-name {
     flex: 1;
-    font-size: 0.8rem;
+    font-size: var(--font-base);
     font-weight: 500;
     color: var(--text);
     overflow: hidden;
@@ -511,7 +511,7 @@ main {
 }
 
 .plan-item-date {
-    font-size: 0.65rem;
+    font-size: var(--font-sm);
     color: var(--text-muted);
     white-space: nowrap;
 }
@@ -527,7 +527,7 @@ main {
     border-radius: var(--radius);
     background: transparent;
     color: var(--text-secondary);
-    font-size: 0.65rem;
+    font-size: var(--font-sm);
     cursor: pointer;
     transition: background 0.15s, color 0.15s;
 }
@@ -548,7 +548,7 @@ main {
     text-align: center;
     padding: 1.5rem 0;
     color: var(--text-muted);
-    font-size: 0.78rem;
+    font-size: var(--font-base);
 }
 
 /* ═══════════════════════════════════
@@ -576,7 +576,7 @@ main {
     .palette-btn {
         width: 32px;
         height: 32px;
-        font-size: 0.78rem;
+        font-size: var(--font-base);
     }
 
     #map-controls {
@@ -607,7 +607,7 @@ main {
     .palette-btn {
         width: 28px;
         height: 28px;
-        font-size: 0.72rem;
+        font-size: var(--font-sm);
     }
 }
 
@@ -615,7 +615,7 @@ main {
 .election-panel { padding: 20px; max-width: 380px; position: relative; }
 .election-close { position: absolute; top: 8px; right: 12px; background: none; border: none; font-size: 1.4rem; cursor: pointer; color: var(--text-muted); }
 .election-controls { display: flex; flex-direction: column; gap: 8px; margin: 12px 0; }
-.election-controls label { display: flex; align-items: center; gap: 8px; font-size: 0.82rem; }
+.election-controls label { display: flex; align-items: center; gap: 8px; font-size: var(--font-base); }
 #election-histogram { width: 100%; border-radius: var(--radius); background: var(--bg-elevated); }
 
 /* Extra small: handled by shared-base.css (hide .sim-brand, tight gap) */

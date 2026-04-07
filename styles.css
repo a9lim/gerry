@@ -39,9 +39,9 @@
     gap: 2px;
 }
 .party-select {
-    font: 11px/1 var(--font-body);
+    font: 11px/1 var(--font-sans);
     padding: 4px 2px;
-    border-radius: var(--radius-sm);
+    border-radius: var(--radius);
     border: none;
     background: var(--bg-panel);
     color: var(--text);
@@ -178,7 +178,7 @@ main {
 /* paint-order: stroke draws the halo behind the fill text,
    giving readable contrast over any hex color. */
 .district-label {
-    font-family: var(--font-body);
+    font-family: var(--font-sans);
     font-size: 11px;
     font-weight: 700;
     fill: var(--label-fill);
@@ -209,7 +209,7 @@ main {
 .palette-btn {
     width: 28px;
     height: 28px;
-    border-radius: var(--radius-sm);
+    border-radius: var(--radius);
     border: none;
     background: transparent;
     color: var(--text-muted);
@@ -265,7 +265,7 @@ main {
     flex-direction: column;
     align-items: center;
     padding: 8px 8px;
-    border-radius: var(--radius-sm);
+    border-radius: var(--radius);
     background: var(--bg-hover);
     border: none;
     transition: background 0.2s;
@@ -301,7 +301,7 @@ main {
     color: var(--text-muted);
     font-size: 0.68rem;
     line-height: 1.4;
-    font-family: var(--font-body);
+    font-family: var(--font-sans);
     padding: 2px 8px;
     margin-top: 2px;
 }
@@ -313,7 +313,7 @@ main {
 
 
 .metric-note {
-    font-family: var(--font-body);
+    font-family: var(--font-sans);
     font-size: 0.68rem;
     color: var(--text-muted);
     text-align: right;
@@ -326,7 +326,7 @@ main {
 .vote-bar-container {
     height: 7px;
     background: var(--bar-track);
-    border-radius: 4px;
+    border-radius: var(--radius);
     display: flex;
     overflow: hidden;
     margin-top: 8px;
@@ -370,7 +370,7 @@ main {
 }
 
 .prop-label {
-    font-family: var(--font-body);
+    font-family: var(--font-sans);
     font-size: 0.72rem;
     font-weight: 600;
     width: 30px;
@@ -388,13 +388,13 @@ main {
 .prop-bar-track {
     height: 5px;
     background: var(--bar-track);
-    border-radius: 3px;
+    border-radius: var(--radius);
     overflow: hidden;
 }
 
 .prop-bar-fill {
     height: 100%;
-    border-radius: 3px;
+    border-radius: var(--radius);
     transition: width 0.45s var(--ease-out);
 }
 
@@ -427,7 +427,7 @@ main {
 }
 
 .prop-legend-item {
-    font-family: var(--font-body);
+    font-family: var(--font-sans);
     font-size: 0.62rem;
     color: var(--text-muted);
     display: flex;
@@ -438,7 +438,7 @@ main {
 .legend-swatch {
     width: 12px;
     height: 5px;
-    border-radius: 3px;
+    border-radius: var(--radius);
     display: inline-block;
     background: var(--text-secondary);
 }
@@ -492,7 +492,7 @@ main {
     align-items: center;
     gap: 0.5rem;
     padding: 0.5rem 0.65rem;
-    border-radius: var(--radius-sm);
+    border-radius: var(--radius);
     background: var(--bg-elevated);
     border: none;
     cursor: pointer;
@@ -524,7 +524,7 @@ main {
 .plan-item-btn {
     padding: 0.2rem 0.4rem;
     border: none;
-    border-radius: var(--radius-sm);
+    border-radius: var(--radius);
     background: transparent;
     color: var(--text-secondary);
     font-size: 0.65rem;
@@ -616,7 +616,7 @@ main {
 .election-close { position: absolute; top: 8px; right: 12px; background: none; border: none; font-size: 1.4rem; cursor: pointer; color: var(--text-muted); }
 .election-controls { display: flex; flex-direction: column; gap: 8px; margin: 12px 0; }
 .election-controls label { display: flex; align-items: center; gap: 8px; font-size: 0.82rem; }
-#election-histogram { width: 100%; border-radius: var(--radius-sm); background: var(--bg-elevated); }
+#election-histogram { width: 100%; border-radius: var(--radius); background: var(--bg-elevated); }
 
 /* Extra small: handled by shared-base.css (hide .sim-brand, tight gap) */
 

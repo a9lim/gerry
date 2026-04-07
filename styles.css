@@ -592,14 +592,6 @@ main {
         animation: slideInRight 0.5s var(--ease-out) 0.15s both;
     }
 
-    .tab-panel {
-        padding: 8px;
-    }
-
-    .stat-group {
-        padding: 0;
-    }
-
 }
 
 /* Small phones: tighter touch targets. */

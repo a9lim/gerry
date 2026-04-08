@@ -73,4 +73,3 @@ Monte Carlo with Gaussian swings. Uses `Math.random()` (not seeded PRNG) — non
 - **Shared CSS at domain root** — `/shared-base.css` absolute path requires serving from parent directory
 - **`shiftForSidebar()`** reads `--panel-w` from computed styles — no hardcoded pixel values
 - **Bar widths** — `.vote-bar, .prop-bar-fill { width: 0 }` in CSS; JS sets width via inline style
-- **`font-variant-numeric: tabular-nums`** inherited from `.stats-scroll` and `#map-controls` — don't add individually to children

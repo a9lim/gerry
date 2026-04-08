@@ -52,7 +52,7 @@ export function initCamera($) {
             // Offset center by half the panel width if sidebar is open.
             let tx = state.origViewBox.x + state.origViewBox.w / 2;
             if (_$?.sidebar?.classList.contains('open') && window.innerWidth > 900) {
-                const pw = parseInt(getComputedStyle(document.documentElement).getPropertyValue('--panel-w')) || 350;
+                const pw = parseInt(getComputedStyle(document.documentElement).getPropertyValue('--panel-w')) || 360;
                 tx += pw / (2 * _defaultZoom);
             }
             camera._animateTo(tx, state.origViewBox.y + state.origViewBox.h / 2, _defaultZoom, CONFIG.zoomFitDuration, EASE_OUT);
@@ -79,7 +79,7 @@ export function zoomToFit() {
     let targetX = o.x + o.w / 2;
     let targetY = o.y + o.h / 2;
     if (_$?.sidebar?.classList.contains('open') && window.innerWidth > 900) {
-        const panelW = parseInt(getComputedStyle(document.documentElement).getPropertyValue('--panel-w')) || 350;
+        const panelW = parseInt(getComputedStyle(document.documentElement).getPropertyValue('--panel-w')) || 360;
         targetX += panelW / (2 * _defaultZoom);
     }
     camera._animateTo(targetX, targetY, _defaultZoom, CONFIG.zoomFitDuration, EASE_OUT);
@@ -91,7 +91,7 @@ export function zoomToFit() {
  */
 export function shiftForSidebar(opening) {
     if (!camera || window.innerWidth <= 900) return;
-    const panelW = parseInt(getComputedStyle(document.documentElement).getPropertyValue('--panel-w')) || 350;
+    const panelW = parseInt(getComputedStyle(document.documentElement).getPropertyValue('--panel-w')) || 360;
     const dx = panelW / (2 * _defaultZoom);
     const o = state.origViewBox;
     camera._animateTo(

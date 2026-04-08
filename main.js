@@ -53,7 +53,7 @@ function cacheDOMElements() {
     $.partisanSymmetry = document.getElementById('partisan-symmetry');
     $.competitiveDistricts = document.getElementById('competitive-districts');
 
-    $.brushToggles = document.getElementById('brush-toggles');
+    $.settingsBtn = document.getElementById('settings-btn');
     $.autofillBtn = document.getElementById('autofill-btn');
     $.gerrymanderBtn = document.getElementById('gerrymander-btn');
     $.gerrymanderParty = document.getElementById('gerrymander-party');
@@ -188,18 +188,18 @@ function setupUI() {
     if ($.redoBtn) $.redoBtn.addEventListener('click', doRedo);
     if ($.themeBtn) $.themeBtn.addEventListener('click', () => { toggleTheme($); _haptics.trigger('light'); });
 
-    if ($.brushToggles) {
-        // Set initial aria-pressed on brush buttons
-        $.brushToggles.querySelectorAll('.mode-btn').forEach(function(b) {
-            b.setAttribute('aria-pressed', b.classList.contains('active') ? 'true' : 'false');
-        });
-        _forms.bindModeGroup($.brushToggles, 'brush', v => {
-            state.brushSize = parseInt(v, 10);
-            // Sync aria-pressed with active class
-            $.brushToggles.querySelectorAll('.mode-btn').forEach(function(b) {
-                b.setAttribute('aria-pressed', b.classList.contains('active') ? 'true' : 'false');
-            });
-        });
+    if ($.settingsBtn) {
+        _settings.create($.settingsBtn, [
+            { type: 'mode', label: 'Brush size', dataAttr: 'brush',
+              buttons: [
+                  { value: '0', label: '1', active: true },
+                  { value: '1', label: '3' },
+                  { value: '2', label: '7' }
+              ],
+              onChange: function (v) { state.brushSize = parseInt(v, 10); }
+            }
+        ]);
+        $.brushToggles = document.querySelector('.settings-dd [data-scope="brush"]');
     }
 
     if ($.autofillBtn) {

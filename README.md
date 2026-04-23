@@ -1,6 +1,6 @@
 # Gerry
 
-An interactive gerrymandering simulator that runs entirely in the browser. You paint congressional districts on a procedural hex-tile map and see how your choices move fairness metrics in real time. No poli-sci background required.
+An interactive gerrymandering simulator that runs entirely in the browser. You paint congressional districts on a procedural hex-tile map and see how your choices move fairness metrics in real time. 
 
 **[Try it](https://a9l.im/gerry)** | Part of the [a9l.im](https://a9l.im) portfolio
 

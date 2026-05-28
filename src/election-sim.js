@@ -2,10 +2,9 @@
 import { CONFIG, PARTY_NAMES } from './config.js';
 import { state } from './state.js';
 
-/** Box-Muller transform: converts uniform [0,1) pairs to normal distribution. */
+/** Scale a standard-normal sample (shared gaussian, /shared-utils.js) to N(mean, stddev). */
 function gaussRandom(mean, stddev) {
-    const u1 = Math.random(), u2 = Math.random();
-    return mean + stddev * Math.sqrt(-2 * Math.log(u1)) * Math.cos(2 * Math.PI * u2);
+    return mean + stddev * gaussian();
 }
 
 /**

@@ -1,15 +1,10 @@
-// Mulberry32: fast 32-bit seeded PRNG for deterministic map generation.
+// Mulberry32 PRNG. The generator algorithm lives in /shared-utils.js
+// (window.mulberry32); re-exported here under gerry's createPRNG name so
+// existing import sites stay stable. Bit-for-bit identical to the prior
+// inline implementation, so map seeds still produce the same maps.
 
 /** Returns a function that yields [0, 1) on each call, deterministic from `seed`. */
-export function createPRNG(seed) {
-    let s = seed | 0;
-    return function() {
-        s = (s + 0x6D2B79F5) | 0;
-        let t = Math.imul(s ^ (s >>> 15), 1 | s);
-        t = (t + Math.imul(t ^ (t >>> 7), 61 | t)) ^ t;
-        return ((t ^ (t >>> 14)) >>> 0) / 4294967296;
-    };
-}
+export const createPRNG = (seed) => mulberry32(seed);
 
 export function randomSeed() {
     return (Math.random() * 4294967296) >>> 0;

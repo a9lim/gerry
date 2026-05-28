@@ -481,10 +481,7 @@ function setupUI() {
     }
 
 
-    if (window.matchMedia('(pointer: coarse)').matches) {
-        var hint = document.getElementById('hint-bar') || document.querySelector('.hint-bar');
-        if (hint) hint.textContent = 'Tap to Paint \u00b7 Pinch to Zoom \u00b7 E to Toggle Erase';
-    }
+    setMobileHint('hint-bar', 'Tap to Paint \u00b7 Pinch to Zoom \u00b7 E to Toggle Erase', '.hint-bar');
 }
 
 // ─── Init ───

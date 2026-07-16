@@ -1,3 +1,10 @@
+---
+name: Gerry
+title: Gerry — Gerrymandering and Electoral Fairness Simulator
+description: Draw districts on a procedural hex map, compare six fairness measures, generate pack-and-crack or neutral plans, and stress-test Monte Carlo elections.
+updated: 2026-07-16
+---
+
 # Gerry — Gerrymandering & Electoral Fairness Simulator
 
 Gerry is an interactive redistricting simulator that demonstrates how district boundaries affect election outcomes. Players draw districts on a procedural hex-tile map and evaluate their fairness using six quantitative metrics.
@@ -10,7 +17,7 @@ The simulation generates a seeded procedural map of voters affiliated with three
 
 Six metrics evaluate the drawn map:
 
-- **Efficiency gap**: Measures wasted votes (votes for losing candidates plus excess votes for winners) as a fraction of total votes. Values above 8% suggest gerrymandering.
+- **Efficiency gap**: Measures wasted votes (votes for losing candidates plus excess votes for winners) as a fraction of total votes. The dashboard warns above 7%.
 - **Partisan symmetry**: Tests whether both parties would win the same seat share if they received the same vote share. Asymmetry indicates structural bias.
 - **Competitive districts**: Counts districts where the margin of victory is less than 10%.
 - **Compactness**: Measures how geometrically compact districts are using the Polsby-Popper ratio (area relative to perimeter squared).
@@ -19,7 +26,7 @@ Six metrics evaluate the drawn map:
 
 ## Algorithms
 
-Automated redistricting modes include pack-and-crack (a classic gerrymandering strategy that concentrates opposition voters into a few districts while spreading the rest thin) and a simulated-annealing fair draw algorithm that optimizes for compactness and partisan symmetry. Monte Carlo election stress tests run thousands of simulated elections with voter turnout noise to evaluate how robust a map is.
+Automated redistricting modes include pack-and-crack, which concentrates opposition voters into a few districts while spreading the rest thin, and a neutral draw. The neutral draw begins with fifteen rounds of Lloyd-style Voronoi relaxation, then assigns cells with a distance-priority multi-source flood fill that penalizes population imbalance. Monte Carlo election stress tests add turnout and preference noise across repeated elections to show how robust a plan is.
 
 ## Educational Use
 
@@ -27,7 +34,7 @@ Designed for political science and civics education. Students experience firstha
 
 ## Procedural Map Generation
 
-Maps are generated from a seeded Perlin noise function that assigns party affiliation probabilities to each hex cell. The seed is adjustable via the URL hash, producing reproducible maps with configurable partisan lean, urban clustering, and minority population density. Population per cell varies by a log-normal distribution to simulate real demographic density patterns. Three density tiers — urban, suburban, and rural — produce distinct partisan compositions mimicking the urban-rural political divide.
+Maps are generated from seeded fractal terrain, corridor fields, and density centers that shape population, party preference, and minority share across the hex grid. Seeds are reproducible, while controls expose partisan lean and clustering. Urban, suburban, and rural density bands create visibly different electoral geographies without claiming to reproduce a particular jurisdiction.
 
 ## Accessibility
 
@@ -35,4 +42,4 @@ Gerry supports keyboard navigation for all controls, high-contrast mode via the 
 
 ## Majority-Minority Districts
 
-The simulator tracks districts where a minority group holds a voting majority, as required for Voting Rights Act Section 2 compliance. The fairness dashboard flags maps that pack or crack minority populations, and the fair-draw algorithm includes a constraint term for minority representation. The pack-and-crack algorithm demonstrates how concentrating opposition voters into a few districts while distributing the remainder thinly yields disproportionate seat shares.
+The simulator tracks districts where a minority group holds a voting majority and reports a simplified Section 2 warning when a sufficiently large, geographically compact minority population lacks an opportunity district. This is an educational diagnostic, not a legal compliance determination. The pack-and-crack mode also makes it possible to see how concentrating or fragmenting a population changes representation.

@@ -2,7 +2,7 @@
 name: Gerry
 title: Gerry — Gerrymandering and Electoral Fairness Simulator
 description: Draw districts on a procedural hex map, compare six fairness measures, generate pack-and-crack or neutral plans, and stress-test Monte Carlo elections.
-updated: 2026-07-16
+updated: 2026-07-17
 ---
 
 # Gerry — Gerrymandering & Electoral Fairness Simulator
@@ -18,7 +18,7 @@ The simulation generates a seeded procedural map of voters affiliated with three
 Six metrics evaluate the drawn map:
 
 - **Efficiency gap**: Measures wasted votes (votes for losing candidates plus excess votes for winners) as a fraction of total votes. The dashboard warns above 7%.
-- **Partisan symmetry**: Tests whether both parties would win the same seat share if they received the same vote share. Asymmetry indicates structural bias.
+- **Partisan symmetry**: Swaps vote totals for each pair of the three parties district by district, recounts seats, and scores how closely each seat-gap reversal matches a symmetric plan.
 - **Competitive districts**: Counts districts where the margin of victory is less than 10%.
 - **Compactness**: Measures how geometrically compact districts are using the Polsby-Popper ratio (area relative to perimeter squared).
 - **Contiguity**: Verifies that every district is a single connected region with no isolated fragments.
@@ -26,7 +26,7 @@ Six metrics evaluate the drawn map:
 
 ## Algorithms
 
-Automated redistricting modes include pack-and-crack, which concentrates opposition voters into a few districts while spreading the rest thin, and a neutral draw. The neutral draw begins with fifteen rounds of Lloyd-style Voronoi relaxation, then assigns cells with a distance-priority multi-source flood fill that penalizes population imbalance. Monte Carlo election stress tests add turnout and preference noise across repeated elections to show how robust a plan is.
+Automated redistricting modes include pack-and-crack, which concentrates opposition voters into a few districts while spreading the rest thin, and a neutral draw. The neutral draw runs fifteen rounds of Lloyd-style Voronoi relaxation, using a distance-priority multi-source flood fill with a soft population-balance penalty at each round and once more after convergence. Monte Carlo election stress tests run 50, 100, or 500 elections with correlated national party swings plus smaller district-level preference noise.
 
 ## Educational Use
 
@@ -38,8 +38,8 @@ Maps are generated from seeded fractal terrain, corridor fields, and density cen
 
 ## Accessibility
 
-Gerry supports keyboard navigation for all controls, high-contrast mode via the theme toggle, and ARIA labels on toolbar buttons and metric displays. District assignments are visible through both color and numerical labels. No flashing content or motion hazards.
+Gerry's buttons, native controls, sidebar tabs, district selectors, and documented shortcuts are keyboard-operable. The map itself exposes an accessible label, but assigning individual hexes still requires a pointer or touch; this is a known gap. Toolbar actions have ARIA labels, and district results are reported as text and numbers alongside the color-coded map. The theme toggle switches between light and dark presentations. Map generation and painting use brief transitions; the shared stylesheet collapses animation and transition durations when the operating system requests reduced motion.
 
 ## Majority-Minority Districts
 
-The simulator tracks districts where a minority group holds a voting majority and reports a simplified Section 2 warning when a sufficiently large, geographically compact minority population lacks an opportunity district. This is an educational diagnostic, not a legal compliance determination. The pack-and-crack mode also makes it possible to see how concentrating or fragmenting a population changes representation.
+The simulator tracks districts where the generated minority population exceeds half the district population. Its required-count readout is a deliberately simplified heuristic: zero below 15% statewide minority share, otherwise `max(1, floor(minorityShare * 8 * 0.5))`. It does not test geographic compactness, communities of interest, racially polarized voting, or the other facts required for a Voting Rights Act analysis, so it is not a legal compliance determination.

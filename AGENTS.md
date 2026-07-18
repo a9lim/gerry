@@ -1,6 +1,6 @@
 # AGENTS.md
 
-Part of the **a9l.im** portfolio. See root `AGENTS.md` for the shared design system and shared code policy. Sibling projects: `geon`, `shoals`, `cyano`, `scripture`.
+Part of the **a9l.im** portfolio. See root `AGENTS.md` for the shared design system and shared code policy. Sibling projects: `geon`, `shoals`, `cyano`, `scripture`, `miasma`, `pile`, and `plasma`.
 
 ## Rules
 

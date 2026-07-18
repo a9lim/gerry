@@ -1,4 +1,4 @@
-// Auto-districting: pack-and-crack gerrymander and fair-draw simulated annealing.
+// Auto-districting: pack-and-crack gerrymander and Lloyd-relaxed fair draw.
 import { CONFIG, HEX_DIRS } from './config.js';
 import { state } from './state.js';
 

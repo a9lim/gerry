@@ -1,12 +1,12 @@
 # Gerry
 
-An interactive gerrymandering simulator that runs entirely in the browser. You paint congressional districts on a procedural hex-tile map and see how your choices move fairness metrics in real time. 
+An interactive gerrymandering simulator that runs entirely in the browser. You paint congressional districts on a procedural hex-tile map and see how your choices move fairness metrics in real time.
 
 **[Try it](https://a9l.im/gerry)** | Part of the [a9l.im](https://a9l.im) portfolio
 
 ## What It Does
 
-Draw district boundaries on a randomly generated map populated by three political parties (Federalist, Farmer-Labor, Reform) with realistic urban, suburban, and rural demographic leans. The simulator scores your map on six fairness metrics (efficiency gap, partisan symmetry, competitive districts, compactness, contiguity, and majority-minority representation), so you can see firsthand how and why a given map is fair or unfair.
+Draw district boundaries on a seeded procedural map populated by three political parties (Federalist, Farmer-Labor, Reform) with stylized urban, suburban, and rural demographic leans. The simulator scores your map on six fairness metrics (efficiency gap, partisan symmetry, competitive districts, compactness, contiguity, and majority-minority representation), so you can see how different criteria agree or conflict.
 
 Two automated algorithms let you compare extremes: a pack-and-crack gerrymander that maximizes seats for a chosen party, and a Lloyd's relaxation fair draw that optimizes for population balance and compactness. A Monte Carlo election simulator stress-tests any plan against random vote swings.
 

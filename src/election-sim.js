@@ -2,7 +2,7 @@
 import { CONFIG, PARTY_NAMES } from './config.js';
 import { state } from './state.js';
 
-/** Scale a standard-normal sample (shared gaussian, /shared-utils.js) to N(mean, stddev). */
+/** Scale a standard-normal sample (shared gaussian, /shared/utils.js) to N(mean, stddev). */
 function gaussRandom(mean, stddev) {
     return mean + stddev * gaussian();
 }

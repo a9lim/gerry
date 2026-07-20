@@ -70,6 +70,6 @@ Monte Carlo with Gaussian swings. Uses `Math.random()` (not seeded PRNG) — non
 - **Auto-fill breaks at capacity** — `autoFillDistrict` stops when no candidate fits under `targetPop * 1.1`, even if district is not full. By design
 - **`data-theme="light"` must be on `<html>`** — CSS theme rules depend on it before JS runs
 - **Media queries use `:root` only** — layout tokens (`--panel-w`, `--toolbar-h`) are not theme-specific. Don't add `[data-theme]` selectors in media queries
-- **Shared CSS at domain root** — `/shared-base.css` absolute path requires serving from parent directory
+- **Shared CSS at domain root** — `/shared/base.css` absolute path requires serving from parent directory
 - **`shiftForSidebar()`** reads `--panel-w` from computed styles — no hardcoded pixel values
 - **Bar widths** — `.vote-bar, .prop-bar-fill { width: 0 }` in CSS; JS sets width via inline style

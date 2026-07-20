@@ -9,10 +9,10 @@ Part of the **a9l.im** portfolio. See root `AGENTS.md` for the shared design sys
 ## Running Locally
 
 ```bash
-cd path/to/a9lim.github.io && python -m http.server
+cd path/to/a9lim.github.io && npm run build && python -m http.server --directory dist
 ```
 
-Serve from root — shared files load via absolute paths. No build step, test suite, or linter.
+Build from the parent repository root and serve `dist/` — shared files load via absolute paths. No build step, test suite, or linter.
 
 ## Overview
 
@@ -30,7 +30,7 @@ Interactive redistricting/gerrymandering simulator. Procedural hex-tile map with
 
 ## Color System
 
-Internal party keys are `orange`/`lime`/`purple` throughout. Display names in `PARTY_NAMES` (config.js): Federalist, Farmer-Labor, Reform. Colors reference `_PALETTE.extended.*` from shared-tokens.js.
+Internal party keys are `orange`/`lime`/`purple` throughout. Display names in `PARTY_NAMES` (config.js): Federalist, Farmer-Labor, Reform. Colors reference `_PALETTE.extended.*` from shared/tokens.js.
 
 ## Key Algorithms
 

@@ -29,10 +29,10 @@ Toolbar buttons give you auto-fill (greedy fill to population target), automated
 ## Running Locally
 
 ```bash
-cd path/to/a9lim.github.io && python -m http.server
+cd path/to/a9lim.github.io && npm run build && python -m http.server --directory dist
 ```
 
-Shared design system files load from the parent directory via absolute paths, so please serve from the repository root. There's no build step or dependencies.
+Shared design system files load from the parent directory via absolute paths, so please build from the parent repository root and serve `dist/`. The project itself has no compile step or dependencies; the parent staging build assembles shared assets.
 
 ## Tech
 
